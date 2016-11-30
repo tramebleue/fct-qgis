@@ -2,9 +2,9 @@ from PyQt4.QtGui import *
 from processing.core.Processing import Processing
 from processing.core.AlgorithmProvider import AlgorithmProvider
 from SplitLineString import SplitLineString
-from ValleyBottomMask import ValleyBottomMask
+from DifferentialRasterThreshold import DifferentialRasterThreshold
 from ValleyBottom import ValleyBottom
-from CleanValleyBottom import CleanValleyBottom
+from RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 
 class FluvialToolbox(object):
 
@@ -23,8 +23,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
     def __init__(self):
         super(FluvialToolboxProvider, self).__init__()
         self.alglist = [ SplitLineString(),
-                         ValleyBottomMask(),
-                         CleanValleyBottom(),
+                         DifferentialRasterThreshold(),
+                         RemoveSmallPolygonalObjects(),
                          ValleyBottom() ]
         for alg in self.alglist:
             alg.provider = self

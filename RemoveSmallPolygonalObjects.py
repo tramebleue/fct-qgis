@@ -36,7 +36,7 @@ from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
 
 
-class CleanValleyBottom(GeoAlgorithm):
+class RemoveSmallPolygonalObjects(GeoAlgorithm):
 
     INPUT = 'INPUT'
     OUTPUT = 'OUTPUT'
@@ -47,8 +47,8 @@ class CleanValleyBottom(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Clean Valley Bottom')
-        self.group, self.i18n_group = self.trAlgorithm('Main')
+        self.name, self.i18n_name = self.trAlgorithm('Remove Small Polygonal Objects')
+        self.group, self.i18n_group = self.trAlgorithm('Common Routines')
 
         self.addParameter(ParameterVector(self.INPUT,
                                           self.tr('Input layer'), [ParameterVector.VECTOR_TYPE_POLYGON]))

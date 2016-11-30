@@ -29,9 +29,11 @@ from processing.core.Processing import Processing
 from processing.core.parameters import ParameterRaster
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
+from processing.core.parameters import ParameterBoolean
 from processing.core.outputs import OutputVector
 from processing.core.ProcessingLog import ProcessingLog
 from processing.gui.Postprocessing import handleAlgorithmResults
+import gdal
 
 
 class ValleyBottom(GeoAlgorithm):
@@ -39,12 +41,23 @@ class ValleyBottom(GeoAlgorithm):
     INPUT_DEM = 'INPUT_DEM'
     INPUT_NETWORK = 'INPUT_NETWORK'
     INPUT_ZOI = 'INPUT_ZOI'
-    OUTPUT_LAYER = 'OUTPUT'
+    OUTPUT = 'OUTPUT'
+    DISPLAY_INTERMEDIATE_RESULT = 'DISPLAY_INTERMEDIATE_RESULT'
+    DO_CLEAN = 'DO_CLEAN'
+
+    LARGE_BUFFER_DISTANCE_PARAM = 'LARGE_BUFFER_DISTANCE'
+    SMALL_BUFFER_DISTANCE_PARAM = 'SMALL_BUFFER_DISTANCE'
+    MIN_THRESHOLD_PARAM = 'MIN_THRESHOLD'
+    MAX_THRESHOLD_PARAM = 'MAX_THRESHOLD'
+    CLEAN_MIN_AREA_PARAM = 'CLEAN_MIN_AREA'
+    CLEAN_MIN_HOLE_AREA_PARAM = 'CLEAN_MIN_HOLE_AREA'
 
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Valley Bottom')
         self.group, self.i18n_group = self.trAlgorithm('Main')
+
+        # Main parameters
 
         self.addParameter(ParameterRaster(self.INPUT_DEM,
                                           self.tr('Input DEM')))
@@ -52,9 +65,57 @@ class ValleyBottom(GeoAlgorithm):
                                           self.tr('Input Stream Network'), [ParameterVector.VECTOR_TYPE_LINE]))
         self.addParameter(ParameterVector(self.INPUT_ZOI,
                                           self.tr('Zone of Interest'), [ParameterVector.VECTOR_TYPE_POLYGON]))
-        self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Valley Bottom')))
+        self.addParameter(ParameterBoolean(self.DISPLAY_INTERMEDIATE_RESULT,
+                                           self.tr('Display intermediate result layers ?'), True))
+        self.addParameter(ParameterBoolean(self.DO_CLEAN,
+                                           self.tr('Clean result layer ?'), True))
+
+        # Advanced parameters
+
+        params = []
+        params.append(ParameterNumber(self.LARGE_BUFFER_DISTANCE_PARAM,
+                                      self.tr('Large buffer distance'), default=1000))
+        params.append(ParameterNumber(self.SMALL_BUFFER_DISTANCE_PARAM,
+                                      self.tr('Small buffer distance'), default=50))
+        params.append(ParameterNumber(self.MIN_THRESHOLD_PARAM,
+                                      self.tr('Bottom minimum relative elevation'), default=-10))
+        params.append(ParameterNumber(self.MAX_THRESHOLD_PARAM,
+                                      self.tr('Bottom maximum relative elevation'), default=10))
+        params.append(ParameterNumber(self.CLEAN_MIN_AREA_PARAM,
+                                      self.tr('Minimum object area'), default=50e4, minValue=0))
+        params.append(ParameterNumber(self.CLEAN_MIN_HOLE_AREA_PARAM,
+                                      self.tr('Minimum hole area'), default=10e4, minValue=0))
+
+        for param in params:
+            param.isAdvanced = True
+            self.addParameter(param)
+        
+        self.addOutput(OutputVector(self.OUTPUT, self.tr('Valley Bottom')))
 
     def processAlgorithm(self, progress):
+
+        LARGE_BUFFER_DISTANCE = self.getParameterValue(self.LARGE_BUFFER_DISTANCE_PARAM)
+        SMALL_BUFFER_DISTANCE = self.getParameterValue(self.SMALL_BUFFER_DISTANCE_PARAM)
+        MIN_THRESHOLD = self.getParameterValue(self.MIN_THRESHOLD_PARAM)
+        MAX_THRESHOLD = self.getParameterValue(self.MAX_THRESHOLD_PARAM)
+        CLEAN_MIN_AREA = self.getParameterValue(self.CLEAN_MIN_AREA_PARAM)
+        CLEAN_MIN_HOLE_AREA = self.getParameterValue(self.CLEAN_MIN_HOLE_AREA_PARAM)
+        display_result = self.getParameterValue(self.DISPLAY_INTERMEDIATE_RESULT)
+
+        # Hard coded parameters
+        SIMPLIFY_TOLERANCE = 20
+        SPLIT_MAX_LENGTH = 50
+        SIEVE_THRESHOLD = 40
+        SMOOTH_ITERATIONS = 5
+        SMOOTH_OFFSET = .25
+
+        # Constants
+        FOUR_CONNECTIVITY = 0
+        LZW_COMPRESS = 3
+
+        def handleResult(*args, **kw):
+            if display_result:
+                handleAlgorithmResults(*args, **kw)
 
         current = 0
         steps = 18
@@ -73,7 +134,7 @@ class ValleyBottom(GeoAlgorithm):
         SimplifiedNetwork = Processing.runAlgorithm('qgis:simplifygeometries', None,
                             {
                               'INPUT': ClippedNetwork.getOutputValue('OUTPUT'),
-                              'TOLERANCE': 20
+                              'TOLERANCE': SIMPLIFY_TOLERANCE
                             })
         current = current + 1
         progress.setPercentage(int(current * total))
@@ -82,7 +143,7 @@ class ValleyBottom(GeoAlgorithm):
         SplittedNetwork = Processing.runAlgorithm('fluvialtoolbox:splitlinestring', None,
                             {
                               'INPUT': SimplifiedNetwork.getOutputValue('OUTPUT'),
-                              'MAXLENGTH': 50
+                              'MAXLENGTH': SPLIT_MAX_LENGTH
                             })
         current = current + 1
         progress.setPercentage(int(current * total))
@@ -99,7 +160,7 @@ class ValleyBottom(GeoAlgorithm):
         LargeBuffer = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
                             {
                               'INPUT': SplittedNetwork.getOutputValue('OUTPUT'),
-                              'DISTANCE': 1000,
+                              'DISTANCE': LARGE_BUFFER_DISTANCE,
                               'DISSOLVE': True
                             })
         current = current + 1
@@ -109,7 +170,7 @@ class ValleyBottom(GeoAlgorithm):
         SmallBuffer = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
                             {
                               'INPUT': SplittedNetwork.getOutputValue('OUTPUT'),
-                              'DISTANCE': 50,
+                              'DISTANCE': SMALL_BUFFER_DISTANCE,
                               'DISSOLVE': True
                             })
         current = current + 1
@@ -141,7 +202,7 @@ class ValleyBottom(GeoAlgorithm):
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': True,
                               'KEEP_RESOLUTION': True,
-                              'COMPRESS': 3,
+                              'COMPRESS': LZW_COMPRESS,
                               'TILED': True
                             })
         current = current + 1
@@ -155,7 +216,7 @@ class ValleyBottom(GeoAlgorithm):
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': False,
                               'KEEP_RESOLUTION': True,
-                              'COMPRESS': 3,
+                              'COMPRESS': LZW_COMPRESS,
                               'TILED': True
                             })
         current = current + 1
@@ -173,45 +234,53 @@ class ValleyBottom(GeoAlgorithm):
         current = current + 1
         progress.setPercentage(int(current * total))
 
+        layer = gdal.Open(self.getParameterValue(self.INPUT_DEM))
+        geotransform = layer.GetGeoTransform()
+        pixel_width = geotransform[1]
+        pixel_height = -geotransform[5]
+        del layer
+
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Convert to reference DEM ...')
         ReferenceDEM = Processing.runAlgorithm('gdalogr:rasterize', None,
                             {
                               'INPUT': ReferencePolygons.getOutputValue('OUTPUT_LAYER'),
                               'FIELD': '_median',
                               'TILED': True,
-                              'COMPRESS': 3,
+                              'COMPRESS': LZW_COMPRESS,
                               'DIMENSIONS': 1,
-                              'WIDTH': 5,
-                              'HEIGHT': 5,
+                              'WIDTH': pixel_width,
+                              'HEIGHT': pixel_height,
                               'EXTRA': '-tap'
                             })
         current = current + 1
         progress.setPercentage(int(current * total))
 
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Compute relative DEM and extract bottom ...')
-        ValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:valleybottommask', None,
+        ValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:differentialrasterthreshold', handleResult,
                             {
                               'INPUT_DEM': ClippedDEM.getOutputValue('OUTPUT'),
                               'REFERENCE_DEM': ReferenceDEM.getOutputValue('OUTPUT'),
-                              'MIN_THRESHOLD': -10,
-                              'MAX_THRESHOLD': 10,
+                              'MIN_THRESHOLD': MIN_THRESHOLD,
+                              'MAX_THRESHOLD': MAX_THRESHOLD,
                             })
         current = current + 1
         progress.setPercentage(int(current * total))
 
+
+        # Polygonize Valley Bottom
 
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Sieve result ...')
         SievedValleyBottomRaster = Processing.runAlgorithm('gdalogr:sieve', None,
                             {
                               'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
-                              'THRESHOLD': 40,
-                              'CONNECTIONS': 0
+                              'THRESHOLD': SIEVE_THRESHOLD,
+                              'CONNECTIONS': FOUR_CONNECTIVITY
                             })
         current = current + 1
         progress.setPercentage(int(current * total))
 
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Polygonize ...')
-        UncleanedValleyBottom = Processing.runAlgorithm('gdalogr:polygonize', None,
+        UncleanedValleyBottom = Processing.runAlgorithm('gdalogr:polygonize', handleResult,
                             {
                               'INPUT': SievedValleyBottomRaster.getOutputValue('OUTPUT'),
                               'FIELD': 'VALUE'
@@ -219,36 +288,44 @@ class ValleyBottom(GeoAlgorithm):
         current = current + 1
         progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Clean valley bottom ...')
-        ValleyBottom = Processing.runAlgorithm('fluvialtoolbox:cleanvalleybottom', None,
-                            {
-                              'INPUT': UncleanedValleyBottom.getOutputValue('OUTPUT'),
-                              'MIN_AREA': 50e4,
-                              'MIN_HOLE_AREA': 10e4,
-                              'FIELD': 'VALUE',
-                              'VALUE': 1
-                            })
-        current = current + 1
-        progress.setPercentage(int(current * total))
+        # Clean result
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Simplify result ...')
-        SimplifiedValleyBottom = Processing.runAlgorithm('qgis:simplifygeometries', None,
-                            {
-                              'INPUT': ValleyBottom.getOutputValue('OUTPUT'),
-                              'TOLERANCE': 10
-                            })
-        current = current + 1
-        progress.setPercentage(int(current * total))
+        if self.getParameterValue(self.DO_CLEAN):
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Smooth polygons ...')
-        SmoothedValleyBottom = Processing.runAlgorithm('qgis:smoothgeometry', None,
-                            {
-                              'INPUT_LAYER': SimplifiedValleyBottom.getOutputValue('OUTPUT'),
-                              'OUTPUT_LAYER': self.getOutputValue(self.OUTPUT_LAYER),
-                              'ITERATIONS': 5,
-                              'OFFSET': .25
-                            })
-        current = current + 1
-        progress.setPercentage(int(current * total))
+            ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Remove small objects and parts ...')
+            ValleyBottom = Processing.runAlgorithm('fluvialtoolbox:removesmallpolygonalobjects', None,
+                                {
+                                  'INPUT': UncleanedValleyBottom.getOutputValue('OUTPUT'),
+                                  'MIN_AREA': CLEAN_MIN_AREA,
+                                  'MIN_HOLE_AREA': CLEAN_MIN_HOLE_AREA,
+                                  'FIELD': 'VALUE',
+                                  'VALUE': 1
+                                })
+            current = current + 1
+            progress.setPercentage(int(current * total))
+
+            ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Simplify result ...')
+            SimplifiedValleyBottom = Processing.runAlgorithm('qgis:simplifygeometries', None,
+                                {
+                                  'INPUT': ValleyBottom.getOutputValue('OUTPUT'),
+                                  'TOLERANCE': SIMPLIFY_TOLERANCE
+                                })
+            current = current + 1
+            progress.setPercentage(int(current * total))
+
+            ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Smooth polygons ...')
+            SmoothedValleyBottom = Processing.runAlgorithm('qgis:smoothgeometry', None,
+                                {
+                                  'INPUT_LAYER': SimplifiedValleyBottom.getOutputValue('OUTPUT'),
+                                  'OUTPUT_LAYER': self.getOutputValue(self.OUTPUT),
+                                  'ITERATIONS': SMOOTH_ITERATIONS,
+                                  'OFFSET': SMOOTH_OFFSET
+                                })
+            current = current + 1
+            progress.setPercentage(int(current * total))
+
+        else:
+
+            self.setOutputValue(self.OUTPUT, UncleanedValleyBottom.getOutputValue('OUTPUT'))
 
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Done !')

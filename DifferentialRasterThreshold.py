@@ -33,7 +33,7 @@ import gdalnumeric as gn
 import numpy as np
 
 
-class ValleyBottomMask(GeoAlgorithm):
+class DifferentialRasterThreshold(GeoAlgorithm):
 
     INPUT_DEM = 'INPUT_DEM'
     REFERENCE_DEM = 'REFERENCE_DEM'
@@ -44,8 +44,8 @@ class ValleyBottomMask(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Valley Bottom Mask')
-        self.group, self.i18n_group = self.trAlgorithm('Main')
+        self.name, self.i18n_name = self.trAlgorithm('Differential Raster Threshold')
+        self.group, self.i18n_group = self.trAlgorithm('Common Routines')
 
         self.addParameter(ParameterRaster(self.INPUT_DEM,
                                           self.tr('Input DEM')))
