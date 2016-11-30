@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    SplitLineString.py
+    RemoveSmallPolygonalObjects.py
     ---------------------
     Date                 : November 2016
     Copyright            : (C) 2016 by Christophe Rousson

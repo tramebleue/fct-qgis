@@ -1,10 +1,13 @@
 from PyQt4.QtGui import *
 from processing.core.Processing import Processing
 from processing.core.AlgorithmProvider import AlgorithmProvider
-from SplitLineString import SplitLineString
+from SplitLine import SplitLine
 from DifferentialRasterThreshold import DifferentialRasterThreshold
 from ValleyBottom import ValleyBottom
 from RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
+from ExtremePoints import ExtremePoints
+from NearTable import NearTable
+from SplitLineAtNearestPoint import SplitLineAtNearestPoint
 
 class FluvialToolbox(object):
 
@@ -22,9 +25,12 @@ class FluvialToolboxProvider(AlgorithmProvider):
 	
     def __init__(self):
         super(FluvialToolboxProvider, self).__init__()
-        self.alglist = [ SplitLineString(),
+        self.alglist = [ SplitLine(),
                          DifferentialRasterThreshold(),
                          RemoveSmallPolygonalObjects(),
+                         ExtremePoints(),
+                         NearTable(),
+                         SplitLineAtNearestPoint(),
                          ValleyBottom() ]
         for alg in self.alglist:
             alg.provider = self

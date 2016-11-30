@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    SplitLineString.py
+    SplitLine.py
     ---------------------
     Date                 : November 2016
     Copyright            : (C) 2016 by Christophe Rousson
@@ -33,7 +33,7 @@ from processing.tools import dataobjects, vector
 from math import sqrt
 
 
-class SplitLineString(GeoAlgorithm):
+class SplitLine(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     OUTPUT_LAYER = 'OUTPUT'
@@ -41,7 +41,7 @@ class SplitLineString(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Split Linestring')
+        self.name, self.i18n_name = self.trAlgorithm('Split Lines')
         self.group, self.i18n_group = self.trAlgorithm('Common Routines')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
