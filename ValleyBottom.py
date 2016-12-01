@@ -140,7 +140,7 @@ class ValleyBottom(GeoAlgorithm):
         progress.setPercentage(int(current * total))
         
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Split network ...')
-        SplittedNetwork = Processing.runAlgorithm('fluvialtoolbox:splitlinestring', None,
+        SplittedNetwork = Processing.runAlgorithm('fluvialtoolbox:splitlines', None,
                             {
                               'INPUT': SimplifiedNetwork.getOutputValue('OUTPUT'),
                               'MAXLENGTH': SPLIT_MAX_LENGTH

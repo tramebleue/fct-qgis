@@ -24,12 +24,15 @@ __copyright__ = '(C) 2016, Christophe Rousson'
 
 __revision__ = '$Format:%H$'
 
+from PyQt4.QtCore import QSettings
 from qgis.core import QGis, QgsFeature, QgsGeometry, QgsPoint
+from qgis.core import QgsFeatureRequest, QgsExpression, QgsVectorFileWriter
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
+from processing.tools.system import getTempFilenameInTempFolder
 from processing.core.Processing import Processing
 from processing.core.ProcessingLog import ProcessingLog
 
@@ -39,6 +42,8 @@ class CenterLine(GeoAlgorithm):
     INPUT_POLYGONS = 'INPUT_POLYGONS'
     DISAGGREGATION_STEP = 'DISAGGREGATION_STEP'
     OUTPUT = 'OUTPUT'
+
+    STEPS = 16
 
     def defineCharacteristics(self):
 
@@ -54,21 +59,55 @@ class CenterLine(GeoAlgorithm):
 
         self.addOutput(OutputVector(self.OUTPUT, self.tr('Center line')))
 
+    def nextStep(self, description, progress):
+        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, description)
+        progress.setPercentage(int(100.0 * self.current_step / self.STEPS))
+        self.current_step += 1
+
+
     def processAlgorithm(self, progress):
+
+        SIMPLIFY_TOLERANCE = 40
+        SMOOTH_ITERATIONS = 4
+        SMOOTH_OFFSET = .25
         
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Extract polyline end points ...')
+        disaggregation_step = self.getParameterValue(self.DISAGGREGATION_STEP)
+        self.current_step = 0
+
+        # Prepare inputs
+        
+        self.nextStep('Extract polyline end points ...', progress)
         ExtremePoints = Processing.runAlgorithm('fluvialtoolbox:extremepoints', None,
                             {
                                 'INPUT': self.getParameterValue(self.INPUT_POLYLINES)
                             })
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Convert polylines to polygons ...')
-        PolyToLine = Processing.runAlgorithm('qgis:polygonstolines', None,
+        self.nextStep('Simplify polygons ...', progress)
+        SimplifiedPolygons = Processing.runAlgorithm('qgis:simplifygeometries', None,
                             {
-                                'INPUT': self.getParameterValue(self.INPUT_POLYGONS)
+                              'INPUT': self.getParameterValue(self.INPUT_POLYGONS),
+                              'TOLERANCE': SIMPLIFY_TOLERANCE
                             })
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Find nearest objects ...')
+        self.nextStep('Convert polylines to polygons ...', progress)
+        PolyToLine = Processing.runAlgorithm('qgis:polygonstolines', None,
+                            {
+                                'INPUT': SimplifiedPolygons.getOutputValue('OUTPUT')
+                            })
+
+        # Split lines in PolyToLine w.r.t DISAGGREGATION_STEP
+        
+        self.nextStep('Split lines w/ disaggregation step ...', progress)
+        SplittedPolyToLine = Processing.runAlgorithm('fluvialtoolbox:splitlines', None,
+                            {
+                              'INPUT': PolyToLine.getOutputValue('OUTPUT'),
+                              'MAXLENGTH': disaggregation_step
+                            })
+
+        # Split PolyToLine with ExtremePoints
+        # Number lines (UGO_ID) in PolyToLine
+
+        self.nextStep('Find nearest objects ...', progress)
         NearTable = Processing.runAlgorithm('fluvialtoolbox:neartable', None,
                             {
                                 'FROM': ExtremePoints.getOutputValue('OUTPUT'),
@@ -79,14 +118,110 @@ class CenterLine(GeoAlgorithm):
                                 'SEARCH_DISTANCE': 0
                             })
 
-        # Split PolyToLine with ExtremePoints
-        # Number lines (UGO_ID) in PolyToLine
-        # Split lines in PolyToLine w.r.t DISAGGREGATION_STEP
+        self.nextStep('Split lines at extreme points ...', progress)
+        UGO = Processing.runAlgorithm('fluvialtoolbox:splitlineatnearestpoint', None,
+                            {
+                              'INPUT': SplittedPolyToLine.getOutputValue('OUTPUT'),
+                              'NEAR_TABLE': NearTable.getOutputValue('OUTPUT')
+                            })
+
         # Extract Points
+
+        self.nextStep('Extract UGO points ...', progress)
+        UGOPoints = Processing.runAlgorithm('qgis:extractnodes', None,
+                            {
+                                'INPUT': UGO.getOutputValue('OUTPUT')
+                            })
+
         # Compute Thiessen polygons
+
+        self.nextStep('Compute UGO Thiessen polygons ...', progress)
+        UGOThiessenPolygons = Processing.runAlgorithm('qgis:voronoipolygons', None,
+                            {
+                              'INPUT': UGOPoints.getOutputValue('OUTPUT'),
+                              'BUFFER': 5.0
+                            })
+
         # Dissolve (merge) by UGO_ID
+
+        self.nextStep('Aggregate UGO by ID ...', progress)
+        AggregatedGO = Processing.runAlgorithm('saga:polygondissolvebyattribute', None,
+                            {
+                                'POLYGONS': UGOThiessenPolygons.getOutputValue('OUTPUT'),
+                                'FIELD_1': 'FID',
+                                'FIELD_2': 'UGO_ID',
+                                'BND_KEEP': False
+                            })
+
         # Intersect with INPUT_POLYGONS
+
+        self.nextStep('Clip AGO to input polygons ...', progress)
+        ClippedAGO = Processing.runAlgorithm('saga:intersect', None,
+                            {
+                                'A': AggregatedGO.getOutputValue('DISSOLVED'),
+                                'B': SimplifiedPolygons.getOutputValue('OUTPUT'),
+                                'SPLIT': True
+                            })
+
         # Convert to linestring
+
+        self.nextStep('Convert AGO to lines ...', progress)
+        ClippedAGOLines = Processing.runAlgorithm('qgis:polygonstolines', None,
+                            {
+                                'INPUT': ClippedAGO.getOutputValue('RESULT')
+                            })
+
         # Keep interior linestrings
         # Delete identical linestrings
+
+        self.nextStep('Self intersect AGO lines ...', progress)
+        SelfIntersectAGO = Processing.runAlgorithm('qgis:intersection', None,
+                            {
+                                'INPUT': ClippedAGOLines.getOutputValue('OUTPUT'),
+                                'INPUT2': ClippedAGOLines.getOutputValue('OUTPUT')
+                            })
+
+        # Extract UGO boundaries (ie. lines that belong to two different UGO)
+
+        self.nextStep('Extract center line ...', progress)
+        extraction = self.exportFeaturesByExpression(
+                    SelfIntersectAGO.getOutputValue('OUTPUT'),
+                    'UGO_ID != ugo_id_2',
+                    'centerline.shp')
+
         # Simplify and smooth result
+
+        self.nextStep('Simplify result ...', progress)
+        SimplifiedCenterLine = Processing.runAlgorithm('qgis:simplifygeometries', None,
+                            {
+                              'INPUT': extraction,
+                              'TOLERANCE': SIMPLIFY_TOLERANCE
+                            })
+
+        self.nextStep('Smooth center line ...', progress)
+        Processing.runAlgorithm('qgis:smoothgeometry', None,
+                                {
+                                  'INPUT_LAYER': SimplifiedCenterLine.getOutputValue('OUTPUT'),
+                                  'OUTPUT_LAYER': self.getOutputValue(self.OUTPUT),
+                                  'ITERATIONS': SMOOTH_ITERATIONS,
+                                  'OFFSET': SMOOTH_OFFSET
+                                })
+
+        self.nextStep('Done !', progress)
+
+    def exportFeaturesByExpression(self, inputURI, expression, basename):
+        output = getTempFilenameInTempFolder(basename)
+        layer = dataobjects.getObjectFromUri(inputURI)
+        settings = QSettings()
+        systemEncoding = settings.value('/UI/encoding', 'System')
+        writer = QgsVectorFileWriter(output, systemEncoding,
+                                     layer.pendingFields(),
+                                     layer.dataProvider().geometryType(), layer.crs())
+        query = QgsFeatureRequest(QgsExpression(expression))
+        for feature in layer.getFeatures(query):
+            newFeature = QgsFeature()
+            newFeature.setAttributes(feature.attributes())
+            newFeature.setGeometry(QgsGeometry(feature.geometry()))
+            writer.addFeature(newFeature)
+        del writer
+        return output

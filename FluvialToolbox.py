@@ -8,6 +8,7 @@ from RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from ExtremePoints import ExtremePoints
 from NearTable import NearTable
 from SplitLineAtNearestPoint import SplitLineAtNearestPoint
+from CenterLine import CenterLine
 
 class FluvialToolbox(object):
 
@@ -31,7 +32,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                          ExtremePoints(),
                          NearTable(),
                          SplitLineAtNearestPoint(),
-                         ValleyBottom() ]
+                         ValleyBottom(),
+                         CenterLine() ]
         for alg in self.alglist:
             alg.provider = self
 

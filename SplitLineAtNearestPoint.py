@@ -34,7 +34,6 @@ from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 from processing.core.Processing import Processing
 from processing.core.ProcessingLog import ProcessingLog
-from collections import defaultdict
 
 class SplitLineAtNearestPoint(GeoAlgorithm):
 
@@ -57,32 +56,27 @@ class SplitLineAtNearestPoint(GeoAlgorithm):
     def processAlgorithm(self, progress):
 
         ID_FIELD = 'FID'
+        UGO_FIELD = 'UGO_ID'
 
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT))
         near_table = dataobjects.getObjectFromUri(self.getParameterValue(self.NEAR_TABLE))
         fields = QgsFields(layer.pendingFields())
-        fields.append(QgsField('UGO_ID', QVariant.Int))
+        fields.append(QgsField(UGO_FIELD, QVariant.Int))
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
             fields.toList(), layer.dataProvider().geometryType(), layer.crs())
 
-        # line_id -> list of vertex index to split at
-        split_records = defaultdict(list)
-
-        for split_feature in vector.features(near_table):
-            near_id = split_feature.attribute('NEAR_ID')
-            query = QgsFeatureRequest(QgsExpression('%s = %d' % (ID_FIELD, near_id)))
-            near_feature = layer.getFeatures(query).next()
-            if near_feature:
-                snap, at_vertex, before_vertex, after_vertex, sq_distance = \
-                    near_feature.geometry().closestVertex(split_feature.geometry().asPoint())
-                split_records[near_id].append(at_vertex)
-
-        lines = len(split_records.keys())
+        features = vector.features(layer)
+        lines = len(features)
+        total = 100.0 / lines
         splits = 0
 
-        for fid, vertices in split_records.items():
-            query = QgsFeatureRequest(QgsExpression('%s = %d' % (ID_FIELD, fid)))
-            feature = layer.getFeatures(query).next()
+        for current, feature in enumerate(features):
+            vertices = list()
+            fid = feature.attribute(ID_FIELD)
+            for p in self.split_points(fid, near_table):
+                snap, at_vertex, before_vertex, after_vertex, sq_distance = \
+                    feature.geometry().closestVertex(p)
+                vertices.append(at_vertex)
             points = feature.geometry().asPolyline()
             vertices.sort()
             vertices.append(len(points)-1)
@@ -94,13 +88,19 @@ class SplitLineAtNearestPoint(GeoAlgorithm):
                 newFeature = QgsFeature()
                 newFeature.setFields(fields)
                 self.copyAttributes(feature, newFeature)
-                newFeature.setAttribute('UGO_ID', n)
+                newFeature.setAttribute(UGO_FIELD, n)
                 newFeature.setGeometry(QgsGeometry.fromPolyline(part))
                 writer.addFeature(newFeature)
                 current_vertex = vertex
                 splits += 1
+            progress.setPercentage(int(current * total))
 
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Splitted %d lines into %d smaller lines' % (lines, splits))
+
+    def split_points(self, fid, near_table):
+        query = QgsFeatureRequest(QgsExpression('%s = %d' % ('NEAR_ID', fid)))
+        for feature in near_table.getFeatures(query):
+            yield feature.geometry().asPoint()
 
     def copyAttributes(self, src, dst):
         for field in src.fields():
