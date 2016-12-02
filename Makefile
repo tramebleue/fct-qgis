@@ -1,12 +1,22 @@
 PLUGIN_DIR=$(HOME)/.qgis2/python/plugins
 TARGET=$(PLUGIN_DIR)/fluvialtoolbox
+PY_FILES=$(wildcard *.py)
+MODULES=main common utils
+MODULES_PY_FILES=$(foreach module, $(MODULES), $(wildcard $(module)/*.py))
 
 install:
-	mkdir -p $(TARGET)
-	cp *.py metadata.txt $(TARGET)
+	@echo -n Install to $(TARGET) ...
+	@mkdir -p $(TARGET)
+	@cp metadata.txt $(TARGET)
+	@cp $(PY_FILES) $(TARGET)
+	@for m in $(MODULES); do mkdir -p $(TARGET)/$$m; done
+	@for f in $(MODULES_PY_FILES); do cp $$f $(TARGET)/$$f; done
+	@echo Ok
 
 uninstall:
-	rm -rf $(TARGET)
+	@echo -n Remove directory $(TARGET) ...
+	@rm -rf $(TARGET)
+	@echo Ok
 
 clean:
 	rm -f *.c

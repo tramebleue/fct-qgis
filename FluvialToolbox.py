@@ -1,14 +1,8 @@
 from PyQt4.QtGui import *
 from processing.core.Processing import Processing
 from processing.core.AlgorithmProvider import AlgorithmProvider
-from SplitLine import SplitLine
-from DifferentialRasterThreshold import DifferentialRasterThreshold
-from ValleyBottom import ValleyBottom
-from RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
-from ExtremePoints import ExtremePoints
-from NearTable import NearTable
-from SplitLineAtNearestPoint import SplitLineAtNearestPoint
-from CenterLine import CenterLine
+from common import *
+from main import *
 
 class FluvialToolbox(object):
 
