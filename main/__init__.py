@@ -1,2 +1,3 @@
 from ValleyBottom import ValleyBottom
 from CenterLine import CenterLine
+from ValleyBottomWidth import ValleyBottomWidth

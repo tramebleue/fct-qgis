@@ -52,6 +52,8 @@ class ValleyBottom(GeoAlgorithm):
     CLEAN_MIN_AREA_PARAM = 'CLEAN_MIN_AREA'
     CLEAN_MIN_HOLE_AREA_PARAM = 'CLEAN_MIN_HOLE_AREA'
 
+    STEPS = 18
+
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Valley Bottom')
@@ -92,6 +94,12 @@ class ValleyBottom(GeoAlgorithm):
         
         self.addOutput(OutputVector(self.OUTPUT, self.tr('Valley Bottom')))
 
+    def nextStep(self, description, progress):
+        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, description)
+        progress.setText(description)
+        progress.setPercentage(int(100.0 * self.current_step / self.STEPS))
+        self.current_step += 1
+
     def processAlgorithm(self, progress):
 
         LARGE_BUFFER_DISTANCE = self.getParameterValue(self.LARGE_BUFFER_DISTANCE_PARAM)
@@ -113,89 +121,75 @@ class ValleyBottom(GeoAlgorithm):
         FOUR_CONNECTIVITY = 0
         LZW_COMPRESS = 3
 
-        def handleResult(*args, **kw):
-            if display_result:
-                handleAlgorithmResults(*args, **kw)
+        def handleResult(description):
+            def _handle(alg, *args, **kw):
+                if display_result:
+                    for out in alg.outputs:
+                        out.description = description
+                    handleAlgorithmResults(alg, *args, **kw)
+            return _handle
 
-        current = 0
-        steps = 18
-        total = 100.0 / steps
+        self.current_step = 0
         
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Clip stream network by ZOI ...')
+        self.nextStep('Clip stream network by ZOI ...', progress)
         ClippedNetwork = Processing.runAlgorithm('qgis:clip', None,
                             {
                               'INPUT': self.getParameterValue(self.INPUT_NETWORK),
                               'OVERLAY': self.getParameterValue(self.INPUT_ZOI)
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Simplify network')
+        self.nextStep('Simplify network',progress)
         SimplifiedNetwork = Processing.runAlgorithm('qgis:simplifygeometries', None,
                             {
                               'INPUT': ClippedNetwork.getOutputValue('OUTPUT'),
                               'TOLERANCE': SIMPLIFY_TOLERANCE
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
         
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Split network ...')
+        self.nextStep('Split network ...',progress)
         SplittedNetwork = Processing.runAlgorithm('fluvialtoolbox:splitlines', None,
                             {
                               'INPUT': SimplifiedNetwork.getOutputValue('OUTPUT'),
                               'MAXLENGTH': SPLIT_MAX_LENGTH
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Extract points ...')
+        self.nextStep('Extract points ...',progress)
         NetworkPoints = Processing.runAlgorithm('qgis:extractnodes', None,
                             {
                               'INPUT': SplittedNetwork.getOutputValue('OUTPUT')
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
         
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Compute large buffer ...')
+        self.nextStep('Compute large buffer ...',progress)
         LargeBuffer = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
                             {
                               'INPUT': SplittedNetwork.getOutputValue('OUTPUT'),
                               'DISTANCE': LARGE_BUFFER_DISTANCE,
                               'DISSOLVE': True
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
         
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Compute small buffer ...')
+        self.nextStep('Compute small buffer ...',progress)
         SmallBuffer = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
                             {
                               'INPUT': SplittedNetwork.getOutputValue('OUTPUT'),
                               'DISTANCE': SMALL_BUFFER_DISTANCE,
                               'DISSOLVE': True
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Compute thiessen polygons ...')
+        self.nextStep('Compute thiessen polygons ...',progress)
         ThiessenPolygons = Processing.runAlgorithm('qgis:voronoipolygons', None,
                             {
                               'INPUT': NetworkPoints.getOutputValue('OUTPUT'),
                               'BUFFER': 50.0
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Clip thiessen polygons ...')
-        ClippedThiessenPolygons = Processing.runAlgorithm('qgis:clip', None,
+        self.nextStep('Clip thiessen polygons ...',progress)
+        ClippedThiessenPolygons = Processing.runAlgorithm('qgis:clip', handleResult('Thiessen polygons'),
                             {
                               'INPUT': ThiessenPolygons.getOutputValue('OUTPUT'),
                               'OVERLAY': LargeBuffer.getOutputValue('OUTPUT')
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Clip DEM ...')
-        ClippedDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
+        self.nextStep('Clip DEM ...',progress)
+        ClippedDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('DEM (ZOI Clipped)'),
                             {
                               'INPUT': self.getParameterValue(self.INPUT_DEM),
                               'MASK': LargeBuffer.getOutputValue('OUTPUT'),
@@ -205,10 +199,8 @@ class ValleyBottom(GeoAlgorithm):
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Extract minimum DEM ...')
+        self.nextStep('Extract minimum DEM ...',progress)
         MinDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
                             {
                               'INPUT': ClippedDEM.getOutputValue('OUTPUT'),
@@ -219,10 +211,8 @@ class ValleyBottom(GeoAlgorithm):
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Compute reference elevation for every polygon ...')
+        self.nextStep('Compute reference elevation for every polygon ...',progress)
         ReferencePolygons = Processing.runAlgorithm('qgis:zonalstatistics', None,
                             {
                               'INPUT_RASTER': MinDEM.getOutputValue('OUTPUT'),
@@ -231,8 +221,6 @@ class ValleyBottom(GeoAlgorithm):
                               'COLUMN_PREFIX': '_',
                               'GLOBAL_EXTENT': False
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
         layer = gdal.Open(self.getParameterValue(self.INPUT_DEM))
         geotransform = layer.GetGeoTransform()
@@ -240,8 +228,8 @@ class ValleyBottom(GeoAlgorithm):
         pixel_height = -geotransform[5]
         del layer
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Convert to reference DEM ...')
-        ReferenceDEM = Processing.runAlgorithm('gdalogr:rasterize', None,
+        self.nextStep('Convert to reference DEM ...',progress)
+        ReferenceDEM = Processing.runAlgorithm('gdalogr:rasterize',  handleResult('Reference DEM'),
                             {
                               'INPUT': ReferencePolygons.getOutputValue('OUTPUT_LAYER'),
                               'FIELD': '_median',
@@ -252,47 +240,39 @@ class ValleyBottom(GeoAlgorithm):
                               'HEIGHT': pixel_height,
                               'EXTRA': '-tap'
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Compute relative DEM and extract bottom ...')
-        ValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:differentialrasterthreshold', handleResult,
+        self.nextStep('Compute relative DEM and extract bottom ...',progress)
+        ValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:differentialrasterthreshold', None,
                             {
                               'INPUT_DEM': ClippedDEM.getOutputValue('OUTPUT'),
                               'REFERENCE_DEM': ReferenceDEM.getOutputValue('OUTPUT'),
                               'MIN_THRESHOLD': MIN_THRESHOLD,
                               'MAX_THRESHOLD': MAX_THRESHOLD,
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
 
         # Polygonize Valley Bottom
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Sieve result ...')
+        self.nextStep('Sieve result ...',progress)
         SievedValleyBottomRaster = Processing.runAlgorithm('gdalogr:sieve', None,
                             {
                               'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
                               'THRESHOLD': SIEVE_THRESHOLD,
                               'CONNECTIONS': FOUR_CONNECTIVITY
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Polygonize ...')
-        UncleanedValleyBottom = Processing.runAlgorithm('gdalogr:polygonize', handleResult,
+        self.nextStep('Polygonize ...',progress)
+        UncleanedValleyBottom = Processing.runAlgorithm('gdalogr:polygonize', handleResult('Uncleaned Valley Bottom'),
                             {
                               'INPUT': SievedValleyBottomRaster.getOutputValue('OUTPUT'),
                               'FIELD': 'VALUE'
                             })
-        current = current + 1
-        progress.setPercentage(int(current * total))
 
         # Clean result
 
         if self.getParameterValue(self.DO_CLEAN):
 
-            ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Remove small objects and parts ...')
+            self.nextStep('Remove small objects and parts ...',progress)
             ValleyBottom = Processing.runAlgorithm('fluvialtoolbox:removesmallpolygonalobjects', None,
                                 {
                                   'INPUT': UncleanedValleyBottom.getOutputValue('OUTPUT'),
@@ -301,19 +281,15 @@ class ValleyBottom(GeoAlgorithm):
                                   'FIELD': 'VALUE',
                                   'VALUE': 1
                                 })
-            current = current + 1
-            progress.setPercentage(int(current * total))
 
-            ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Simplify result ...')
+            self.nextStep('Simplify result ...',progress)
             SimplifiedValleyBottom = Processing.runAlgorithm('qgis:simplifygeometries', None,
                                 {
                                   'INPUT': ValleyBottom.getOutputValue('OUTPUT'),
                                   'TOLERANCE': SIMPLIFY_TOLERANCE
                                 })
-            current = current + 1
-            progress.setPercentage(int(current * total))
 
-            ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Smooth polygons ...')
+            self.nextStep('Smooth polygons ...',progress)
             SmoothedValleyBottom = Processing.runAlgorithm('qgis:smoothgeometry', None,
                                 {
                                   'INPUT_LAYER': SimplifiedValleyBottom.getOutputValue('OUTPUT'),
@@ -321,11 +297,9 @@ class ValleyBottom(GeoAlgorithm):
                                   'ITERATIONS': SMOOTH_ITERATIONS,
                                   'OFFSET': SMOOTH_OFFSET
                                 })
-            current = current + 1
-            progress.setPercentage(int(current * total))
 
         else:
 
             self.setOutputValue(self.OUTPUT, UncleanedValleyBottom.getOutputValue('OUTPUT'))
 
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Done !')
+        self.nextStep('Done !',progress)

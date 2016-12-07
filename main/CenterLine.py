@@ -43,7 +43,7 @@ class CenterLine(GeoAlgorithm):
     DISAGGREGATION_STEP = 'DISAGGREGATION_STEP'
     OUTPUT = 'OUTPUT'
 
-    STEPS = 16
+    STEPS = 17
 
     def defineCharacteristics(self):
 
@@ -61,6 +61,7 @@ class CenterLine(GeoAlgorithm):
 
     def nextStep(self, description, progress):
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, description)
+        progress.setText(description)
         progress.setPercentage(int(100.0 * self.current_step / self.STEPS))
         self.current_step += 1
 
@@ -189,12 +190,20 @@ class CenterLine(GeoAlgorithm):
                     'UGO_ID != ugo_id_2',
                     'centerline.shp')
 
+        # Remove duplicates objects
+
+        self.nextStep('Remove duplicate objects ...', progress)
+        DeduplicatedLines = Processing.runAlgorithm('qgis:deleteduplicategeometries', None,
+                            {
+                                'INPUT': extraction
+                            })
+
         # Simplify and smooth result
 
         self.nextStep('Simplify result ...', progress)
         SimplifiedCenterLine = Processing.runAlgorithm('qgis:simplifygeometries', None,
                             {
-                              'INPUT': extraction,
+                              'INPUT': DeduplicatedLines.getOutputValue('OUTPUT'),
                               'TOLERANCE': SIMPLIFY_TOLERANCE
                             })
 

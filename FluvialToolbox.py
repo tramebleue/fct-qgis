@@ -1,4 +1,4 @@
-from PyQt4.QtGui import *
+from PyQt4.QtGui import QIcon
 from processing.core.Processing import Processing
 from processing.core.AlgorithmProvider import AlgorithmProvider
 from common import *
@@ -20,16 +20,6 @@ class FluvialToolboxProvider(AlgorithmProvider):
 	
     def __init__(self):
         super(FluvialToolboxProvider, self).__init__()
-        self.alglist = [ SplitLine(),
-                         DifferentialRasterThreshold(),
-                         RemoveSmallPolygonalObjects(),
-                         ExtremePoints(),
-                         NearTable(),
-                         SplitLineAtNearestPoint(),
-                         ValleyBottom(),
-                         CenterLine() ]
-        for alg in self.alglist:
-            alg.provider = self
 
     def unload(self):
         super(FluvialToolboxProvider, self).unload()
@@ -41,7 +31,15 @@ class FluvialToolboxProvider(AlgorithmProvider):
         return 'Fluvial Toolbox'
 
     # def getIcon(self):
-    #    return QIcon(":/plugins/concavehull/icon.svg")
+    #    return QIcon(":/plugins/fluvialtoolbox/icon.svg")
 
     def _loadAlgorithms(self):
-        self.algs = self.alglist
+        self.algs.extend([ SplitLine(),
+                           DifferentialRasterThreshold(),
+                           RemoveSmallPolygonalObjects(),
+                           ExtremePoints(),
+                           NearTable(),
+                           SplitLineAtNearestPoint(),
+                           ValleyBottom(),
+                           CenterLine(),
+                           ValleyBottomWidth() ])

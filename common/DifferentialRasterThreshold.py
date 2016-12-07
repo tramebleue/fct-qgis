@@ -52,9 +52,9 @@ class DifferentialRasterThreshold(GeoAlgorithm):
         self.addParameter(ParameterRaster(self.REFERENCE_DEM,
                                           self.tr('Reference DEM')))
         self.addParameter(ParameterNumber(self.MIN_THRESHOLD,
-                                          self.tr('Min. value'), -10))
+                                          self.tr('Min. value'), default=-10))
         self.addParameter(ParameterNumber(self.MAX_THRESHOLD,
-                                          self.tr('Max. value'), 10))
+                                          self.tr('Max. value'), default=10))
         self.addParameter(ParameterString(self.NO_DATA,
                                           self.tr('No data value'), '-9999'))
 

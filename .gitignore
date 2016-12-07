@@ -4,3 +4,4 @@
 *.o
 *.so
 test
+.DS_Store

@@ -11,7 +11,7 @@
 name=Fluvial Toolbox
 qgisMinimumVersion=2.0
 description=Fluvial Toolbox
-version=1.O.0
+version=1.0.0
 author=Geopeka
 email=contact@geopeka.fr 
 
