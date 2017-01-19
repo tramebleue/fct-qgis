@@ -57,7 +57,7 @@ class ValleyBottom(GeoAlgorithm):
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Valley Bottom')
-        self.group, self.i18n_group = self.trAlgorithm('Main')
+        self.group, self.i18n_group = self.trAlgorithm('Spatial Components')
 
         # Main parameters
 

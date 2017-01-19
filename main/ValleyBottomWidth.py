@@ -49,7 +49,7 @@ class ValleyBottomWidth(GeoAlgorithm):
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Valley Bottom Width')
-        self.group, self.i18n_group = self.trAlgorithm('Main')
+        self.group, self.i18n_group = self.trAlgorithm('Metrics')
 
         self.addParameter(ParameterVector(self.INPUT_POLYGONS,
                                           self.tr('Input polygons'), [ParameterVector.VECTOR_TYPE_POLYGON]))
