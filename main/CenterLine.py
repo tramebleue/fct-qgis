@@ -35,6 +35,7 @@ from processing.tools import dataobjects, vector
 from processing.tools.system import getTempFilenameInTempFolder
 from processing.core.Processing import Processing
 from processing.core.ProcessingLog import ProcessingLog
+from processing.gui.Postprocessing import handleAlgorithmResults
 
 class CenterLine(GeoAlgorithm):
 
@@ -68,12 +69,21 @@ class CenterLine(GeoAlgorithm):
 
     def processAlgorithm(self, progress):
 
-        SIMPLIFY_TOLERANCE = 40
+        SIMPLIFY_TOLERANCE = 5
         SMOOTH_ITERATIONS = 4
-        SMOOTH_OFFSET = .25
+        SMOOTH_OFFSET = .4
         
         disaggregation_step = self.getParameterValue(self.DISAGGREGATION_STEP)
         self.current_step = 0
+
+        display_result = True
+        def handleResult(description):
+            def _handle(alg, *args, **kw):
+                if display_result:
+                    for out in alg.outputs:
+                        out.description = description
+                    handleAlgorithmResults(alg, *args, **kw)
+            return _handle
 
         # Prepare inputs
         
@@ -84,7 +94,7 @@ class CenterLine(GeoAlgorithm):
                             })
 
         self.nextStep('Simplify polygons ...', progress)
-        SimplifiedPolygons = Processing.runAlgorithm('qgis:simplifygeometries', None,
+        SimplifiedPolygons = Processing.runAlgorithm('qgis:simplifygeometries', handleResult('SimplifiedPolygons'),
                             {
                               'INPUT': self.getParameterValue(self.INPUT_POLYGONS),
                               'TOLERANCE': SIMPLIFY_TOLERANCE
@@ -137,7 +147,7 @@ class CenterLine(GeoAlgorithm):
         # Compute Thiessen polygons
 
         self.nextStep('Compute UGO Thiessen polygons ...', progress)
-        UGOThiessenPolygons = Processing.runAlgorithm('qgis:voronoipolygons', None,
+        UGOThiessenPolygons = Processing.runAlgorithm('qgis:voronoipolygons', handleResult('UGOThiessenPolygons'),
                             {
                               'INPUT': UGOPoints.getOutputValue('OUTPUT'),
                               'BUFFER': 5.0

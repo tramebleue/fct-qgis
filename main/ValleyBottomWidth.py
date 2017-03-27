@@ -77,7 +77,7 @@ class ValleyBottomWidth(GeoAlgorithm):
 
     def processAlgorithm(self, progress):
 
-        SIMPLIFY_TOLERANCE = 40
+        SIMPLIFY_TOLERANCE = 10
 
         disaggregation_step = self.getParameterValue(self.DISAGGREGATION_STEP)
         self.current_step = 0

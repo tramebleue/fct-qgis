@@ -35,6 +35,7 @@ class FluvialToolboxProvider(AlgorithmProvider):
 
     def _loadAlgorithms(self):
         self.algs.extend([ SplitLine(),
+                           SplitLineIntoSegments(),
                            DifferentialRasterThreshold(),
                            RemoveSmallPolygonalObjects(),
                            ExtremePoints(),

@@ -4,3 +4,4 @@ from RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from ExtremePoints import ExtremePoints
 from NearTable import NearTable
 from SplitLineAtNearestPoint import SplitLineAtNearestPoint
+from SplitLineIntoSegments import SplitLineIntoSegments
