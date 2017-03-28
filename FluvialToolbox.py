@@ -34,15 +34,22 @@ class FluvialToolboxProvider(AlgorithmProvider):
     #    return QIcon(":/plugins/fluvialtoolbox/icon.svg")
 
     def _loadAlgorithms(self):
-        self.algs.extend([ SplitLine(),
-                           SplitLineIntoSegments(),
-                           JoinByNearest(),
-                           Sequencing(),
-                           DifferentialRasterThreshold(),
-                           RemoveSmallPolygonalObjects(),
-                           ExtremePoints(),
-                           NearTable(),
-                           SplitLineAtNearestPoint(),
-                           ValleyBottom(),
-                           CenterLine(),
-                           ValleyBottomWidth() ])
+        algs = [ SplitLine(),
+                 SplitLineIntoSegments(),
+                 JoinByNearest(),
+                 Sequencing(),
+                 DifferentialRasterThreshold(),
+                 RemoveSmallPolygonalObjects(),
+                 ExtremePoints(),
+                 NearTable(),
+                 SplitLineAtNearestPoint(),
+                 ValleyBottom(),
+                 CenterLine(),
+                 ValleyBottomWidth() ]
+        try:
+          from shapelish import *
+          algs.append(FastVariableDistanceBuffer())
+          algs.append(FastFixedDistanceBuffer())
+        except ImportError:
+          pass
+        self.algs.extend(algs)
