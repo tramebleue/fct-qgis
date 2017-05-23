@@ -45,7 +45,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  SplitLineAtNearestPoint(),
                  ValleyBottom(),
                  CenterLine(),
-                 ValleyBottomWidth() ]
+                 ValleyBottomWidth(),
+                 SimpleRasterStatistics() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

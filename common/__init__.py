@@ -7,3 +7,4 @@ from SplitLineAtNearestPoint import SplitLineAtNearestPoint
 from SplitLineIntoSegments import SplitLineIntoSegments
 from JoinByNearest import JoinByNearest
 from Sequencing import Sequencing
+from SimpleRasterStatistics import SimpleRasterStatistics
