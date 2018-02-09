@@ -1,7 +1,7 @@
 PLUGIN_DIR=$(HOME)/.qgis2/python/plugins
 TARGET=$(PLUGIN_DIR)/fluvialtoolbox
 PY_FILES=$(wildcard *.py)
-MODULES=main common utils shapelish
+MODULES=main common utils shapelish graph
 MODULES_PY_FILES=$(foreach module, $(MODULES), $(wildcard $(module)/*.py))
 
 install:

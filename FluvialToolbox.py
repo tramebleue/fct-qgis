@@ -3,6 +3,7 @@ from processing.core.Processing import Processing
 from processing.core.AlgorithmProvider import AlgorithmProvider
 from common import *
 from main import *
+from graph import *
 
 class FluvialToolbox(object):
 
@@ -41,12 +42,26 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  DifferentialRasterThreshold(),
                  RemoveSmallPolygonalObjects(),
                  ExtremePoints(),
+                 ExtractUniquePoints(),
                  NearTable(),
                  SplitLineAtNearestPoint(),
                  ValleyBottom(),
                  CenterLine(),
                  ValleyBottomWidth(),
-                 SimpleRasterStatistics() ]
+                 SimpleRasterStatistics(),
+                 Sequencing2(),
+                 SelectStreamFromSourceToOutlet(),
+                 SelectGraphCycle(),
+                 SelectionReverseFlowDirection(),
+                 GraphEndpoints(),
+                 SelectByDistance(),
+                 MeasureDistanceToPointLayer(),
+                 AggregateLineSegments(),
+                 TrianglesToEdges(),
+                 PointOnSurface(),
+                 FastDeleteExteriorPolygons(),
+                 UniqueValuesTable(),
+                 ComputeFrictionCost() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

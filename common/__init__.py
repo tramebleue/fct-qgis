@@ -8,3 +8,16 @@ from SplitLineIntoSegments import SplitLineIntoSegments
 from JoinByNearest import JoinByNearest
 from Sequencing import Sequencing
 from SimpleRasterStatistics import SimpleRasterStatistics
+from ExtractUniquePoints import ExtractUniquePoints
+from Sequencing2 import Sequencing2
+from SelectStreamFromSourceToOutlet import SelectStreamFromSourceToOutlet
+from SelectGraphCycle import SelectGraphCycle
+from SelectionReverseFlowDirection import SelectionReverseFlowDirection
+from GraphEndpoints import GraphEndpoints
+from SelectByDistance import SelectByDistance
+from MeasureDistanceToPointLayer import MeasureDistanceToPointLayer
+from AggregateLineSegments import AggregateLineSegments
+from TrianglesToEdges import TrianglesToEdges
+from PointOnSurface import PointOnSurface
+from FastDeleteExteriorPolygons import FastDeleteExteriorPolygons
+from UniqueValuesTable import UniqueValuesTable
