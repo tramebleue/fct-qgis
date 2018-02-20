@@ -47,7 +47,7 @@ class GraphEndpoints(GeoAlgorithm):
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Graph Endpoints')
-        self.group, self.i18n_group = self.trAlgorithm('Common Routines')
+        self.group, self.i18n_group = self.trAlgorithm('Graph Routines')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))

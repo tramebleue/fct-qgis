@@ -21,3 +21,7 @@ from TrianglesToEdges import TrianglesToEdges
 from PointOnSurface import PointOnSurface
 from FastDeleteExteriorPolygons import FastDeleteExteriorPolygons
 from UniqueValuesTable import UniqueValuesTable
+from RandomPoints import RandomPoints
+from LineMidpoints import LineMidpoints
+from MeasurePointsAlongLine import MeasurePointsAlongLine
+from ProjectPointsAlongLine import ProjectPointsAlongLine

@@ -2,10 +2,10 @@
 
 """
 ***************************************************************************
-    FastDeleteExteriorPolygons.py
+    LineMidpoints.py
     ---------------------
-    Date                 : November 2016
-    Copyright            : (C) 2016 by Christophe Rousson
+    Date                 : February 2018
+    Copyright            : (C) 2018 by Christophe Rousson
 ***************************************************************************
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
@@ -17,8 +17,8 @@
 """
 
 __author__ = 'Christophe Rousson'
-__date__ = 'November 2016'
-__copyright__ = '(C) 2016, Christophe Rousson'
+__date__ = 'February 2018'
+__copyright__ = '(C) 2018, Christophe Rousson'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -37,45 +37,38 @@ from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
 from math import sqrt
 
-class FastDeleteExteriorPolygons(GeoAlgorithm):
+class LineMidpoints(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
-    REFERENCE_LAYER = 'REFERENCE_LAYER'
+    OUTPUT_LAYER = 'OUTPUT'
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Fast Delete Exterior Polygons')
-        self.group, self.i18n_group = self.trAlgorithm('Graph Routines')
+        self.name, self.i18n_name = self.trAlgorithm('Line Midpoints')
+        self.group, self.i18n_group = self.trAlgorithm('Common Routines')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
-                                          self.tr('Polygon Layer'), [ParameterVector.VECTOR_TYPE_POLYGON]))
-        self.addParameter(ParameterVector(self.REFERENCE_LAYER,
-                                          self.tr('Reference Layer'), [ParameterVector.VECTOR_TYPE_POLYGON]))
+                                          self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
+
+        self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Midpoints')))
 
     def processAlgorithm(self, progress):
 
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
-        reference = dataobjects.getObjectFromUri(self.getParameterValue(self.REFERENCE_LAYER))
 
-        layer.startEditing()
+        writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
+            layer.fields().toList(),
+            QGis.WKBPoint,
+            layer.crs())
         total = 100.0 / layer.featureCount()
-        deleted = 0
 
         for current, feature in enumerate(layer.getFeatures()):
 
-            centroid = feature.geometry().centroid()
-            contained = False
-
-            for ref in reference.getFeatures():
-                if ref.geometry().contains(centroid):
-                    contained = True
-                    break
-
-            if not contained:
-                layer.deleteFeature(feature.id())
-                deleted = deleted + 1
+            geom = feature.geometry()
+            midpoint = geom.interpolate( 0.5 * geom.length() )
+            outfeature = QgsFeature()
+            outfeature.setGeometry(midpoint)
+            outfeature.setAttributes(feature.attributes())
+            writer.addFeature(outfeature)            
 
             progress.setPercentage(int(current * total))
-
-        layer.commitChanges()
-        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Deleted %d features" % deleted)

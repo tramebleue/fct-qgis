@@ -61,7 +61,15 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  PointOnSurface(),
                  FastDeleteExteriorPolygons(),
                  UniqueValuesTable(),
-                 ComputeFrictionCost() ]
+                 ComputeFrictionCost(),
+                 RandomPoints(),
+                 ShortestDistanceToTargets(),
+                 NodesFromEdges(),
+                 LineMidpoints(),
+                 MeasurePointsAlongLine(),
+                 ProjectPointsAlongLine(),
+                 SegmentMeanSlope(),
+                 DirectedGraphFromUndirected() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

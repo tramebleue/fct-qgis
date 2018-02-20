@@ -49,7 +49,7 @@ class CenterLine(GeoAlgorithm):
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Center Line')
-        self.group, self.i18n_group = self.trAlgorithm('Spatial Components')
+        self.group, self.i18n_group = self.trAlgorithm('Attic')
 
         self.addParameter(ParameterVector(self.INPUT_POLYLINES,
                                           self.tr('Input lines'), [ParameterVector.VECTOR_TYPE_LINE]))

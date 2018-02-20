@@ -48,7 +48,7 @@ class Sequencing(GeoAlgorithm):
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Sequencing')
-        self.group, self.i18n_group = self.trAlgorithm('Common Routines')
+        self.group, self.i18n_group = self.trAlgorithm('Attic')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
