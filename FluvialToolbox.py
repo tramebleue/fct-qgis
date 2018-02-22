@@ -69,7 +69,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  MeasurePointsAlongLine(),
                  ProjectPointsAlongLine(),
                  SegmentMeanSlope(),
-                 DirectedGraphFromUndirected() ]
+                 DirectedGraphFromUndirected(),
+                 LongestPathInDirectedAcyclicGraph() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

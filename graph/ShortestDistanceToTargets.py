@@ -31,6 +31,7 @@ from PyQt4.QtCore import QVariant
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
+from processing.core.parameters import ParameterSelection
 from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
@@ -235,6 +236,7 @@ class ShortestDistanceToTargets(GeoAlgorithm):
     TARGET_FID_FIELD = 'TARGET_FID_FIELD'
 
     EDGE_LAYER = 'EDGE_LAYER'
+    GRAPH_TYPE = 'GRAPH_TYPE'
     NODE_A_FIELD = 'NODE_A_FIELD'
     NODE_B_FIELD = 'NODE_B_FIELD'
     WEIGHT_FIELD = 'WEIGHT_FIELD'
@@ -265,6 +267,10 @@ class ShortestDistanceToTargets(GeoAlgorithm):
 
         self.addParameter(ParameterVector(self.EDGE_LAYER,
                                           self.tr('Edge Layer'), [ParameterVector.VECTOR_TYPE_LINE]))
+
+        self.addParameter(ParameterSelection(self.GRAPH_TYPE,
+                                             self.tr('Graph Type'),
+                                             options=[self.tr('Undirected'), self.tr('Directed')], default=0))
         
         self.addParameter(ParameterTableField(self.NODE_A_FIELD,
                                           self.tr('Node A Field'),
@@ -308,7 +314,10 @@ class ShortestDistanceToTargets(GeoAlgorithm):
         for target in vector.features(target_layer):
             targets.add(target.attribute(target_fid_field))
 
-        graph = DirectedEdgeLayerGraph(edge_layer, node_a_field, node_b_field, weight_field, max_weight)
+        if self.getParameterValue(self.GRAPH_TYPE) == 0:
+            graph = UndirectedEdgeLayerGraph(edge_layer, node_a_field, node_b_field, weight_field, max_weight)
+        else:
+            graph = DirectedEdgeLayerGraph(edge_layer, node_a_field, node_b_field, weight_field, max_weight)
 
         progress.setText(self.tr("Compute shortest path to targets for each input node ..."))
         

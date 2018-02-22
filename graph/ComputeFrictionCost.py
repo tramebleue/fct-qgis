@@ -31,6 +31,7 @@ from PyQt4.QtCore import QVariant
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
+from processing.core.parameters import ParameterSelection
 from processing.core.parameters import ParameterTable, ParameterTableField
 from processing.core.outputs import OutputVector, OutputTable
 from processing.tools import dataobjects, vector
@@ -46,6 +47,7 @@ class ComputeFrictionCost(GeoAlgorithm):
     COST_TABLE = 'COST_TABLE'
     CLASS_FIELD = 'CLASS_FIELD'
     COST_FIELD = 'COST_FIELD'
+    MODE = 'MODE'
 
     OUTPUT = 'OUTPUT'
 
@@ -78,6 +80,10 @@ class ComputeFrictionCost(GeoAlgorithm):
                                           parent=self.COST_TABLE,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
+        self.addParameter(ParameterSelection(self.MODE,
+                                             self.tr('Cost Aggregation'),
+                                             options=[self.tr('Weighted by Length'), self.tr('Maximum')], default=0))
+
         self.addOutput(OutputVector(self.OUTPUT, self.tr('Friction Costs')))
 
     def processAlgorithm(self, progress):
@@ -89,6 +95,7 @@ class ComputeFrictionCost(GeoAlgorithm):
         cost_table = dataobjects.getObjectFromUri(self.getParameterValue(self.COST_TABLE))
         class_field = self.getParameterValue(self.CLASS_FIELD)
         cost_field = self.getParameterValue(self.COST_FIELD)
+        mode_weighted = (self.getParameterValue(self.MODE) == 0)
         
         for record in cost_table.getFeatures():
 
@@ -129,7 +136,11 @@ class ComputeFrictionCost(GeoAlgorithm):
 
                     friction_class = match.attribute(class_field)
                     intersection = feature.geometry().intersection(match.geometry())
-                    cost = cost + intersection.length() * costs.get(friction_class, max_cost)
+
+                    if mode_weighted:
+                        cost = cost + intersection.length() * costs.get(friction_class, max_cost)
+                    else:
+                        cost = max(cost, costs.get(friction_class, max_cost))
 
             outfeature = QgsFeature()
             outfeature.setAttributes(

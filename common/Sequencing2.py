@@ -210,8 +210,8 @@ class Sequencing2(GeoAlgorithm):
         fields = layerFields.toList() + [
             QgsField('NODE_A', type=QVariant.Int, len=10),
             QgsField('NODE_B', type=QVariant.Int, len=10),
-            QgsField('STARTM', type=QVariant.Double, len=12, prec=4),
-            QgsField('ENDM', type=QVariant.Double, len=12, prec=4)
+            QgsField('STARTM', type=QVariant.Double, len=10, prec=2),
+            QgsField('ENDM', type=QVariant.Double, len=10, prec=2)
         ]
         writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
             fields, layer.dataProvider().geometryType(), layer.crs())
@@ -244,10 +244,10 @@ class Sequencing2(GeoAlgorithm):
 
                 endpointA_gid, endpointB_gid = segments_to_points.pop(segment_id)
 
-                reverse = (current_endpoint_gid != endpointA_gid)
+                reverse = (current_endpoint_gid == endpointA_gid)
                 if reverse:
-                    endpointB_gid = endpointA_gid
-                    endpointA_gid = current_endpoint_gid
+                    endpointA_gid = endpointB_gid
+                    endpointB_gid = current_endpoint_gid
                 
                 endpointA_id = endpoints_gid_index[endpointA_gid]
                 endpointB_id = endpoints_gid_index[endpointB_gid]
@@ -257,15 +257,15 @@ class Sequencing2(GeoAlgorithm):
 
                 # Compute new attributes
                 
-                measureA = measures[endpointA_gid]
-                measureB = max(measures[endpointB_gid], measureA + segment.geometry().length())
-                measures[endpointB_gid] = measureB
+                measureB = measures[endpointB_gid]
+                measureA = max(measures[endpointA_gid], measureB + segment.geometry().length())
+                measures[endpointA_gid] = measureA
 
                 attributes = [
                     endpointA_gid,
                     endpointB_gid,
-                    measureA,
-                    measureB
+                    measureB, # Measurement from outlet: STARTM = Node B (end node)
+                    measureA  # ENDM = Node A (start node)
                 ]
 
                 # Write out feature
@@ -282,15 +282,15 @@ class Sequencing2(GeoAlgorithm):
 
                 # Update in-degree and out-degree
 
-                endpointA.setAttribute('DIN', endpointA.attribute('DIN') + 1)
+                endpointA.setAttribute('DOUT', endpointA.attribute('DOUT') + 1)
+                endpointA.setAttribute('MEASURE', measureA)
                 endpoints_layer.updateFeature(endpointA)
-                endpointB.setAttribute('DOUT', endpointB.attribute('DOUT') + 1)
-                endpointB.setAttribute('MEASURE', measureB)
+                endpointB.setAttribute('DIN', endpointB.attribute('DIN') + 1)
                 endpoints_layer.updateFeature(endpointB)
 
                 # Step forward
 
-                process_stack.append(endpointB)
+                process_stack.append(endpointA)
                 current = current + 1
                 progress.setPercentage(int(current * total))
 

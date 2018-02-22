@@ -183,11 +183,13 @@ class AggregateLineSegments(GeoAlgorithm):
         
         current = 0
         fid = 0
+        seen_nodes = set()
 
         while process_stack:
 
             from_node = process_stack.pop()
-            ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Processing node %d" % from_node)
+            seen_nodes.add(from_node)
+            # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Processing node %d" % from_node)
 
             for branch in range(0, len(node_index[from_node])):
 
@@ -221,7 +223,8 @@ class AggregateLineSegments(GeoAlgorithm):
                 fid = fid + 1
 
                 # dont't process twice or more after confluences
-                if branch == 0:
+                # if branch == 0:
+                if not next_node in seen_nodes:
                     process_stack.append(next_node)
 
                     
