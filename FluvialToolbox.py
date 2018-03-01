@@ -73,7 +73,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  DirectedGraphFromUndirected(),
                  LongestPathInDirectedAcyclicGraph(),
                  PolygonSkeleton(),
-                 DisaggregatePolygon() ]
+                 DisaggregatePolygon(),
+                 LongestPathInDirectedAcyclicGraphMultiFlow() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

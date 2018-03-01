@@ -482,7 +482,7 @@
                         }, 
                         "FIELD_PRECISION": 2.0, 
                         "FIELD_LENGTH": 10.0, 
-                        "FORMULA": "1.2 * \"DMEDAXIS\"", 
+                        "FORMULA": "max(1.3 * \"DMEDAXIS\", 200.0)", 
                         "FIELD_NAME": "DBUF"
                     }, 
                     "active": true, 

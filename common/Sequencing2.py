@@ -34,6 +34,7 @@ from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
+from processing.core.GeoAlgorithmExecutionException import GeoAlgorithmExecutionException
 from functools import total_ordering
 from heapq import heappush, heappop
 from math import sqrt
@@ -60,12 +61,11 @@ class MeasuredNode(object):
 class Sequencing2(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
+    SEARCH_DISTANCE = 'SEARCH_DISTANCE'
+    
     OUTPUT_LAYER = 'OUTPUT'
     ENDPOINTS_LAYER = 'ENDPOINTS_LAYER'
     UNMATCHED_LAYER = 'UNMATCHED_LAYER'
-    START_POINT_X = 'START_POINT_X'
-    START_POINT_Y = 'START_POINT_Y'
-    SEARCH_DISTANCE = 'SEARCH_DISTANCE'
 
     def defineCharacteristics(self):
 
@@ -74,10 +74,7 @@ class Sequencing2(GeoAlgorithm):
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
-        self.addParameter(ParameterNumber(self.START_POINT_X,
-                                          self.tr('Start X'), default=0.0, optional=False))
-        self.addParameter(ParameterNumber(self.START_POINT_Y,
-                                          self.tr('Start Y'), default=0.0, optional=False))
+        
         self.addParameter(ParameterNumber(self.SEARCH_DISTANCE,
                                           self.tr('Search Distance'), default=10.0, optional=False))
         
@@ -137,9 +134,8 @@ class Sequencing2(GeoAlgorithm):
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
         search_distance = self.getParameterValue(self.SEARCH_DISTANCE)
 
-        features = vector.features(layer)
-        total = 100.0 / (2*len(features))
-        links = dict()
+        if layer.selectedFeatureCount() == 0:
+            raise GeoAlgorithmExecutionException(self.tr('You must select a line segment to start from.'))
 
         # Step 1
 
@@ -160,10 +156,10 @@ class Sequencing2(GeoAlgorithm):
             ])
         endpoints_index = QgsSpatialIndex()
         endpoints_layer.startEditing()
-        total = 100.0 / len(features)
+        total = 100.0 / layer.featureCount()
         nextid = 0
         
-        for current, feature in enumerate(features):
+        for current, feature in enumerate(layer.getFeatures()):
             
             geometry = feature.geometry()
             polyline = self.asPolyline(geometry)
@@ -224,6 +220,37 @@ class Sequencing2(GeoAlgorithm):
 
         # Step 2
 
+        progress.setText(self.tr("Search for endpoint to start from ..."))
+
+        seen_nodes = dict()
+        process_stack = []
+
+        # start_point = QgsPoint(
+        #     self.getParameterValue(self.START_POINT_X),
+        #     self.getParameterValue(self.START_POINT_Y))
+
+        search_from_feature = layer.selectedFeatures()[0]
+        coords = self.asPolyline(search_from_feature.geometry())
+        min_degree = float('inf')
+        start_node = None
+
+        for start_point in [ coords[0], coords[-1] ]:
+        
+            candidate_endpoint = self.findNearestFeature(start_point, endpoints_layer, endpoints_index, search_distance)
+            if candidate_endpoint is not None:
+                candidate_degree = len(points_to_segments[candidate_endpoint.attribute('GID')])
+                if candidate_degree < min_degree:
+                    start_node = MeasuredNode(candidate_endpoint, 0.0)
+                    min_degree = candidate_degree
+        
+        if not start_node is None:
+            heappush(process_stack, start_node)
+            seen_nodes[start_node.id] = start_node
+        else:
+            raise GeoAlgorithmExecutionException(self.tr('Never '))
+
+        # Step 3
+
         progress.setText(self.tr("Build directed graph and compute measures ..."))
 
         layerFields = layer.fields()
@@ -236,22 +263,9 @@ class Sequencing2(GeoAlgorithm):
         writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
             fields, layer.dataProvider().geometryType(), layer.crs())
 
-        total = 100.0 / len(features)
+        total = 100.0 / layer.featureCount()
         current = 0
         endpoints_layer.startEditing()
-
-        seen_nodes = dict()
-        process_stack = []
-
-        start_point = QgsPoint(
-            self.getParameterValue(self.START_POINT_X),
-            self.getParameterValue(self.START_POINT_Y))
-        
-        start_endpoint = self.findNearestFeature(start_point, endpoints_layer, endpoints_index, search_distance)
-        if start_endpoint is not None:
-            node = MeasuredNode(start_endpoint, 0.0)
-            seen_nodes[node.id] = node
-            heappush(process_stack, node)
 
         while process_stack:
             

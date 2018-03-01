@@ -1,0 +1,76 @@
+Algorithm: Polygon Skeleton
+Input:
+  - Shape (Polygon)
+Steps:
+  - Polyline = PolygonsToLines(Shape)
+  - BoundaryPoints = CreatePointsAlongLine(Polyline, distance)
+  - VoronoiPolygons = Voronoi(BoundaryPoints)
+  - ClippedVoronoiPolygons = Clip(VoronoiPolygons, Shape)
+  - VoronoiLines = PolygonsToLines(ClippedVoronoiPolygons)
+  - VoronoiSegments = LineToSegments(VoronoiLines)
+  - VoronoiSegments = DeleteByLocation(VoronoiSegments, intersects(Buffer(BoundaryPoints, distance))
+  - PolygonSkeleton = RemoveDuplicateGeometry(VoronoiSegments)
+
+Algorithm: Medial Axis
+Input:
+  - Skeleton (Polyline)
+  - Outlet (Point)
+  - MaxSearchDistance (Distance)
+Steps:
+  - SelectClosestFeature(Skeleton, Outlet, MaxSearchDistance)
+  - LineGraph, LineGraphEndPoints = Sequencing(Skeleton)
+  - ResolveDivergingNodes(LineGraph, LineGraphEndPoints)
+  - MedialAxis = LongestPath(LineGraph)
+  - MedialAxisEndPoints = GraphEndpoints(MedialAxis)
+  - ResolveDivergingNodes(MedialAxis, MedialAxisEndPoints)
+  - AggregateLineSegments(MedialAxis)
+  - Simplify(MedialAxis, tolerance=5.0)
+
+Algorithm: Disaggregate Polygon
+Input:
+  - Shape (Polygon)
+  - MedialAxis (Measured Polyline)
+  - DisaggregationStep (Distance)
+Steps:
+  - BoundaryPoints = CreatePointsAlongLine(PolygonsToLines(Shape), DisaggregationStep)
+  - MedialAxisPoints = CreatePointsAlongLine(MedialAxis, DisaggregationStep)
+  - MeasureDistanceToLine(MedialAxisPoints, MedialAxis, 'LFS')
+  - MeasureDistanceToPoints(BoundaryPoints, MedialAxisPoints, 'DBUF')
+  - BoundaryBuffer = VariableDistanceBuffer(BoundaryPoints, 1.3 * 'DBUF', dissolve=True)
+  - Remove(Interior)Holes(BoundaryBuffer)
+  - ExteriorPoints = CreatePointsAlongLine(PolygonsToLines(BoundaryBuffer), DisaggregationStep)
+  - VoronoiPolygons = Voronoi(MedialAxisPoints + ExteriorPoints)
+  - ClippedVoronoiPolygons = Clip(VoronoiPolygons, Shape)
+  - MultiGeometryToSimpleGeometry(ClippedVoronoiPolygons)
+  - MeasuredMedialAxisPoints = MeasurePointsAlongLine(MedialAxisPoints, MedialAxis, 'MEAS_B')
+  - AddUniqueIdentifier(MeasuredMedialAxisPoints, 'GID', sort='STARTM')
+  - PolygonsAndAttributes = JoinAttributeByLocation(ClippedVoronoiPolygons, MeasuredMedialAxisPoints, 'contains', 'inner')
+  - DisaggregatedPolygons = ExportSelectedAttributes(PolygonsAndAttributes, 'GID', 'LFS', 'MEAS_B')
+
+Algorithm:
+  name: algorithm name
+  group: group name
+  description: a description
+  parameters:
+    - name: parameter name
+      description: parameter description
+      type: parameter class {Raster, Vector, Number, Boolean, Selection, TableField, ...}
+      option1: option value
+      option2: option value
+  output:
+    output1:
+      name: output name for future reference
+      description: a description
+      type: output type {Vector, Raster, ...}
+    output2: output name for future reference
+  steps:
+    - name: step name
+      description: a description
+      algorithm: AlgorithmName
+      arguments:
+        arg1: argument value or reference (input.name, step.output_name, self.func)
+        arg2: argument value or reference
+      output:
+        default: step_name
+        output1: output name for future reference
+        output2: output name for future reference

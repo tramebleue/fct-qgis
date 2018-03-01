@@ -51,6 +51,7 @@ class PathInfo(object):
         self.end_node = None
         self.length = 0
         self.edges = list()
+        self.diverging = False
 
     def add(self, node, edge, new_length):
 
@@ -63,29 +64,18 @@ class NodeInfo(object):
 
     def __init__(self, node, length=0.0, path=None):
 
+        self.node = node
         self.length = length
         self.out_degree = 0
         if path is None:
             path = PathInfo(self)
-        self.paths = [ path ]
+        self.path = path
         self.index = -1
 
-    def upstream(self):
-
-        path = self.paths[0]
-        new_path = PathInfo(path.start_node)
-        new_path.length= self.length
-        new_path.edges = path.edges[0:self.index+1]
-        return new_path
-
     def add(self, node, edge, new_length):
-
-        if self.out_degree > 0:
-            path = self.upstream()
-            self.paths.append(path)
-        else:
-            path = self.paths[0]
-            self.index = len(path.edges) - 1
+        
+        path = self.path
+        self.index = len(path.edges) - 1
 
         successor = NodeInfo(node, new_length, path)
         self.out_degree = self.out_degree + 1
@@ -93,8 +83,12 @@ class NodeInfo(object):
 
         return successor
 
+    def divergesTo(self, b):
 
-class LongestPathInDirectedAcyclicGraph(GeoAlgorithm):
+        return (self.path.start_node.node == b.path.start_node.node)
+
+
+class LongestPathInDirectedAcyclicGraphMultiFlow(GeoAlgorithm):
 
     EDGE_LAYER = 'EDGE_LAYER'
     NODE_A_FIELD = 'NODE_A_FIELD'
@@ -104,7 +98,7 @@ class LongestPathInDirectedAcyclicGraph(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Longest Path In Directed Acyclic Graph')
+        self.name, self.i18n_name = self.trAlgorithm('Longest Path In DAG (Multiple Flow)')
         self.group, self.i18n_group = self.trAlgorithm('Graph Routines')
 
         self.addParameter(ParameterVector(self.EDGE_LAYER,
@@ -161,6 +155,8 @@ class LongestPathInDirectedAcyclicGraph(GeoAlgorithm):
         for source in sources:
             seen_nodes[source] = NodeInfo(source)
 
+        diverging = False
+
         while stack:
 
             node = stack.pop()
@@ -172,15 +168,25 @@ class LongestPathInDirectedAcyclicGraph(GeoAlgorithm):
 
                 current_length = seen_nodes[a].length + length
 
-                if seen_nodes.has_key(b) and seen_nodes[b].length >= current_length:
-                    continue
+                if seen_nodes.has_key(b):
+                    
+                    if seen_nodes[a].divergesTo(seen_nodes[b]):
+
+                        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Closing diverticule")
+                        junction = seen_nodes[a].add(b, edge, current_length)
+                        if seen_nodes[b].length < current_length:
+                            seen_nodes[b] = junction
+                            continue
+                    
+                    if seen_nodes[b].length >= current_length:
+                        continue
 
                 seen_nodes[b] = seen_nodes[a].add(b, edge, current_length)
                 stack.append(b)
 
                 if current_length > max_length:
                     max_length = current_length
-                    max_path = seen_nodes[b].paths[-1]
+                    max_path = seen_nodes[b].path
 
         # Step 3
 
