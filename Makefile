@@ -1,16 +1,20 @@
 PLUGIN_DIR=$(HOME)/.qgis2/python/plugins
 TARGET=$(PLUGIN_DIR)/fluvialtoolbox
 PY_FILES=$(wildcard *.py)
-MODULES=main common utils shapelish graph
+MODEL_FILES=$(wildcard *.model)
+MODULES=main common utils shapelish graph modeler
 MODULES_PY_FILES=$(foreach module, $(MODULES), $(wildcard $(module)/*.py))
+MODULES_MODEL_FILES=$(foreach module, $(MODULES), $(wildcard $(module)/*.model))
 
 install:
 	@echo -n Install to $(TARGET) ...
 	@mkdir -p $(TARGET)
 	@cp metadata.txt $(TARGET)
 	@cp $(PY_FILES) $(TARGET)
+	# @cp $(MODEL_FILES) $(TARGET)
 	@for m in $(MODULES); do mkdir -p $(TARGET)/$$m; done
 	@for f in $(MODULES_PY_FILES); do cp $$f $(TARGET)/$$f; done
+	@for f in $(MODULES_MODEL_FILES); do cp $$f $(TARGET)/$$f; done
 	@echo Ok
 
 uninstall:

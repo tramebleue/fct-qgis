@@ -31,6 +31,7 @@ from PyQt4.QtCore import QVariant
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
+from processing.core.parameters import ParameterString
 from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
@@ -41,6 +42,7 @@ class MeasureDistanceToPointLayer(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT_LAYER'
     DISTANCE_TO_LAYER = 'DISTANCE_TO_LAYER'
+    DISTANCE_FIELD = 'DISTANCE_FIELD'
     OUTPUT_LAYER = 'OUTPUT'
 
     def defineCharacteristics(self):
@@ -50,8 +52,12 @@ class MeasureDistanceToPointLayer(GeoAlgorithm):
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input Layer'), [ParameterVector.VECTOR_TYPE_ANY]))
+
         self.addParameter(ParameterVector(self.DISTANCE_TO_LAYER,
                                           self.tr('Distance To Layer'), [ParameterVector.VECTOR_TYPE_POINT]))
+
+        self.addParameter(ParameterString(self.DISTANCE_FIELD,
+                                          self.tr('Distance Field'), default='DISTANCE'))
         
         self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Measured')))
 
@@ -59,12 +65,13 @@ class MeasureDistanceToPointLayer(GeoAlgorithm):
 
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
         distance_layer = dataobjects.getObjectFromUri(self.getParameterValue(self.DISTANCE_TO_LAYER))
+        distance_field = self.getParameterValue(self.DISTANCE_FIELD)
 
         spatial_index = QgsSpatialIndex(distance_layer.getFeatures())
 
         writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
             layer.fields().toList() + [
-                QgsField('DISTANCE', type=QVariant.Double, len=10, prec=2)
+                QgsField(distance_field, type=QVariant.Double, len=10, prec=2)
             ],
             layer.dataProvider().geometryType(),
             layer.crs())

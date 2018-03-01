@@ -4,6 +4,7 @@ from processing.core.AlgorithmProvider import AlgorithmProvider
 from common import *
 from main import *
 from graph import *
+from modeler import *
 
 class FluvialToolbox(object):
 
@@ -70,7 +71,9 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  ProjectPointsAlongLine(),
                  SegmentMeanSlope(),
                  DirectedGraphFromUndirected(),
-                 LongestPathInDirectedAcyclicGraph() ]
+                 LongestPathInDirectedAcyclicGraph(),
+                 PolygonSkeleton(),
+                 DisaggregatePolygon() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

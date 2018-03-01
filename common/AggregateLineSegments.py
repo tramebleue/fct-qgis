@@ -43,6 +43,8 @@ class AggregateLineSegments(GeoAlgorithm):
     OUTPUT_LAYER = 'OUTPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
+    UPSTREAM_MEASURE_FIELD = 'UPSTREAM_MEASURE_FIELD'
+    DOWNSTREAM_MEASURE_FIELD = 'DOWNSTREAM_MEASURE_FIELD'
 
     def defineCharacteristics(self):
 
@@ -51,12 +53,24 @@ class AggregateLineSegments(GeoAlgorithm):
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
+        
         self.addParameter(ParameterTableField(self.FROM_NODE_FIELD,
                                           self.tr('From Node Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
+        
         self.addParameter(ParameterTableField(self.TO_NODE_FIELD,
                                           self.tr('To Node Field'),
+                                          parent=self.INPUT_LAYER,
+                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
+
+        self.addParameter(ParameterTableField(self.DOWNSTREAM_MEASURE_FIELD,
+                                          self.tr('Downstream Measure Field'),
+                                          parent=self.INPUT_LAYER,
+                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
+
+        self.addParameter(ParameterTableField(self.UPSTREAM_MEASURE_FIELD,
+                                          self.tr('Upstream Measure Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
@@ -98,6 +112,8 @@ class AggregateLineSegments(GeoAlgorithm):
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
+        ds_measure_field = self.getParameterValue(self.DOWNSTREAM_MEASURE_FIELD)
+        us_measure_field = self.getParameterValue(self.UPSTREAM_MEASURE_FIELD)
 
         progress.setText(self.tr("Build node index ..."))
 
@@ -168,7 +184,9 @@ class AggregateLineSegments(GeoAlgorithm):
             [
                 QgsField('GID', type=QVariant.Int, len=10),
                 QgsField(from_node_field, type=QVariant.Int, len=10),
-                QgsField(to_node_field, type=QVariant.Int, len=10)
+                QgsField(to_node_field, type=QVariant.Int, len=10),
+                QgsField(ds_measure_field, type=QVariant.Double, len=10, prec=2),
+                QgsField(us_measure_field, type=QVariant.Double, len=10, prec=2)
             ],
             layer.dataProvider().geometryType(),
             layer.crs())
@@ -177,6 +195,7 @@ class AggregateLineSegments(GeoAlgorithm):
 
         process_stack = list()
 
+        # Find source nodes
         for node in node_index.keys():
             if len(node_index[node]) >= 1 and in_degree[node] == 0:
                 process_stack.append(node)
@@ -188,7 +207,10 @@ class AggregateLineSegments(GeoAlgorithm):
         while process_stack:
 
             from_node = process_stack.pop()
+            if from_node in seen_nodes:
+                continue
             seen_nodes.add(from_node)
+
             # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Processing node %d" % from_node)
 
             for branch in range(0, len(node_index[from_node])):
@@ -196,6 +218,7 @@ class AggregateLineSegments(GeoAlgorithm):
                 next_node = node_index[from_node][branch]
                 next_segment_id = feature_index[from_node][branch]
                 segment = layer.getFeatures(QgsFeatureRequest(next_segment_id)).next()
+                upstream_measure = segment.attribute(us_measure_field)
                 vertices = self.asPolyline(segment.geometry())
 
                 current = current + 1
@@ -211,21 +234,25 @@ class AggregateLineSegments(GeoAlgorithm):
                         progress.setPercentage(int(current * total))
 
                         next_node = node_index[next_node][0]
+
+                downstream_measure = segment.attribute(ds_measure_field)
                     
                 feature = QgsFeature()
                 feature.setGeometry(QgsGeometry.fromPolyline(vertices))
                 feature.setAttributes([
                         fid,
                         from_node,
-                        next_node
+                        next_node,
+                        downstream_measure,
+                        upstream_measure
                     ])
                 writer.addFeature(feature)
                 fid = fid + 1
 
                 # dont't process twice or more after confluences
                 # if branch == 0:
-                if not next_node in seen_nodes:
-                    process_stack.append(next_node)
+                # if not next_node in seen_nodes:
+                process_stack.append(next_node)
 
                     
 

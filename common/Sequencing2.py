@@ -34,7 +34,27 @@ from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
+from functools import total_ordering
+from heapq import heappush, heappop
 from math import sqrt
+
+@total_ordering
+class MeasuredNode(object):
+
+    def __init__(self, feature, measure):
+        self.id = feature.id()
+        self.feature = feature
+        self.measure = measure
+        self.duplicate = False
+
+    def __hash__(self):
+        return self.id.__hash__()
+
+    def __lt__(self, other):
+        return self.measure < other.measure
+
+    def __eq__(self, other):
+        return self.measure == other.measure
 
 
 class Sequencing2(GeoAlgorithm):
@@ -210,12 +230,17 @@ class Sequencing2(GeoAlgorithm):
         fields = layerFields.toList() + [
             QgsField('NODE_A', type=QVariant.Int, len=10),
             QgsField('NODE_B', type=QVariant.Int, len=10),
-            QgsField('STARTM', type=QVariant.Double, len=10, prec=2),
-            QgsField('ENDM', type=QVariant.Double, len=10, prec=2)
+            QgsField('MEAS_A', type=QVariant.Double, len=10, prec=2),
+            QgsField('MEAS_B', type=QVariant.Double, len=10, prec=2)
         ]
         writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
             fields, layer.dataProvider().geometryType(), layer.crs())
 
+        total = 100.0 / len(features)
+        current = 0
+        endpoints_layer.startEditing()
+
+        seen_nodes = dict()
         process_stack = []
 
         start_point = QgsPoint(
@@ -224,15 +249,17 @@ class Sequencing2(GeoAlgorithm):
         
         start_endpoint = self.findNearestFeature(start_point, endpoints_layer, endpoints_index, search_distance)
         if start_endpoint is not None:
-            process_stack.append(start_endpoint)
-
-        total = 100.0 / len(features)
-        current = 0
-        endpoints_layer.startEditing()
+            node = MeasuredNode(start_endpoint, 0.0)
+            seen_nodes[node.id] = node
+            heappush(process_stack, node)
 
         while process_stack:
             
-            current_endpoint = process_stack.pop()
+            node = heappop(process_stack)
+            if node.duplicate:
+                continue
+
+            current_endpoint = node.feature
             current_endpoint_gid = current_endpoint.attribute('GID')
             current_point = current_endpoint.geometry().asPoint()
             segment_ids = points_to_segments[current_endpoint_gid]
@@ -264,8 +291,8 @@ class Sequencing2(GeoAlgorithm):
                 attributes = [
                     endpointA_gid,
                     endpointB_gid,
-                    measureB, # Measurement from outlet: STARTM = Node B (end node)
-                    measureA  # ENDM = Node A (start node)
+                    measureA,  # Measurement from outlet: ENDM = Node A (start node)
+                    measureB   # STARTM = Node B (end node)
                 ]
 
                 # Write out feature
@@ -290,7 +317,21 @@ class Sequencing2(GeoAlgorithm):
 
                 # Step forward
 
-                process_stack.append(endpointA)
+                if seen_nodes.has_key(endpointA.id()):
+
+                    seen_node = seen_nodes[endpointA.id()]
+                    if seen_node.measure > measureA:
+                        seen_node.duplicate = True
+                        new_node = MeasuredNode(endpointA, measureA)
+                        heappush(process_stack, new_node)
+                        seen_nodes[new_node.id] = new_node
+
+                else:
+
+                    node = MeasuredNode(endpointA, measureA)
+                    heappush(process_stack, node)
+                    seen_nodes[node.id] = node
+
                 current = current + 1
                 progress.setPercentage(int(current * total))
 

@@ -31,6 +31,7 @@ from PyQt4.QtCore import QVariant
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
+from processing.core.parameters import ParameterSelection
 from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
@@ -42,6 +43,7 @@ class MeasurePointsAlongLine(GeoAlgorithm):
     INPUT_POINTS = 'INPUT_POINTS'
     INPUT_LINES = 'INPUT_LINES'
     MEASURE_FIELD = 'MEASURE_FIELD'
+    LINE_DIRECTION = 'LINE_DIRECTION'
     OUTPUT_LAYER = 'OUTPUT'
 
     def defineCharacteristics(self):
@@ -54,6 +56,13 @@ class MeasurePointsAlongLine(GeoAlgorithm):
 
         self.addParameter(ParameterVector(self.INPUT_LINES,
                                           self.tr('Measured Lines'), [ParameterVector.VECTOR_TYPE_LINE]))
+
+        self.addParameter(ParameterSelection(self.LINE_DIRECTION,
+                                             self.tr('Line Direction'),
+                                             options=[
+                                                self.tr('Upstream To Downstream'),
+                                                self.tr('Downstream To Upstream')
+                                             ], default=0))
 
         self.addParameter(ParameterTableField(self.MEASURE_FIELD,
                                           self.tr('Measure Field'),
@@ -92,6 +101,7 @@ class MeasurePointsAlongLine(GeoAlgorithm):
         point_layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_POINTS))
         line_layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LINES))
         measure_field = self.getParameterValue(self.MEASURE_FIELD)
+        downwards = (self.getParameterValue(self.LINE_DIRECTION) == 0)
 
         line_index = QgsSpatialIndex(line_layer.getFeatures())
 
@@ -113,7 +123,7 @@ class MeasurePointsAlongLine(GeoAlgorithm):
                 line = line_layer.getFeatures(QgsFeatureRequest(c)).next()
                 d = line.geometry().distance(feature.geometry())
                 if d < closest:
-                    measure = line.attribute(measure_field) + self.lineLocatePoint(line.geometry(), feature.geometry(), True)
+                    measure = line.attribute(measure_field) + self.lineLocatePoint(line.geometry(), feature.geometry(), downwards)
                     closest = d
 
             outfeature = QgsFeature()
