@@ -50,7 +50,7 @@ class NearTable(GeoAlgorithm):
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Near Table')
-        self.group, self.i18n_group = self.trAlgorithm('Common Routines')
+        self.group, self.i18n_group = self.trAlgorithm('Attic')
 
         self.addParameter(ParameterVector(self.FROM_LAYER,
                                           self.tr('Source points layer'), [ParameterVector.VECTOR_TYPE_POINT]))

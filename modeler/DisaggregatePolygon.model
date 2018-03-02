@@ -113,7 +113,7 @@
         }, 
         "helpContent": {}, 
         "group": "Spatial Components", 
-        "name": "Disaggregate Polygon", 
+        "name": "Disaggregated Polygon", 
         "algs": {
             "QGISREFACTORFIELDS_1": {
                 "values": {

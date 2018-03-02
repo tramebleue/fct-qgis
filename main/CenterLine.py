@@ -122,9 +122,9 @@ class CenterLine(GeoAlgorithm):
         NearTable = Processing.runAlgorithm('fluvialtoolbox:neartable', None,
                             {
                                 'FROM': ExtremePoints.getOutputValue('OUTPUT'),
-                                'FROM_ID_FIELD': 'FID',
+                                'FROM_ID_FIELD': 'GID',
                                 'TO': PolyToLine.getOutputValue('OUTPUT'),
-                                'TO_ID_FIELD': 'FID',
+                                'TO_ID_FIELD': 'GID',
                                 'NEIGHBORS': 1,
                                 'SEARCH_DISTANCE': 0
                             })
@@ -159,7 +159,7 @@ class CenterLine(GeoAlgorithm):
         AggregatedGO = Processing.runAlgorithm('saga:polygondissolvebyattribute', None,
                             {
                                 'POLYGONS': UGOThiessenPolygons.getOutputValue('OUTPUT'),
-                                'FIELD_1': 'FID',
+                                'FIELD_1': 'GID',
                                 'FIELD_2': 'UGO_ID',
                                 'BND_KEEP': False
                             })
