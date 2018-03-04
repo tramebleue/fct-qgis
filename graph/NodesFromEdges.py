@@ -87,7 +87,7 @@ class NodesFromEdges(GeoAlgorithm):
             attribute_index = QgsSpatialIndex(attribute_layer.getFeatures())
             fields = fields + attribute_layer.fields().toList()
 
-        writer = writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
+        writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
             fields,
             QGis.WKBPoint,
             edge_layer.crs())
