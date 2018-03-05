@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    NodesFromEdges.py
+    PlanformMetrics.py
     ---------------------
     Date                 : February 2018
     Copyright            : (C) 2016 by Christophe Rousson
@@ -105,6 +105,28 @@ class Bend(object):
         # amp = max([ distance_to_line(self.p_origin, self.p_end, p) for p in self.points ])
         return amp
 
+    def max_amplitude_stem(self):
+        """
+
+        Returns:
+        - max amplitude stem as QgsGeometry (Line with 2 points)
+        - index of max amplitude point
+        """
+        axis = QgsGeometry.fromPolyline([ self.p_origin, self.p_end ])
+        max_amp = 0.0
+        max_idx = 0
+        stem = None
+
+        for idx, p in enumerate(self.points):
+            pt = QgsGeometry.fromPoint(p)
+            amp = pt.distance(axis)
+            if amp > max_amp:
+                stem = axis.shortestLine(pt)
+                max_amp = amp
+                max_idx = idx
+
+        return stem, max_idx
+
     def wavelength(self):
         axis = QgsGeometry.fromPolyline([ self.p_origin, self.p_end ])
         return 2 * axis.length()
@@ -127,6 +149,9 @@ class Bend(object):
         p1 = self.points[-1]
         return axis_direction.angle(qgs_vector(p0, p1)) * 180 / PI
 
+    def curvature_radius(self):
+        return self.wavelength() * pow(self.sinuosity(), 1.5) / (13 * pow(self.sinuosity() - 1, 0.5))
+
 def clamp_angle(angle):
     """ Return angle between -180 and +180 degrees
     """
@@ -137,24 +162,26 @@ def clamp_angle(angle):
         angle = angle - 360
     return angle
 
-
-
-class FlowAxis(GeoAlgorithm):
+class PlanformMetrics(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT_LAYER'
     FLOW_AXIS = 'FLOW_AXIS'
     SEGMENTS = 'SEGMENTS'
+    INFLECTION_POINTS = 'INFLECTION_POINTS'
+    STEMS = 'STEMS'
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Flow Axis (Inflection Points)')
-        self.group, self.i18n_group = self.trAlgorithm('Spatial Components')
+        self.name, self.i18n_name = self.trAlgorithm('Planform Metrics')
+        self.group, self.i18n_group = self.trAlgorithm('Metrics')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
-                                          self.tr('Directed Polylines'), [ParameterVector.VECTOR_TYPE_LINE]))
+                                          self.tr('Center Line'), [ParameterVector.VECTOR_TYPE_LINE]))
 
         self.addOutput(OutputVector(self.FLOW_AXIS, self.tr('Flow Axis')))
-        self.addOutput(OutputVector(self.SEGMENTS, self.tr('Segments')))
+        self.addOutput(OutputVector(self.SEGMENTS, self.tr('Segments With Planform Metrics')))
+        self.addOutput(OutputVector(self.INFLECTION_POINTS, self.tr('Inflection Points')))
+        self.addOutput(OutputVector(self.STEMS, self.tr('Max Amplitude Stems')))
 
     def processAlgorithm(self, progress):
 
@@ -162,24 +189,40 @@ class FlowAxis(GeoAlgorithm):
 
         axis_writer = self.getOutputFromName(self.FLOW_AXIS).getVectorWriter(
             layer.fields().toList() + [
-                QgsField('AXISID', QVariant.Int, len=10),
+                QgsField('BENDID', QVariant.Int, len=10),
                 QgsField('ANGLE', QVariant.Double, len=10, prec=6)
             ],
-            layer.dataProvider().geometryType(),
+            QGis.WKBLineString,
             layer.crs())
 
         segment_writer = self.getOutputFromName(self.SEGMENTS).getVectorWriter(
             layer.fields().toList() + [
-                QgsField('AXISID', QVariant.Int, len=10),
+                QgsField('BENDID', QVariant.Int, len=10),
                 QgsField('NPTS', QVariant.Int, len=4),
                 QgsField('LBEND', QVariant.Double, len=10, prec=2),
                 QgsField('LWAVE', QVariant.Double, len=10, prec=2),
                 QgsField('SINUO', QVariant.Double, len=6, prec=4),
                 QgsField('AMPLI', QVariant.Double, len=10, prec=4),
                 QgsField('OMEG0', QVariant.Double, len=10, prec=8),
-                QgsField('OMEG1', QVariant.Double, len=10, prec=6)
+                QgsField('OMEG1', QVariant.Double, len=10, prec=6),
+                QgsField('RCURV', QVariant.Double, len=10, prec=3)
             ],
             layer.dataProvider().geometryType(),
+            layer.crs())
+
+        inflection_points_writer = self.getOutputFromName(self.INFLECTION_POINTS).getVectorWriter(
+            [
+                QgsField('GID', QVariant.Int, len=10)
+            ],
+            QGis.WKBPoint,
+            layer.crs())
+
+        stem_writer = self.getOutputFromName(self.STEMS).getVectorWriter(
+            [
+                QgsField('BENDID', QVariant.Int, len=10),
+                QgsField('AMPLI', QVariant.Double, len=10, prec=4)
+            ],
+            QGis.WKBLineString,
             layer.crs())
 
         def write_axis_segment(fid, p0, p1, feature, angle):
@@ -195,6 +238,8 @@ class FlowAxis(GeoAlgorithm):
         def write_segment(fid, points, feature):
             
             bend = Bend(points)
+            stem, stem_idx = bend.max_amplitude_stem()
+
             new_feature = QgsFeature()
             new_feature.setGeometry(QgsGeometry.fromPolyline(points))
             new_feature.setAttributes(feature.attributes() + [
@@ -205,12 +250,32 @@ class FlowAxis(GeoAlgorithm):
                     bend.sinuosity(),
                     bend.amplitude(),
                     bend.omega_origin(),
-                    bend.omega_end()
+                    bend.omega_end(),
+                    bend.curvature_radius()
                 ])
             segment_writer.addFeature(new_feature)
 
+            stem_feature = QgsFeature()
+            stem_feature.setGeometry(stem)
+            stem_feature.setAttributes([
+                    fid,
+                    stem.length()
+                ])
+            stem_writer.addFeature(stem_feature)
+
+        def write_inflection_point(point_id, point):
+
+            new_feature = QgsFeature()
+            new_feature.setGeometry(QgsGeometry.fromPoint(point))
+            new_feature.setAttributes([
+                    point_id
+                ])
+            inflection_points_writer.addFeature(new_feature)
+
+
         total = 100.0 / layer.featureCount()
         fid = 0
+        point_id = 0
 
         for current, feature in enumerate(vector.features(layer)):
 
@@ -222,16 +287,18 @@ class FlowAxis(GeoAlgorithm):
             current_segment = [ a, b ]
             current_axis_direction = None
 
+            write_inflection_point(point_id, a)
+            point_id = point_id + 1
+
             for c in points_iterator:
 
                 sign = angle_sign(a, b, c)
                 
                 if current_sign * sign < 0:
 
-                    pi = QgsPoint(0.5 * (a.x() + b.x()), 0.5 * (a.y() + b.y()))
-                    current_segment.pop()
-                    current_segment.append(pi)
                     p0 = current_segment[0]
+                    pi = QgsPoint(0.5 * (a.x() + b.x()), 0.5 * (a.y() + b.y()))
+                    current_segment.append(pi)
                     
                     if current_axis_direction:
                         angle = current_axis_direction.angle(qgs_vector(p0, pi)) * 180 / PI
@@ -240,16 +307,21 @@ class FlowAxis(GeoAlgorithm):
                     
                     write_axis_segment(fid, p0, pi, feature, angle)
                     write_segment(fid, current_segment, feature)
+                    write_inflection_point(point_id, pi)
                     
                     current_sign = sign
                     current_segment = [ pi, b ]
                     current_axis_direction = qgs_vector(p0, pi)
                     fid = fid + 1
+                    point_id = point_id + 1
+
+                else:
+
+                    current_segment.append(b)
 
                 if current_sign == 0:
                     current_sign = sign
 
-                current_segment.append(c)
                 a, b = b, c
 
             p0 = current_segment[0]
@@ -260,6 +332,8 @@ class FlowAxis(GeoAlgorithm):
 
             write_axis_segment(fid, p0, b, feature, angle)
             write_segment(fid, current_segment, feature)
+            write_inflection_point(point_id, b)
             fid = fid + 1
+            point_id = point_id + 1
 
             progress.setPercentage(int(current * total))
