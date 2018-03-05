@@ -1,4 +1,5 @@
-PLUGIN_DIR=$(HOME)/.qgis2/python/plugins
+QGIS_USER_DIR=$(HOME)/.qgis2
+PLUGIN_DIR=$(QGIS_USER_DIR)/python/plugins
 TARGET=$(PLUGIN_DIR)/fluvialtoolbox
 PY_FILES=$(wildcard *.py)
 MODEL_FILES=$(wildcard *.model)
