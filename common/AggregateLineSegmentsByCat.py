@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    AggregateLineSegments.py
+    AggregateLineSegmentsByCat.py
     ---------------------
     Date                 : November 2016
     Copyright            : (C) 2016 by Christophe Rousson
@@ -36,11 +36,13 @@ from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
 from math import sqrt
+from fluvialtoolbox.utils import IdGenerator
 
-class AggregateLineSegments(GeoAlgorithm):
+class AggregateLineSegmentsByCat(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     OUTPUT_LAYER = 'OUTPUT'
+    CATEGORY_FIELD = 'CATEGORY_FIELD'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
     UPSTREAM_MEASURE_FIELD = 'UPSTREAM_MEASURE_FIELD'
@@ -48,11 +50,16 @@ class AggregateLineSegments(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Aggregate Line Segments')
+        self.name, self.i18n_name = self.trAlgorithm('Aggregate Line Segments By Category')
         self.group, self.i18n_group = self.trAlgorithm('Graph Routines')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
+
+        self.addParameter(ParameterTableField(self.CATEGORY_FIELD,
+                                          self.tr('Category Field'),
+                                          parent=self.INPUT_LAYER,
+                                          datatype=ParameterTableField.DATA_TYPE_ANY))
         
         self.addParameter(ParameterTableField(self.FROM_NODE_FIELD,
                                           self.tr('From Node Field'),
@@ -87,6 +94,42 @@ class AggregateLineSegments(GeoAlgorithm):
     def processAlgorithm(self, progress):
 
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
+        category_field = self.getParameterValue(self.CATEGORY_FIELD)
+        from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
+        to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
+        ds_measure_field = self.getParameterValue(self.DOWNSTREAM_MEASURE_FIELD)
+        us_measure_field = self.getParameterValue(self.UPSTREAM_MEASURE_FIELD)
+
+        fields = layer.fields().toList()
+        writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
+            [
+                QgsField('GID', type=QVariant.Int, len=10),
+                fields[vector.resolveFieldIndex(layer, category_field)],
+                fields[vector.resolveFieldIndex(layer, from_node_field)],
+                fields[vector.resolveFieldIndex(layer, to_node_field)],
+                fields[vector.resolveFieldIndex(layer, ds_measure_field)],
+                fields[vector.resolveFieldIndex(layer, us_measure_field)],
+                QgsField('LENGTH', QVariant.Double, len=10, prec=2)
+            ],
+            layer.dataProvider().geometryType(),
+            layer.crs())
+
+        categories = vector.uniqueValues(layer, category_field)
+        generator = IdGenerator()
+
+        for category in categories:
+
+            expression = QgsExpression('%s = %s' % (category_field, category))
+            q = QgsFeatureRequest(expression)
+            selection = [ f.id() for f in layer.getFeatures(q) ]
+            layer.setSelectedFeatures(selection)
+
+            self.processSelection(layer, writer, category, generator, progress)
+
+        layer.removeSelection()
+
+    def processSelection(self, layer, writer, category, fid, progress):
+
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
         ds_measure_field = self.getParameterValue(self.DOWNSTREAM_MEASURE_FIELD)
@@ -120,9 +163,10 @@ class AggregateLineSegments(GeoAlgorithm):
 
         node_index = dict()
         feature_index = dict()
-        total = 100.0 / layer.featureCount()
+        features = vector.features(layer)
+        total = 100.0 / len(features)
 
-        for current, feature in enumerate(vector.features(layer)):
+        for current, feature in enumerate(features):
 
             from_node = feature.attribute(from_node_field)
             to_node = feature.attribute(to_node_field)
@@ -156,19 +200,8 @@ class AggregateLineSegments(GeoAlgorithm):
                 in_degree[to_node] = in_degree.get(to_node, 0) + 1
 
         progress.setText(self.tr("Aggregate lines ..."))
-
-        writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
-            [
-                QgsField('GID', type=QVariant.Int, len=10),
-                QgsField(from_node_field, type=QVariant.Int, len=10),
-                QgsField(to_node_field, type=QVariant.Int, len=10),
-                QgsField(ds_measure_field, type=QVariant.Double, len=10, prec=2),
-                QgsField(us_measure_field, type=QVariant.Double, len=10, prec=2)
-            ],
-            layer.dataProvider().geometryType(),
-            layer.crs())
         
-        total = 100.0 / layer.featureCount()
+        total = 100.0 / len(features)
 
         process_stack = list()
 
@@ -178,7 +211,6 @@ class AggregateLineSegments(GeoAlgorithm):
                 process_stack.append(node)
         
         current = 0
-        fid = 0
         seen_nodes = set()
 
         while process_stack:
@@ -217,14 +249,15 @@ class AggregateLineSegments(GeoAlgorithm):
                 feature = QgsFeature()
                 feature.setGeometry(QgsGeometry.fromPolyline(vertices))
                 feature.setAttributes([
-                        fid,
+                        next(fid),
+                        category,
                         from_node,
                         next_node,
                         downstream_measure,
-                        upstream_measure
+                        upstream_measure,
+                        feature.geometry().length()
                     ])
                 writer.addFeature(feature)
-                fid = fid + 1
 
                 # dont't process twice or more after confluences
                 # if branch == 0:
@@ -235,4 +268,4 @@ class AggregateLineSegments(GeoAlgorithm):
 
         ProcessingLog.addToLog(
             ProcessingLog.LOG_INFO,
-            "Created %d line features" % fid)
+            "Created %d line features" % current)

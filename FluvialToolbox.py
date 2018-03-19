@@ -52,12 +52,14 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  SimpleRasterStatistics(),
                  Sequencing2(),
                  SelectStreamFromSourceToOutlet(),
+                 SelectStreamFromOutletToSources(),
                  SelectGraphCycle(),
                  SelectionReverseFlowDirection(),
                  GraphEndpoints(),
                  SelectByDistance(),
                  MeasureDistanceToPointLayer(),
                  AggregateLineSegments(),
+                 AggregateLineSegmentsByCat(),
                  TrianglesToEdges(),
                  PointOnSurface(),
                  FastDeleteExteriorPolygons(),
@@ -77,7 +79,9 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  LongestPathInDirectedAcyclicGraphMultiFlow(),
                  MedialAxis(),
                  LocalFeatureSize(),
-                 PlanformMetrics() ]
+                 PlanformMetrics(),
+                 PathLengthOrder(),
+                 SelectNearestFeature() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

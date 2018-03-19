@@ -17,6 +17,7 @@ from GraphEndpoints import GraphEndpoints
 from SelectByDistance import SelectByDistance
 from MeasureDistanceToPointLayer import MeasureDistanceToPointLayer
 from AggregateLineSegments import AggregateLineSegments
+from AggregateLineSegmentsByCat import AggregateLineSegmentsByCat
 from TrianglesToEdges import TrianglesToEdges
 from PointOnSurface import PointOnSurface
 from FastDeleteExteriorPolygons import FastDeleteExteriorPolygons
@@ -25,3 +26,5 @@ from RandomPoints import RandomPoints
 from LineMidpoints import LineMidpoints
 from MeasurePointsAlongLine import MeasurePointsAlongLine
 from ProjectPointsAlongLine import ProjectPointsAlongLine
+from SelectStreamFromOutletToSources import SelectStreamFromOutletToSources
+from SelectNearestFeature import SelectNearestFeature

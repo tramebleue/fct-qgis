@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    SelectStreamFromSourceToOutlet.py
+    SelectStreamFromOutletToSources.py
     ---------------------
     Date                 : November 2016
     Copyright            : (C) 2016 by Christophe Rousson
@@ -38,7 +38,7 @@ from processing.core.ProcessingLog import ProcessingLog
 from math import sqrt
 
 
-class SelectStreamFromSourceToOutlet(GeoAlgorithm):
+class SelectStreamFromOutletToSources(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     # OUTPUT_LAYER = 'OUTPUT'
@@ -47,7 +47,7 @@ class SelectStreamFromSourceToOutlet(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Select Stream From Source To Outlet')
+        self.name, self.i18n_name = self.trAlgorithm('Select Stream From Outlet To Sources')
         self.group, self.i18n_group = self.trAlgorithm('Graph Routines')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
@@ -71,18 +71,17 @@ class SelectStreamFromSourceToOutlet(GeoAlgorithm):
 
         progress.setText(self.tr("Build layer index ..."))
 
-        # Index : Node A -> Edges starting from Node A
-        from_node_index = dict()
+        to_node_index = dict()
         features = vector.features(layer)
         total = 100.0 / len(features)
 
         for current, feature in enumerate(layer.getFeatures()):
 
-            from_node = feature.attribute(from_node_field)
-            if from_node_index.has_key(from_node):
-                from_node_index[from_node].append(feature.id())
+            to_node = feature.attribute(to_node_field)
+            if to_node_index.has_key(to_node):
+                to_node_index[to_node].append(feature.id())
             else:
-                from_node_index[from_node] = [ feature.id() ]
+                to_node_index[to_node] = [ feature.id() ]
             
             progress.setPercentage(int(current * total))
 
@@ -96,10 +95,10 @@ class SelectStreamFromSourceToOutlet(GeoAlgorithm):
 
             segment = process_stack.pop()
             selection.add(segment.id())
-            to_node = segment.attribute(to_node_field)
+            from_node = segment.attribute(from_node_field)
 
-            if from_node_index.has_key(to_node):
-                q = QgsFeatureRequest().setFilterFids(from_node_index[to_node])
+            if to_node_index.has_key(from_node):
+                q = QgsFeatureRequest().setFilterFids(to_node_index[from_node])
                 for next_segment in layer.getFeatures(q):
                     # Prevent infinite loop
                     if not next_segment.id() in selection:
