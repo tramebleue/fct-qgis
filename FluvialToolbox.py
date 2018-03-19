@@ -77,7 +77,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  LongestPathInDirectedAcyclicGraphMultiFlow(),
                  MedialAxis(),
                  LocalFeatureSize(),
-                 PlanformMetrics() ]
+                 PlanformMetrics(),
+                 ExtractRasterValueAtPoints() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())
