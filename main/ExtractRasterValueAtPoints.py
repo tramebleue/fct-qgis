@@ -44,8 +44,10 @@ import numpy as np
 
 class ElevationService(object):
 
-    def __init__(self, datasource, datasource_srid,  input_srid):
+    def __init__(self, datasource, band, nodata, datasource_srid,  input_srid):
         self.datasource = datasource
+        self.band = band
+        self.nodata = nodata
         self.datasource_srid = datasource_srid
         self.input_srid = input_srid
 
@@ -73,7 +75,7 @@ class ElevationService(object):
         py = int((y - dem_tranform[3]) / dem_tranform[5])
         return (px, py)
 
-    def point_elevation(self, point, nodata):
+    def point_elevation(self, point):
         """ Returns point elevation (z) according to DEM
 
         Input:
@@ -83,11 +85,11 @@ class ElevationService(object):
         px, py = self.worldtopixel(t[0], t[1])
         # TODO check point is within data range, otherwise return 0
         if not self.in_range(px, py):
-            return nodata
+            return self.nodata
         elev = self.elevations.ReadAsArray(px, py, 1, 1).ravel()
         return np.asscalar(elev[0])
 
-    def line_elevation(self, linestring, step, nodata):
+    def line_elevation(self, linestring, step):
         """ Returns projected linestring
             as a sequence of (x, y, z, m) coordinates
             where is the 'measure' coordinate,
@@ -100,7 +102,7 @@ class ElevationService(object):
         length = linestring.length()
         for s in np.arange(0, length+step, step):
             p = linestring.interpolate(s).asPoint()
-            yield p.x(), p.y(), self.point_elevation(p, nodata), s
+            yield p.x(), p.y(), self.point_elevation(p), s
 
 def fixed_precision(x, precision):
     return round(float(x) * precision) / precision
@@ -110,6 +112,7 @@ class ExtractRasterValueAtPoints(GeoAlgorithm):
 
     INPUT_POINTS = 'INPUT_POINTS'
     INPUT_RASTER = 'INPUT_RASTER'
+    INPUT_RASTER_BAND = 'INPUT_RASTER_BAND'
     VALUE_FIELD = 'VALUE_FIELD'
     # NODATA = 'NODATA'
     OUTPUT = 'OUTPUT'
@@ -124,6 +127,9 @@ class ExtractRasterValueAtPoints(GeoAlgorithm):
 
         self.addParameter(ParameterRaster(self.INPUT_RASTER,
                                           self.tr('Input Raster')))
+
+        self.addParameter(ParameterNumber(self.INPUT_RASTER_BAND,
+                                          self.tr('Band'), default=1, minValue=1))
 
         self.addParameter(ParameterString(self.VALUE_FIELD,
                                           self.tr('Value Field'), default='VALUE'))
@@ -141,7 +147,8 @@ class ExtractRasterValueAtPoints(GeoAlgorithm):
         auth2, code2 = raster_layer.crs().authid().split(':')
 
         value_field = self.getParameterValue(self.VALUE_FIELD)
-        nodata = raster_layer.dataProvider().srcNoDataValue(1)
+        band = self.getParameterValue(self.INPUT_RASTER_BAND)
+        nodata = raster_layer.dataProvider().srcNoDataValue(band)
 
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
             layer.fields().toList() + [
@@ -152,12 +159,12 @@ class ExtractRasterValueAtPoints(GeoAlgorithm):
         
         total = 100.0 / layer.featureCount()
 
-        with ElevationService(raster_layer.dataProvider().dataSourceUri(), int(code2), int(code1)) as service:
+        with ElevationService(raster_layer.dataProvider().dataSourceUri(), band, nodata, int(code2), int(code1)) as service:
             
             for current, feature in enumerate(vector.features(layer)):
 
-                value = service.point_elevation(feature.geometry().asPoint(), nodata)
-                ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Point %s value = %.3f" % (str(feature.geometry().asPoint()), value))
+                value = service.point_elevation(feature.geometry().asPoint())
+                # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Point %s value = %.3f" % (str(feature.geometry().asPoint()), value))
 
                 outfeature = QgsFeature()
                 outfeature.setGeometry(feature.geometry())

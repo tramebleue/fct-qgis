@@ -204,8 +204,8 @@ class PlanformMetrics(GeoAlgorithm):
                 QgsField('SINUO', QVariant.Double, len=6, prec=4),
                 QgsField('AMPLI', QVariant.Double, len=10, prec=4),
                 QgsField('OMEG0', QVariant.Double, len=10, prec=8),
-                QgsField('OMEG1', QVariant.Double, len=10, prec=6),
-                QgsField('RCURV', QVariant.Double, len=10, prec=3)
+                QgsField('OMEG1', QVariant.Double, len=10, prec=6)
+                # QgsField('RCURV', QVariant.Double, len=10, prec=3)
             ],
             layer.dataProvider().geometryType(),
             layer.crs())
@@ -240,6 +240,10 @@ class PlanformMetrics(GeoAlgorithm):
             bend = Bend(points)
             stem, stem_idx = bend.max_amplitude_stem()
 
+            if stem is None:
+                ProcessingLog.addToLog(ProcessingLog.LOG_INFO, str(points))
+                return
+
             new_feature = QgsFeature()
             new_feature.setGeometry(QgsGeometry.fromPolyline(points))
             new_feature.setAttributes(feature.attributes() + [
@@ -250,8 +254,8 @@ class PlanformMetrics(GeoAlgorithm):
                     bend.sinuosity(),
                     bend.amplitude(),
                     bend.omega_origin(),
-                    bend.omega_end(),
-                    bend.curvature_radius()
+                    bend.omega_end()
+                    # bend.curvature_radius()
                 ])
             segment_writer.addFeature(new_feature)
 
