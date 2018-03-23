@@ -82,7 +82,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  PlanformMetrics(),
                  PathLengthOrder(),
                  SelectNearestFeature(),
-                 ExtractRasterValueAtPoints() ]
+                 ExtractRasterValueAtPoints(),
+                 StrahlerOrder() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())
