@@ -288,7 +288,7 @@ class PlanformMetrics(GeoAlgorithm):
             a = next(points_iterator)
             b = next(points_iterator)
             current_sign = 0
-            current_segment = [ a, b ]
+            current_segment = [ a ]
             current_axis_direction = None
 
             write_inflection_point(point_id, a)
@@ -335,6 +335,7 @@ class PlanformMetrics(GeoAlgorithm):
                 angle = 0.0
 
             write_axis_segment(fid, p0, b, feature, angle)
+            current_segment.append(b)
             write_segment(fid, current_segment, feature)
             write_inflection_point(point_id, b)
             fid = fid + 1
