@@ -1,0 +1,13 @@
+tests:
+  - name: Points On Surface # Human readable identifier
+    algorithm: fluvialtoolbox:pointonsurface # Algorithm name
+    params: # A list of parameters (only 1 here)
+      - type: vector    # Param is a vector layer
+        name: polygons.gml # file name
+    results: # A map of results (only one here)
+      OUTPUT:
+        type: vector   # Expected result is a vector layer
+        name: expected/points_on_surface.gml # The relative filepath from the processing testdata directory
+        compare:
+          geometry:
+            precision: 7
