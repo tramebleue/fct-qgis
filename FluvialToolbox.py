@@ -83,7 +83,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  PathLengthOrder(),
                  SelectNearestFeature(),
                  ExtractRasterValueAtPoints(),
-                 StrahlerOrder() ]
+                 StrahlerOrder(),
+                 SimplifyVisvalingam() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

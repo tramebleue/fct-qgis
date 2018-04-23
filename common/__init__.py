@@ -28,3 +28,4 @@ from MeasurePointsAlongLine import MeasurePointsAlongLine
 from ProjectPointsAlongLine import ProjectPointsAlongLine
 from SelectStreamFromOutletToSources import SelectStreamFromOutletToSources
 from SelectNearestFeature import SelectNearestFeature
+from SimplifyVisvalingam import SimplifyVisvalingam
