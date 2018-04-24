@@ -2,10 +2,9 @@ import os
 import sys
 import yaml
 
-PREFIX_PATH = os.environ.get('PREFIX_PATH', '/usr/share')
-sys.path.append(os.path.join(PREFIX_PATH, 'qgis/python/plugins'))
+QGIS_PREFIX_PATH = os.environ.get('QGIS_PREFIX_PATH', '/usr/share/qgis')
+sys.path.append(os.path.join(QGIS_PREFIX_PATH, 'python/plugins'))
 sys.path.append(os.path.join(os.environ['HOME'], '.qgis2/python/plugins'))
-
 
 from processing.tests import AlgorithmsTestBase
 
@@ -18,9 +17,7 @@ from qgis.testing import (
 )
 
 def processingTestDataPath():
-    # return os.path.join(os.path.dirname(__file__), 'testdata')
-    return 'testdata'
-
+    return os.path.join(os.path.dirname(__file__), 'testdata')
 
 class TestFluvialToolboxAlgorithms(unittest.TestCase, AlgorithmsTestBase.AlgorithmsTest):
 
