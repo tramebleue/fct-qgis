@@ -5,6 +5,7 @@ from common import *
 from main import *
 from graph import *
 from modeler import *
+from spatial_components import *
 
 class FluvialToolbox(object):
 
@@ -84,7 +85,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  SelectNearestFeature(),
                  ExtractRasterValueAtPoints(),
                  StrahlerOrder(),
-                 SimplifyVisvalingam() ]
+                 SimplifyVisvalingam(),
+                 LeftRightDGO() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())
