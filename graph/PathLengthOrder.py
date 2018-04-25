@@ -148,7 +148,8 @@ class PathLengthOrder(GeoAlgorithm):
         writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
             layer.fields().toList() + [
                 QgsField('PATHID', QVariant.Int, len=5),
-                QgsField('PRANK', QVariant.Int, len=5)
+                QgsField('PRANK', QVariant.Int, len=5),
+                QgsField('PLENGTH', QVariant.Double, len=10, prec=2)
             ],
             layer.dataProvider().geometryType(),
             layer.crs())
@@ -160,11 +161,13 @@ class PathLengthOrder(GeoAlgorithm):
             process_stack = [ edge ]
             selection = set()
             rank = 1
+            length = 0
 
             while process_stack:
 
                 edge = process_stack.pop()
                 selection.add(edge.id())
+                length += edge.geometry().length()
                 to_node = edge.attribute(to_node_field)
 
                 if aindex.has_key(to_node):
@@ -187,7 +190,8 @@ class PathLengthOrder(GeoAlgorithm):
                 outfeature.setGeometry(feature.geometry())
                 outfeature.setAttributes(feature.attributes() + [
                         current,
-                        rank
+                        rank,
+                        length
                     ])
                 writer.addFeature(outfeature)
                 seen_edges[feature.id()] = rank
