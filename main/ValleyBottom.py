@@ -30,7 +30,7 @@ from processing.core.parameters import ParameterRaster
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
 from processing.core.parameters import ParameterBoolean
-from processing.core.outputs import OutputVector
+from processing.core.outputs import OutputVector, OutputRaster
 from processing.core.ProcessingLog import ProcessingLog
 from processing.gui.Postprocessing import handleAlgorithmResults
 import gdal
@@ -42,7 +42,10 @@ class ValleyBottom(GeoAlgorithm):
     INPUT_NETWORK = 'INPUT_NETWORK'
     INPUT_ZOI = 'INPUT_ZOI'
     OUTPUT = 'OUTPUT'
+    VALLEYBOTTOM_RASTER = 'VALLEYBOTTOM_RASTER'
+    DISAGGREGATION_DISTANCE = 'DISAGGREGATION_DISTANCE'
     DISPLAY_INTERMEDIATE_RESULT = 'DISPLAY_INTERMEDIATE_RESULT'
+    MERGE_DISTANCE = 'MERGE_DISTANCE'
     DO_CLEAN = 'DO_CLEAN'
 
     LARGE_BUFFER_DISTANCE_PARAM = 'LARGE_BUFFER_DISTANCE'
@@ -52,7 +55,7 @@ class ValleyBottom(GeoAlgorithm):
     CLEAN_MIN_AREA_PARAM = 'CLEAN_MIN_AREA'
     CLEAN_MIN_HOLE_AREA_PARAM = 'CLEAN_MIN_HOLE_AREA'
 
-    STEPS = 18
+    STEPS = 24
 
     def defineCharacteristics(self):
 
@@ -67,10 +70,16 @@ class ValleyBottom(GeoAlgorithm):
                                           self.tr('Input Stream Network'), [ParameterVector.VECTOR_TYPE_LINE]))
         self.addParameter(ParameterVector(self.INPUT_ZOI,
                                           self.tr('Zone of Interest'), [ParameterVector.VECTOR_TYPE_POLYGON]))
-        self.addParameter(ParameterBoolean(self.DISPLAY_INTERMEDIATE_RESULT,
-                                           self.tr('Display intermediate result layers ?'), True))
+
+        self.addParameter(ParameterNumber(self.DISAGGREGATION_DISTANCE,
+                                          self.tr('Disaggregation Step'), default=50.0, minValue=0.0))
+        self.addParameter(ParameterNumber(self.MERGE_DISTANCE,
+                                           self.tr('Merge polygons closer than distance'), default=50.0, minValue=0.0))
         self.addParameter(ParameterBoolean(self.DO_CLEAN,
                                            self.tr('Clean result layer ?'), True))
+
+        self.addParameter(ParameterBoolean(self.DISPLAY_INTERMEDIATE_RESULT,
+                                           self.tr('Display intermediate result layers ?'), False))
 
         # Advanced parameters
 
@@ -94,7 +103,10 @@ class ValleyBottom(GeoAlgorithm):
         
         self.addOutput(OutputVector(self.OUTPUT, self.tr('Valley Bottom')))
 
+        self.addOutput(OutputRaster(self.VALLEYBOTTOM_RASTER, self.tr('Valley Bottom Raster')))
+
     def nextStep(self, description, progress):
+
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, description)
         progress.setText(description)
         progress.setPercentage(int(100.0 * self.current_step / self.STEPS))
@@ -106,13 +118,15 @@ class ValleyBottom(GeoAlgorithm):
         SMALL_BUFFER_DISTANCE = self.getParameterValue(self.SMALL_BUFFER_DISTANCE_PARAM)
         MIN_THRESHOLD = self.getParameterValue(self.MIN_THRESHOLD_PARAM)
         MAX_THRESHOLD = self.getParameterValue(self.MAX_THRESHOLD_PARAM)
+        MIN_OBJECT_DISTANCE = self.getParameterValue(self.MERGE_DISTANCE)
+        do_clean = self.getParameterValue(self.DO_CLEAN)
         CLEAN_MIN_AREA = self.getParameterValue(self.CLEAN_MIN_AREA_PARAM)
         CLEAN_MIN_HOLE_AREA = self.getParameterValue(self.CLEAN_MIN_HOLE_AREA_PARAM)
         display_result = self.getParameterValue(self.DISPLAY_INTERMEDIATE_RESULT)
 
         # Hard coded parameters
         SIMPLIFY_TOLERANCE = 20
-        SPLIT_MAX_LENGTH = 50
+        SPLIT_MAX_LENGTH = self.getParameterValue(self.DISAGGREGATION_DISTANCE)
         SIEVE_THRESHOLD = 40
         SMOOTH_ITERATIONS = 5
         SMOOTH_OFFSET = .25
@@ -159,11 +173,18 @@ class ValleyBottom(GeoAlgorithm):
                             })
         
         self.nextStep('Compute large buffer ...',progress)
-        LargeBuffer = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        LargeBufferToClip = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
                             {
                               'INPUT': SplittedNetwork.getOutputValue('OUTPUT'),
                               'DISTANCE': LARGE_BUFFER_DISTANCE,
                               'DISSOLVE': True
+                            })
+
+        self.nextStep('Clip large buffer ...',progress)
+        LargeBuffer = Processing.runAlgorithm('qgis:clip', None,
+                            {
+                              'INPUT': LargeBufferToClip.getOutputValue('OUTPUT'),
+                              'OVERLAY': self.getParameterValue(self.INPUT_ZOI)
                             })
         
         self.nextStep('Compute small buffer ...',progress)
@@ -232,7 +253,7 @@ class ValleyBottom(GeoAlgorithm):
         ReferenceDEM = Processing.runAlgorithm('gdalogr:rasterize',  handleResult('Reference DEM'),
                             {
                               'INPUT': ReferencePolygons.getOutputValue('OUTPUT_LAYER'),
-                              'FIELD': '_median',
+                              'FIELD': '_min',
                               'TILED': True,
                               'COMPRESS': LZW_COMPRESS,
                               'DIMENSIONS': 1,
@@ -242,12 +263,24 @@ class ValleyBottom(GeoAlgorithm):
                             })
 
         self.nextStep('Compute relative DEM and extract bottom ...',progress)
-        ValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:differentialrasterthreshold', None,
+        ValleyBottomRasterToClip = Processing.runAlgorithm('fluvialtoolbox:differentialrasterthreshold', None,
                             {
                               'INPUT_DEM': ClippedDEM.getOutputValue('OUTPUT'),
                               'REFERENCE_DEM': ReferenceDEM.getOutputValue('OUTPUT'),
                               'MIN_THRESHOLD': MIN_THRESHOLD,
                               'MAX_THRESHOLD': MAX_THRESHOLD,
+                            })
+
+        self.nextStep('Clip Raster Bottom ...',progress)
+        ValleyBottomRaster = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
+                            {
+                              'INPUT': ValleyBottomRasterToClip.getOutputValue('OUTPUT'),
+                              'MASK': self.getParameterValue(self.INPUT_ZOI),
+                              'ALPHA_BAND': False,
+                              'CROP_TO_CUTLINE': True,
+                              'KEEP_RESOLUTION': True,
+                              'COMPRESS': LZW_COMPRESS,
+                              'TILED': True
                             })
 
 
@@ -261,6 +294,8 @@ class ValleyBottom(GeoAlgorithm):
                               'CONNECTIONS': FOUR_CONNECTIVITY
                             })
 
+        self.setOutputValue(self.VALLEYBOTTOM_RASTER, SievedValleyBottomRaster.getOutputValue('OUTPUT'))
+
         self.nextStep('Polygonize ...',progress)
         UncleanedValleyBottom = Processing.runAlgorithm('gdalogr:polygonize', handleResult('Uncleaned Valley Bottom'),
                             {
@@ -268,9 +303,45 @@ class ValleyBottom(GeoAlgorithm):
                               'FIELD': 'VALUE'
                             })
 
+        # if MIN_OBJECT_DISTANCE > 0:
+
+        #   self.nextStep('Simplify result ...',progress)
+        #   MergedValleyBottom0 = Processing.runAlgorithm('qgis:simplifygeometries', None,
+        #                         {
+        #                           'INPUT': UncleanedValleyBottom.getOutputValue('OUTPUT'),
+        #                           'TOLERANCE': SIMPLIFY_TOLERANCE
+        #                         })
+
+        #   self.nextStep('Merge close objects (step 1) ...',progress)
+        #   MergedValleyBottom1 = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        #                       {
+        #                         'INPUT': MergedValleyBottom0.getOutputValue('OUTPUT'),
+        #                         'DISTANCE': MIN_OBJECT_DISTANCE,
+        #                         'DISSOLVE': True
+        #                       })
+
+        #   self.nextStep('Merge close objects (step 2) ...',progress)
+        #   MergedValleyBottom2 = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        #                       {
+        #                         'INPUT': MergedValleyBottom1.getOutputValue('OUTPUT'),
+        #                         'DISTANCE': -MIN_OBJECT_DISTANCE - (MIN_OBJECT_DISTANCE / 10),
+        #                         'DISSOLVE': False
+        #                       })
+
+        #   self.nextStep('Merge close objects (step 3) ...',progress)
+        #   MergedValleyBottom3 = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        #                       {
+        #                         'INPUT': MergedValleyBottom2.getOutputValue('OUTPUT'),
+        #                         'DISTANCE': (MIN_OBJECT_DISTANCE / 10),
+        #                         'DISSOLVE': True
+        #                       })
+
+        #   UncleanedValleyBottom = MergedValleyBottom3
+
+
         # Clean result
 
-        if self.getParameterValue(self.DO_CLEAN):
+        if self.getParameterValue(do_clean):
 
             self.nextStep('Remove small objects and parts ...',progress)
             ValleyBottom = Processing.runAlgorithm('fluvialtoolbox:removesmallpolygonalobjects', None,

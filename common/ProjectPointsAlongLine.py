@@ -37,6 +37,49 @@ from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
 from math import sqrt
 
+def lineLocatePoint(line, point):
+    """
+    Returns a distance representing the location along this linestring of the closest point
+    on this linestring geometry to the specified point.
+    ie, the returned value indicates how far along this linestring you need to traverse
+    to get to the closest location where this linestring comes to the specified point.
+
+    Note: This function exists in QGis from version 3.0
+
+    Parameters
+    ----------
+
+    line: QgsGeometry, LineString
+
+    point: QgsGeometry, Point
+        point to seek proximity to
+
+    Returns
+    -------
+
+    distance along line, or -1 if error
+    """
+
+    if line.isMultipart(): return -1
+
+    measure = 0.0
+    closest = float('inf')
+    closest_measure = 0.0
+    vertices = line.asPolyline()
+
+    for v0, v1 in zip(vertices[:-1], vertices[1:]):
+
+        segment = QgsGeometry.fromPolyline([ v0, v1 ])
+        d = segment.distance(point)
+
+        if d < closest:
+            closest = d
+            closest_measure = measure + QgsGeometry.fromPoint(v0).distance(point)
+
+        measure = measure + segment.length()
+
+    return closest_measure
+
 class ProjectPointsAlongLine(GeoAlgorithm):
 
     INPUT_POINTS = 'INPUT_POINTS'
@@ -61,28 +104,6 @@ class ProjectPointsAlongLine(GeoAlgorithm):
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
         self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Projected Points')))
-
-    def lineLocatePoint(self, line, point):
-
-        vertices = iter(line.asPolyline())
-        v0 = next(vertices)
-
-        measure = 0.0
-        closest = float('inf')
-        closest_measure = 0.0
-
-        for v1 in vertices:
-
-            segment = QgsGeometry.fromPolyline([ v0, v1 ])
-            d = segment.distance(point)
-            if d < closest:
-                closest = d
-                closest_measure = measure + QgsGeometry.fromPoint(v0).distance(point)
-
-            measure = measure + segment.length()
-            v0 = v1
-
-        return closest_measure
 
     def processAlgorithm(self, progress):
 
@@ -110,7 +131,7 @@ class ProjectPointsAlongLine(GeoAlgorithm):
 
                 d = line.geometry().distance(feature.geometry())
                 if d < closest:
-                    m = self.lineLocatePoint(line.geometry(), feature.geometry())
+                    m = lineLocatePoint(line.geometry(), feature.geometry())
                     # if line is reversed
                     measure = line.attribute(measure_field) + (line.geometry().length() - m)
                     # else

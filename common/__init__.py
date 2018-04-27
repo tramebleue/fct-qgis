@@ -29,3 +29,4 @@ from ProjectPointsAlongLine import ProjectPointsAlongLine
 from SelectStreamFromOutletToSources import SelectStreamFromOutletToSources
 from SelectNearestFeature import SelectNearestFeature
 from SimplifyVisvalingam import SimplifyVisvalingam
+from BinaryClosing import BinaryClosing
