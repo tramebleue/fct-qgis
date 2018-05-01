@@ -115,36 +115,6 @@
         "group": "Spatial Components", 
         "name": "Disaggregated Polygon", 
         "algs": {
-            "QGISREFACTORFIELDS_1": {
-                "values": {
-                    "name": "QGISREFACTORFIELDS_1", 
-                    "paramsFolded": true, 
-                    "outputs": {}, 
-                    "pos": {
-                        "values": {
-                            "y": 551.4240362811789, 
-                            "x": 1152.5927005722926
-                        }, 
-                        "class": "point"
-                    }, 
-                    "outputsFolded": true, 
-                    "dependencies": [], 
-                    "params": {
-                        "INPUT_LAYER": {
-                            "values": {
-                                "alg": "QGISADDAUTOINCREMENTALFIELD_1", 
-                                "output": "OUTPUT"
-                            }, 
-                            "class": "processing.modeler.ModelerAlgorithm.ValueFromOutput"
-                        }, 
-                        "FIELDS_MAPPING": "[{'expression': u'\"AUTO\"', 'length': 10, 'type': 2, 'name': u'GID', 'precision': 0}]"
-                    }, 
-                    "active": true, 
-                    "consoleName": "qgis:refactorfields", 
-                    "description": "Refactor fields"
-                }, 
-                "class": "processing.modeler.ModelerAlgorithm.Algorithm"
-            }, 
             "QGISPOLYGONSTOLINES_2": {
                 "values": {
                     "name": "QGISPOLYGONSTOLINES_2", 
@@ -334,60 +304,35 @@
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
             }, 
-            "QGISJOINATTRIBUTESBYLOCATION_1": {
+            "QGISVARIABLEDISTANCEBUFFER_1": {
                 "values": {
-                    "name": "QGISJOINATTRIBUTESBYLOCATION_1", 
+                    "name": "QGISVARIABLEDISTANCEBUFFER_1", 
                     "paramsFolded": true, 
-                    "outputs": {
-                        "OUTPUT": {
-                            "values": {
-                                "description": "Disaggregated Polygons", 
-                                "pos": {
-                                    "values": {
-                                        "y": 1549.5243391385275, 
-                                        "x": 2189.1072187000277
-                                    }, 
-                                    "class": "point"
-                                }
-                            }, 
-                            "class": "processing.modeler.ModelerAlgorithm.ModelerOutput"
-                        }
-                    }, 
+                    "outputs": {}, 
                     "pos": {
                         "values": {
-                            "y": 1488.0702896426899, 
-                            "x": 2030.2423424396216
+                            "y": 758.0, 
+                            "x": 921.0
                         }, 
                         "class": "point"
                     }, 
                     "outputsFolded": true, 
                     "dependencies": [], 
                     "params": {
-                        "PREDICATE": [
-                            "contains"
-                        ], 
-                        "STATS": "count", 
-                        "TARGET": {
+                        "INPUT": {
                             "values": {
-                                "alg": "QGISMULTIPARTTOSINGLEPARTS_1", 
-                                "output": "OUTPUT"
+                                "alg": "QGISFIELDCALCULATOR_1", 
+                                "output": "OUTPUT_LAYER"
                             }, 
                             "class": "processing.modeler.ModelerAlgorithm.ValueFromOutput"
                         }, 
-                        "PRECISION": 0.0, 
-                        "SUMMARY": 0, 
-                        "JOIN": {
-                            "values": {
-                                "alg": "FLUVIALTOOLBOXMEASUREPOINTSALONGLINE_1", 
-                                "output": "OUTPUT"
-                            }, 
-                            "class": "processing.modeler.ModelerAlgorithm.ValueFromOutput"
-                        }, 
-                        "KEEP": 0
+                        "SEGMENTS": 5.0, 
+                        "DISSOLVE": true, 
+                        "FIELD": "DBUF"
                     }, 
                     "active": true, 
-                    "consoleName": "qgis:joinattributesbylocation", 
-                    "description": "Join attributes by location"
+                    "consoleName": "qgis:variabledistancebuffer", 
+                    "description": "Variable distance buffer"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
             }, 
@@ -423,6 +368,36 @@
                     "active": true, 
                     "consoleName": "qgis:clip", 
                     "description": "Clip"
+                }, 
+                "class": "processing.modeler.ModelerAlgorithm.Algorithm"
+            }, 
+            "QGISREFACTORFIELDS_2": {
+                "values": {
+                    "name": "QGISREFACTORFIELDS_2", 
+                    "paramsFolded": true, 
+                    "outputs": {}, 
+                    "pos": {
+                        "values": {
+                            "y": 1253.2303824023945, 
+                            "x": 1804.3376011024222
+                        }, 
+                        "class": "point"
+                    }, 
+                    "outputsFolded": true, 
+                    "dependencies": [], 
+                    "params": {
+                        "INPUT_LAYER": {
+                            "values": {
+                                "alg": "QGISMERGEVECTORLAYERS_1", 
+                                "output": "OUTPUT"
+                            }, 
+                            "class": "processing.modeler.ModelerAlgorithm.ValueFromOutput"
+                        }, 
+                        "FIELDS_MAPPING": "[]"
+                    }, 
+                    "active": true, 
+                    "consoleName": "qgis:refactorfields", 
+                    "description": "Delete Unused Fields"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
             }, 
@@ -491,33 +466,33 @@
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
             }, 
-            "QGISREFACTORFIELDS_2": {
+            "QGISSIMPLIFYGEOMETRIES_1": {
                 "values": {
-                    "name": "QGISREFACTORFIELDS_2", 
+                    "name": "QGISSIMPLIFYGEOMETRIES_1", 
                     "paramsFolded": true, 
                     "outputs": {}, 
                     "pos": {
                         "values": {
-                            "y": 1253.2303824023945, 
-                            "x": 1804.3376011024222
+                            "y": 260.0, 
+                            "x": 340.0
                         }, 
                         "class": "point"
                     }, 
                     "outputsFolded": true, 
                     "dependencies": [], 
                     "params": {
-                        "INPUT_LAYER": {
+                        "INPUT": {
                             "values": {
-                                "alg": "QGISMERGEVECTORLAYERS_1", 
+                                "alg": "QGISPOLYGONSTOLINES_1", 
                                 "output": "OUTPUT"
                             }, 
                             "class": "processing.modeler.ModelerAlgorithm.ValueFromOutput"
                         }, 
-                        "FIELDS_MAPPING": "[]"
+                        "TOLERANCE": 5.0
                     }, 
                     "active": true, 
-                    "consoleName": "qgis:refactorfields", 
-                    "description": "Delete Unused Fields"
+                    "consoleName": "qgis:simplifygeometries", 
+                    "description": "Simplify Shape Boundary"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
             }, 
@@ -550,35 +525,54 @@
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
             }, 
-            "QGISVARIABLEDISTANCEBUFFER_1": {
+            "FLUVIALTOOLBOXMATCHPOLYGONWITHNEARESTCENTROID_1": {
                 "values": {
-                    "name": "QGISVARIABLEDISTANCEBUFFER_1", 
+                    "name": "FLUVIALTOOLBOXMATCHPOLYGONWITHNEARESTCENTROID_1", 
                     "paramsFolded": true, 
-                    "outputs": {}, 
+                    "outputs": {
+                        "OUTPUT": {
+                            "values": {
+                                "description": "Disaggregated Polygons", 
+                                "pos": {
+                                    "values": {
+                                        "y": 1551.9924465629033, 
+                                        "x": 2446.613093309886
+                                    }, 
+                                    "class": "point"
+                                }
+                            }, 
+                            "class": "processing.modeler.ModelerAlgorithm.ModelerOutput"
+                        }
+                    }, 
                     "pos": {
                         "values": {
-                            "y": 758.0, 
-                            "x": 921.0
+                            "y": 1506.9924465629033, 
+                            "x": 2246.613093309886
                         }, 
                         "class": "point"
                     }, 
                     "outputsFolded": true, 
                     "dependencies": [], 
                     "params": {
+                        "K_NEIGHBORS": 5.0, 
                         "INPUT": {
                             "values": {
-                                "alg": "QGISFIELDCALCULATOR_1", 
-                                "output": "OUTPUT_LAYER"
+                                "alg": "QGISMULTIPARTTOSINGLEPARTS_1", 
+                                "output": "OUTPUT"
                             }, 
                             "class": "processing.modeler.ModelerAlgorithm.ValueFromOutput"
                         }, 
-                        "SEGMENTS": 5.0, 
-                        "DISSOLVE": true, 
-                        "FIELD": "DBUF"
+                        "JOINED": {
+                            "values": {
+                                "alg": "FLUVIALTOOLBOXMEASUREPOINTSALONGLINE_1", 
+                                "output": "OUTPUT"
+                            }, 
+                            "class": "processing.modeler.ModelerAlgorithm.ValueFromOutput"
+                        }
                     }, 
                     "active": true, 
-                    "consoleName": "qgis:variabledistancebuffer", 
-                    "description": "Variable distance buffer"
+                    "consoleName": "fluvialtoolbox:matchpolygonwithnearestcentroid", 
+                    "description": "Match Polygon With Nearest Centroid"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
             }, 
@@ -786,33 +780,33 @@
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
             }, 
-            "QGISSIMPLIFYGEOMETRIES_1": {
+            "QGISREFACTORFIELDS_1": {
                 "values": {
-                    "name": "QGISSIMPLIFYGEOMETRIES_1", 
+                    "name": "QGISREFACTORFIELDS_1", 
                     "paramsFolded": true, 
                     "outputs": {}, 
                     "pos": {
                         "values": {
-                            "y": 260.0, 
-                            "x": 340.0
+                            "y": 551.4240362811789, 
+                            "x": 1152.5927005722926
                         }, 
                         "class": "point"
                     }, 
                     "outputsFolded": true, 
                     "dependencies": [], 
                     "params": {
-                        "INPUT": {
+                        "INPUT_LAYER": {
                             "values": {
-                                "alg": "QGISPOLYGONSTOLINES_1", 
+                                "alg": "QGISADDAUTOINCREMENTALFIELD_1", 
                                 "output": "OUTPUT"
                             }, 
                             "class": "processing.modeler.ModelerAlgorithm.ValueFromOutput"
                         }, 
-                        "TOLERANCE": 5.0
+                        "FIELDS_MAPPING": "[{'expression': u'\"AUTO\"', 'length': 10, 'type': 2, 'name': u'GID', 'precision': 0}]"
                     }, 
                     "active": true, 
-                    "consoleName": "qgis:simplifygeometries", 
-                    "description": "Simplify Shape Boundary"
+                    "consoleName": "qgis:refactorfields", 
+                    "description": "Refactor fields"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
             }

@@ -87,7 +87,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  StrahlerOrder(),
                  SimplifyVisvalingam(),
                  LeftRightDGO(),
-                 BinaryClosing() ]
+                 BinaryClosing(),
+                 MatchPolygonWithNearestCentroid() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

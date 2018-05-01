@@ -30,3 +30,4 @@ from SelectStreamFromOutletToSources import SelectStreamFromOutletToSources
 from SelectNearestFeature import SelectNearestFeature
 from SimplifyVisvalingam import SimplifyVisvalingam
 from BinaryClosing import BinaryClosing
+from MatchPolygonWithNearestCentroid import MatchPolygonWithNearestCentroid

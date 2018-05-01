@@ -61,7 +61,7 @@ class BinaryClosing(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Binary Closing (Morphology)')
+        self.name, self.i18n_name = self.trAlgorithm('Binary Closing')
         self.group, self.i18n_group = self.trAlgorithm('Image Processing')
 
         self.addParameter(ParameterRaster(self.INPUT,
@@ -96,7 +96,7 @@ class BinaryClosing(GeoAlgorithm):
             raise GeoAlgorithmExecutionException('SciPy ndimage.morphology module is not available.')
 
         size = int(round(distance / pixel_xsize))
-        structure = iterate_structure(generate_binary_structure(2, 1), size)
+        structure = iterate_structure(generate_binary_structure(2, 1), (size - 3) / 2)
 
         progress.setText('Read input ...')
         mat = datasource.GetRasterBand(bandNumber).ReadAsArray()

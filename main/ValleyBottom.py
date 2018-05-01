@@ -272,10 +272,10 @@ class ValleyBottom(GeoAlgorithm):
                             })
 
         self.nextStep('Clip Raster Bottom ...',progress)
-        ValleyBottomRaster = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
+        RawValleyBottomRaster = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
                             {
                               'INPUT': ValleyBottomRasterToClip.getOutputValue('OUTPUT'),
-                              'MASK': self.getParameterValue(self.INPUT_ZOI),
+                              'MASK': LargeBuffer.getOutputValue('OUTPUT'),
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': True,
                               'KEEP_RESOLUTION': True,
@@ -283,23 +283,33 @@ class ValleyBottom(GeoAlgorithm):
                               'TILED': True
                             })
 
+        self.setOutputValue(self.VALLEYBOTTOM_RASTER, RawValleyBottomRaster.getOutputValue('OUTPUT'))
 
-        # Polygonize Valley Bottom
+        if MIN_OBJECT_DISTANCE > 0:
 
-        self.nextStep('Sieve result ...',progress)
-        SievedValleyBottomRaster = Processing.runAlgorithm('gdalogr:sieve', None,
+          self.nextStep('Merge close objects...',progress)
+          ValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:binaryclosing', None,
                             {
-                              'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
+                              'INPUT': RawValleyBottomRaster.getOutputValue('OUTPUT'),
+                              'DISTANCE': MIN_OBJECT_DISTANCE,
+                              'ITERATIONS': 5
+                            })
+        else:
+
+          self.nextStep('Sieve result ...',progress)
+          ValleyBottomRaster = Processing.runAlgorithm('gdalogr:sieve', None,
+                            {
+                              'INPUT': RawValleyBottomRaster.getOutputValue('OUTPUT'),
                               'THRESHOLD': SIEVE_THRESHOLD,
                               'CONNECTIONS': FOUR_CONNECTIVITY
                             })
 
-        self.setOutputValue(self.VALLEYBOTTOM_RASTER, SievedValleyBottomRaster.getOutputValue('OUTPUT'))
+        # Polygonize Valley Bottom
 
         self.nextStep('Polygonize ...',progress)
         UncleanedValleyBottom = Processing.runAlgorithm('gdalogr:polygonize', handleResult('Uncleaned Valley Bottom'),
                             {
-                              'INPUT': SievedValleyBottomRaster.getOutputValue('OUTPUT'),
+                              'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
                               'FIELD': 'VALUE'
                             })
 
@@ -341,7 +351,7 @@ class ValleyBottom(GeoAlgorithm):
 
         # Clean result
 
-        if self.getParameterValue(do_clean):
+        if self.getParameterValue(self.DO_CLEAN):
 
             self.nextStep('Remove small objects and parts ...',progress)
             ValleyBottom = Processing.runAlgorithm('fluvialtoolbox:removesmallpolygonalobjects', None,
