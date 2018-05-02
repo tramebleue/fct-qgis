@@ -221,6 +221,7 @@ class LeftRightDGO(GeoAlgorithm):
     SPLIT_AXIS = 'SPLIT_AXIS'
     DGO_PRIMARY_KEY = 'DGO_PRIMARY_KEY'
     DGO_AXIS_FK = 'DGO_AXIS_FK'
+    AXIS_PRIMARY_KEY = 'AXIS_PRIMARY_KEY'
 
     # Outputs
 
@@ -252,6 +253,11 @@ class LeftRightDGO(GeoAlgorithm):
         self.addParameter(ParameterVector(self.SPLIT_AXIS,
                                           self.tr('Split Axis'), [ParameterVector.VECTOR_TYPE_LINE]))
 
+        self.addParameter(ParameterTableField(self.AXIS_PRIMARY_KEY,
+                                              self.tr('Split Axis Primary Key'),
+                                              parent=self.SPLIT_AXIS,
+                                              datatype=ParameterTableField.DATA_TYPE_NUMBER))
+
          # Outputs
 
         self.addOutput(OutputVector(self.OUTPUT, self.tr('Left Right DGO')))
@@ -262,7 +268,11 @@ class LeftRightDGO(GeoAlgorithm):
         centroid_layer = dataobjects.getObjectFromUri(self.getParameterValue(self.DGO_CENTROIDS))
         axis_layer = dataobjects.getObjectFromUri(self.getParameterValue(self.SPLIT_AXIS))
         primary_key = self.getParameterValue(self.DGO_PRIMARY_KEY)
+        axis_pk = self.getParameterValue(self.AXIS_PRIMARY_KEY)
         axis_fk = self.getParameterValue(self.DGO_AXIS_FK)
+
+        centroid_index = { f.attribute(primary_key) : f.id() for f in centroid_layer.getFeatures() }
+        axis_index = { f.attribute(axis_pk) : f.id() for f in axis_layer.getFeatures() }
 
         dgos = vector.features(dgo_layer)
         total = 100.0 / len(dgos)
@@ -277,11 +287,36 @@ class LeftRightDGO(GeoAlgorithm):
 
         for current, dgo in enumerate(dgos):
 
-            centroid = centroid_layer.getFeatures(QgsFeatureRequest(dgo.attribute(primary_key))).next()
-            origin = centroid.geometry()
+            pk = dgo.attribute(primary_key)
+
+            if not centroid_index.has_key(pk):
+                continue
+
+            centroid = centroid_layer.getFeatures(QgsFeatureRequest(centroid_index[pk])).next()
             axis_id = centroid.attribute(axis_fk)
-            splitter = axis_layer.getFeatures(QgsFeatureRequest(axis_id)).next()
-            outlet = dgo.geometry().intersection(splitter.geometry()).asPolyline()[-1]
+
+            if not axis_index.has_key(axis_id):
+                continue
+                
+            origin = centroid.geometry()
+            splitter = axis_layer.getFeatures(QgsFeatureRequest(axis_index[axis_id])).next()
+            intersection = dgo.geometry().intersection(splitter.geometry()).asPolyline()
+
+            if len(intersection) < 2:
+
+                outfeature = QgsFeature()
+                outfeature.setGeometry(dgo.geometry())
+                outfeature.setAttributes(
+                    dgo.attributes() + [
+                        0,
+                        0.0
+                    ]
+                )
+                writer.addFeature(outfeature)
+
+                continue
+
+            outlet = intersection[-1]
 
             dgo_geom = QgsGeometry(dgo.geometry())
             splitted, sides, test_points = dgo_geom.splitGeometry(splitter.geometry().asPolyline(), True)
