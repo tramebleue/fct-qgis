@@ -300,9 +300,16 @@ class LeftRightDGO(GeoAlgorithm):
                 
             origin = centroid.geometry()
             splitter = axis_layer.getFeatures(QgsFeatureRequest(axis_index[axis_id])).next()
-            intersection = dgo.geometry().intersection(splitter.geometry()).asPolyline()
+            intersection = dgo.geometry().intersection(splitter.geometry())
 
-            if len(intersection) < 2:
+            try:
+
+                if intersection.isMultipart():
+                    outlet = intersection.asMultiPolyline()[-1][-1]
+                else:
+                    outlet = intersection.asPolyline()[-1]
+
+            except IndexError:
 
                 outfeature = QgsFeature()
                 outfeature.setGeometry(dgo.geometry())
@@ -315,8 +322,6 @@ class LeftRightDGO(GeoAlgorithm):
                 writer.addFeature(outfeature)
 
                 continue
-
-            outlet = intersection[-1]
 
             dgo_geom = QgsGeometry(dgo.geometry())
             splitted, sides, test_points = dgo_geom.splitGeometry(splitter.geometry().asPolyline(), True)

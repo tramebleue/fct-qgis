@@ -88,7 +88,9 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  SimplifyVisvalingam(),
                  LeftRightDGO(),
                  BinaryClosing(),
-                 MatchPolygonWithNearestCentroid() ]
+                 MatchPolygonWithNearestCentroid(),
+                 ProjectPointsAlongMostImportantLine(),
+                 MatchPolygonWithMostImportantLine() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())
