@@ -35,6 +35,7 @@ from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
+from ..core import vector as vector_helper
 from math import degrees, atan2
 import numpy as np
 
@@ -68,6 +69,54 @@ def side_of_line(o, a, b):
     cross = (ax * by) - (ay * bx)
 
     return sign(cross)
+
+def side_of_linestring(o, linestring):
+    """
+    Parameters
+    ----------
+
+    o: QgsPoint
+    linestring: QgsGeometry, Line
+
+    Returns
+    -------
+
+    -1 if `o` is right to `linestring',
+     1 if `o` is left to `linestring',
+     0 if `o` is neither right or left to `linestring',
+       ie. `o` lies exactly on `linestring` 
+    """
+
+    if linestring.length() == 0.0:
+        return 0
+
+    ptgeom = QgsGeometry.fromPoint(o)
+    min_distance = float('inf')
+    side = 0
+
+    if linestring.isMultipart():
+
+        for points in linestring.asMultiPolyline():
+
+            for a, b in zip(points[:-1], points[1:]):
+
+                distance = QgsGeometry.fromPolyline([ a, b ]).distance(ptgeom)
+                if distance < min_distance:
+                    side = side_of_line(o, a, b)
+                    min_distance = distance
+
+    else:
+
+        points = linestring.asPolyline()
+
+        for a, b in zip(points[:-1], points[1:]):
+
+            distance = QgsGeometry.fromPolyline([ a, b ]).distance(ptgeom)
+            if distance < min_distance:
+                side = side_of_line(o, a, b)
+                min_distance = distance
+
+    return side
 
 def segment_angle(a, b):
     """
@@ -278,10 +327,11 @@ class LeftRightDGO(GeoAlgorithm):
         total = 100.0 / len(dgos)
 
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
-            dgo_layer.fields().toList() + [
+            vector_helper.createUniqueFieldsList(
+                dgo_layer,
                 QgsField('SIDE', QVariant.Int, len=2),
                 QgsField('HALFWIDTH', QVariant.Double, len=10, prec=2)
-            ],
+            ),
             dgo_layer.dataProvider().geometryType(),
             dgo_layer.crs())
 
@@ -335,7 +385,7 @@ class LeftRightDGO(GeoAlgorithm):
                 for geom in sides:
 
                     pole, max_width = maximum_width(geom, origin)
-                    side = side_of_line(origin.asPoint(), outlet, pole)
+                    side = side_of_linestring(geom.pointOnSurface().asPoint(), intersection)
 
                     outfeature = QgsFeature()
                     outfeature.setGeometry(geom)

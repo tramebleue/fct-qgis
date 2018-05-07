@@ -3,7 +3,7 @@ PLUGIN_DIR=$(QGIS_USER_DIR)/python/plugins
 TARGET=$(PLUGIN_DIR)/fluvialtoolbox
 PY_FILES=$(wildcard *.py)
 MODEL_FILES=$(wildcard *.model)
-MODULES=main common utils shapelish graph modeler spatial_components
+MODULES=core main common utils shapelish graph modeler spatial_components
 MODULES_PY_FILES=$(foreach module, $(MODULES), $(wildcard $(module)/*.py))
 MODULES_MODEL_FILES=$(foreach module, $(MODULES), $(wildcard $(module)/*.model))
 
