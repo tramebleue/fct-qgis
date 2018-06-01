@@ -130,7 +130,10 @@ class MatchPolygonWithNearestCentroid(GeoAlgorithm):
                     distance = d
 
             if nearest:
-                
+
+                # TODO: check nearest has not already been matched with another centroid
+                # keep only the nearest centroid
+
                 outFeature = QgsFeature()
                 outFeature.setGeometry(nearest.geometry())
                 outFeature.setAttributes(nearest.attributes() + centroid.attributes())

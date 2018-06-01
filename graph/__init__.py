@@ -6,3 +6,4 @@ from LongestPathInDirectedAcyclicGraph import LongestPathInDirectedAcyclicGraph
 from LongestPathInDirectedAcyclicGraphMultiFlow import LongestPathInDirectedAcyclicGraphMultiFlow
 from PathLengthOrder import PathLengthOrder
 from StrahlerOrder import StrahlerOrder
+from MeasureDGO import MeasureDGO

@@ -35,6 +35,8 @@ from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
+
+from ..core import vector as vector_helper
 from math import sqrt
 
 def lineLocatePoint(line, point):
@@ -86,11 +88,12 @@ class ProjectPointsAlongLine(GeoAlgorithm):
     INPUT_LINES = 'INPUT_LINES'
     MEASURE_FIELD = 'MEASURE_FIELD'
     LINE_PK = 'LINE_PK'
+    MAX_DISTANCE = 'MAX_DISTANCE'
     OUTPUT_LAYER = 'OUTPUT'
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Project Points Along Line')
+        self.name, self.i18n_name = self.trAlgorithm('Project Points Along Nearest Line')
         self.group, self.i18n_group = self.trAlgorithm('Common Routines')
 
         self.addParameter(ParameterVector(self.INPUT_POINTS,
@@ -108,6 +111,10 @@ class ProjectPointsAlongLine(GeoAlgorithm):
                                           self.tr('Measure Field'),
                                           parent=self.INPUT_LINES,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
+
+        self.addParameter(ParameterNumber(self.MAX_DISTANCE,
+                                          self.tr('Maximum Distance'),
+                                          default=200.0, minValue=0.0))
 
         self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Projected Points')))
 
@@ -128,13 +135,16 @@ class ProjectPointsAlongLine(GeoAlgorithm):
         line_layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LINES))
         measure_field = self.getParameterValue(self.MEASURE_FIELD)
         line_pk_field = self.getParameterValue(self.LINE_PK)
+        max_distance = self.getParameterValue(self.MAX_DISTANCE)
 
         line_index = QgsSpatialIndex(line_layer.getFeatures())
 
         writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
-            self.appendFields(point_layer,
-                line_layer.fields()[vector.resolveFieldIndex(line_layer, line_pk_field)],
-                QgsField(measure_field, QVariant.Double, len=10, prec=4)),
+            vector_helper.createUniqueFieldsList(
+                point_layer,
+                vector_helper.resolveField(line_layer, line_pk_field),
+                QgsField(measure_field, QVariant.Double, len=10, prec=4)
+            ),
             point_layer.dataProvider().geometryType(),
             point_layer.crs())
 
@@ -147,7 +157,13 @@ class ProjectPointsAlongLine(GeoAlgorithm):
             closest_id = None
             closest_point = feature.geometry()
 
-            for line in vector.features(line_layer):
+            rect = feature.geometry().boundingBox()
+            rect.grow(max_distance)
+
+            candidates = line_index.intersects(rect)
+            q = QgsFeatureRequest().setFilterFids(candidates)
+
+            for line in line_layer.getFeatures(q):
 
                 d = line.geometry().distance(feature.geometry())
                 if d < closest:
@@ -160,12 +176,14 @@ class ProjectPointsAlongLine(GeoAlgorithm):
                     closest_id = line.attribute(line_pk_field)
                     closest_point = line.geometry().interpolate(m)
 
-            outfeature = QgsFeature()
-            outfeature.setGeometry(closest_point)
-            outfeature.setAttributes(feature.attributes() + [
-                    closest_id,
-                    measure
-                ])
-            writer.addFeature(outfeature)
+            if closest_id is not None:
+
+                outfeature = QgsFeature()
+                outfeature.setGeometry(closest_point)
+                outfeature.setAttributes(feature.attributes() + [
+                        closest_id,
+                        measure
+                    ])
+                writer.addFeature(outfeature)
 
             progress.setPercentage(int(current * total))

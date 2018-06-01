@@ -41,6 +41,7 @@ from processing.core.ProcessingLog import ProcessingLog
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
+from math import sqrt
 
 class ElevationService(object):
 
@@ -56,6 +57,7 @@ class ElevationService(object):
         DATA_SRS.ImportFromEPSG(self.datasource_srid)
         self.input_transform = osr.CreateCoordinateTransformation(INPUT_SRS, DATA_SRS)
         self.dem = gdal.Open(self.datasource)
+        dem_tranform = self.dem.GetGeoTransform()
         self.elevations = self.dem.GetRasterBand(1)
         return self
 
@@ -76,8 +78,15 @@ class ElevationService(object):
     def point_elevation(self, point, nodata):
         """ Returns point elevation (z) according to DEM
 
-        Input:
-        - point: QgsPoint
+        Parameters
+        ----------
+
+        point: QgsPoint
+
+        Returns
+        -------
+
+        z (elevation) at point `point`
         """
         t = self.input_transform.TransformPoint(point.x(), point.y())
         px, py = self.worldtopixel(t[0], t[1])
@@ -87,20 +96,124 @@ class ElevationService(object):
         elev = self.elevations.ReadAsArray(px, py, 1, 1).ravel()
         return elev[0]
 
-    def line_elevation(self, linestring, step, nodata):
+    def sample_linestring(self, linestring, step, nodata):
         """ Returns projected linestring
             as a sequence of (x, y, z, m) coordinates
-            where is the 'measure' coordinate,
+            where m is the 'measure' coordinate,
             ie. curvilinear coordinate of point measured along line
 
-        Input:
-        - linestring: QgsGeometry of type LineString
-        - measure z every step along line, given in map units
+        Parameters
+        ----------
+        
+        linestring: QgsGeometry, type LineString
+            Input feature
+        
+        step: float
+            measure z every `step` along line,
+            given in map units
         """
         length = linestring.length()
         for s in np.arange(0, length+step, step):
             p = linestring.interpolate(s).asPoint()
             yield p.x(), p.y(), self.point_elevation(p, nodata), s
+
+    def project_linestring(self, linestring, nodata):
+        """ Returns projected linestring
+            as a sequence of (x, y, z, m) coordinates
+            where m is the 'measure' coordinate,
+            ie. curvilinear coordinate of point measured along line
+
+        Parameters
+        ----------
+        
+        linestring: QgsGeometry, type LineString
+        
+        nodata: float
+            elevation value to return
+            when point falls out of raster grid
+
+        Returns
+        -------
+
+        Generator of (x, y, z, m) coordinates
+        corresponding to the intersection of raster cells with input linestring,
+        yielding one data point per intersected cell.
+
+        """
+
+        if linestring.isMultipart():
+
+            # Does it make sense to use a MultiLineString as input ??
+
+            for points in linestring.asMultiPolyline():
+
+                m0 = 0.0
+                for a, b in zip(points[:-1], points[1:]):
+                    for x, y, z, m in self.project_segment(a, b, nodata):
+                            yield x, y, z, m0 + m
+                    m0 = m0 + QgsGeometry.fromPoint(a).distance(QgsGeometry.fromPoint(b))
+
+        else:
+
+            points = linestring.asPolyline()
+            m0 = 0.0
+            for a, b in zip(points[:-1], points[1:]):
+                for x, y, z, m in self.project_segment(a, b, nodata):
+                        yield x, y, z, m0 + m
+                m0 = m0 + QgsGeometry.fromPoint(a).distance(QgsGeometry.fromPoint(b))
+
+    def project_segment(self, a, b, nodata):
+        """ Returns projected segment
+            as a sequence of (x, y, z, m) coordinates
+
+        Parameters
+        ----------
+        a, b: QgsPoint
+            end points of segment [AB]
+        
+        nodata: float
+            elevation value to return
+            when point falls out of raster grid
+
+        Returns
+        -------
+        Generator of (x, y, z, m) coordinates
+        corresponding to the intersection of raster cells with segment [AB],
+        yielding one data point per intersected cell.
+
+        """
+
+        dx = abs(b.x() - a.x())
+        dy = abs(b.y() - a.y())
+        x = a.x()
+        y = a.y()
+
+        if dx > 0.0 or dy > 0.0:
+
+            if dx > dy:
+                n = dx / self.dem.RasterXSize
+                dx = self.dem.RasterXSize
+                dy = dy / n
+            else:
+                n = dy / self.dem.RasterYSize
+                dy = self.dem.RasterYSize
+                dx = dx / n
+
+            if a.x() < b.x(): dx = -dx
+            if a.y() < b.y(): dy = -dy
+            dm = sqrt(dx*dx + dy*dy)
+
+            i = 0.0
+            m = 0.0
+            while i < n:
+
+                z = self.point_elevation(QgsPoint(x, y), nodata)
+                yield x, y, z, m
+
+                x = x + dx
+                y = y + dy
+                m = m + dm
+                i = i + 1.0
 
 def fixed_precision(x, precision):
     return round(float(x) * precision) / precision
@@ -126,8 +239,8 @@ class SegmentMeanSlope(GeoAlgorithm):
         self.addParameter(ParameterRaster(self.INPUT_DEM,
                                           self.tr('Elevations (DEM)')))
 
-        self.addParameter(ParameterNumber(self.MEASURE_STEP,
-                                          self.tr('Measure Step (Map Unit)'), default=5.0, minValue=0.0))
+        # self.addParameter(ParameterNumber(self.MEASURE_STEP,
+        #                                   self.tr('Measure Step (Map Unit)'), default=5.0, minValue=0.0))
 
         self.addParameter(ParameterNumber(self.NODATA,
                                           self.tr('No Data Value'), default=-999.0))
@@ -145,7 +258,7 @@ class SegmentMeanSlope(GeoAlgorithm):
         auth1, code1 = line_layer.crs().authid().split(':')
         auth2, code2 = dem_layer.crs().authid().split(':')
 
-        measure_step = self.getParameterValue(self.MEASURE_STEP)
+        # measure_step = self.getParameterValue(self.MEASURE_STEP)
         nodata = self.getParameterValue(self.NODATA)
 
         updown_ordering = (self.getParameterValue(self.LINE_ORDERING) == 0)
@@ -165,7 +278,7 @@ class SegmentMeanSlope(GeoAlgorithm):
             
             for current, feature in enumerate(vector.features(line_layer)):
 
-                elevations = np.array([ (m, z) for x, y, z, m in service.line_elevation(feature.geometry(), measure_step, nodata) ])
+                elevations = np.array([ (m, z) for x, y, z, m in service.project_linestring(feature.geometry(), nodata) ])
                 
                 a = np.array([ elevations.T[0], np.ones(elevations.shape[0]) ])
                 b = elevations.T[1]

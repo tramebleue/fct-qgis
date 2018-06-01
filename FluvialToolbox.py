@@ -92,7 +92,8 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  ProjectPointsAlongMostImportantLine(),
                  MatchPolygonWithMostImportantLine(),
                  LeftRightBox(),
-                 SafePolygonIntersection() ]
+                 SafePolygonIntersection(),
+                 MeasureDGO() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())
