@@ -7,3 +7,6 @@ from LongestPathInDirectedAcyclicGraphMultiFlow import LongestPathInDirectedAcyc
 from PathLengthOrder import PathLengthOrder
 from StrahlerOrder import StrahlerOrder
 from MeasureDGO import MeasureDGO
+from IdentifyNetworkNodes import IdentifyNetworkNodes
+from SelectConnectedComponents import SelectConnectedComponents
+from MeasureLinesFromOutlet import MeasureLinesFromOutlet

@@ -50,7 +50,7 @@ class MeasureDGO(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Measure DGO')
+        self.name, self.i18n_name = self.trAlgorithm('DGO Linear Referencing')
         self.group, self.i18n_group = self.trAlgorithm('Metrics')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
