@@ -1,5 +1,6 @@
 from PyQt4.QtCore import QSettings, QTranslator, QCoreApplication
 from PyQt4.QtGui import QIcon, QAction
+from qgis.gui import QgsMapLayerProxyModel
 from processing.core.Processing import Processing
 from processing.core.AlgorithmProvider import AlgorithmProvider
 from common import *
@@ -7,11 +8,15 @@ from main import *
 from graph import *
 from modeler import *
 from spatial_components import *
-from maptools import ReverseFlowDirectionTool
+
+from maptools import ReverseFlowDirectionTool, ConnectTool, NodePairingTool
+
+import resources
 
 class FluvialToolbox(object):
 
     def __init__(self, iface):
+
         self.iface = iface
         self.actions = list()
         self.provider = FluvialToolboxProvider()
@@ -21,19 +26,15 @@ class FluvialToolbox(object):
 
     def initGui(self):
 
-        icon_path = ':/plugins/fluvialtoolbox/icon.png'
+        icon_path = ':/plugins/FluvialToolbox/icon.png'
         
         Processing.addProvider(self.provider)
 
-        self.reverseFlowDirectionTool = ReverseFlowDirectionTool(self.iface.mapCanvas(), None)
-        action = self.add_action(
-                icon_path,
-                self.tr('Reverse Flow Direction'),
-                callback=self.activateReverseFlowDirectionTool,
-                parent=self.iface.mainWindow())
-        action.setCheckable(True)
-        self.reverseFlowDirectionTool.setAction(action)
-
+        self.maptools = [
+            ReverseFlowDirectionTool.initGui(self),
+            ConnectTool.initGui(self),
+            NodePairingTool.initGui(self)
+        ]
 
     def unload(self):
 
@@ -46,10 +47,8 @@ class FluvialToolbox(object):
             self.iface.removeToolBarIcon(action)
         
         # Unset the map tool in case it's set
-        self.iface.mapCanvas().unsetMapTool(self.reverseFlowDirectionTool)
-
-    def activateReverseFlowDirectionTool(self):
-        self.iface.mapCanvas().setMapTool(self.reverseFlowDirectionTool)
+        for tool in self.maptools:
+            self.iface.mapCanvas().unsetMapTool(tool)
 
     def add_action(
         self,
@@ -216,7 +215,11 @@ class FluvialToolboxProvider(AlgorithmProvider):
                  MeasureDGO(),
                  IdentifyNetworkNodes(),
                  SelectConnectedComponents(),
-                 MeasureLinesFromOutlet() ]
+                 MeasureLinesFromOutlet(),
+                 SelectFullLengthPaths(),
+                 PairNetworkNodes(),
+                 MatchNetworkSegments(),
+                 MarkMainDrain() ]
         try:
           from shapelish import *
           algs.append(FastVariableDistanceBuffer())

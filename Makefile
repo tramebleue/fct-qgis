@@ -8,7 +8,12 @@ MODULES_PY_FILES=$(foreach module, $(MODULES), $(wildcard $(module)/*.py))
 MODULES_MODEL_FILES=$(foreach module, $(MODULES), $(wildcard $(module)/*.model))
 ICONS=$(wildcard *.png)
 
-install:
+default: install
+
+resources.py: resources.qrc
+	pyrcc4 -o resources.py resources.qrc
+
+install: resources.py
 	@echo -n Install to $(TARGET) ...
 	@mkdir -p $(TARGET)
 	@cp metadata.txt $(TARGET)
@@ -18,6 +23,8 @@ install:
 	@for f in $(MODULES_PY_FILES); do cp $$f $(TARGET)/$$f; done
 	@for f in $(MODULES_MODEL_FILES); do cp $$f $(TARGET)/$$f; done
 	@cp $(ICONS) $(TARGET)
+	@cp *.qrc $(TARGET)
+	@cp -R ui $(TARGET)
 	@echo Ok
 
 uninstall:

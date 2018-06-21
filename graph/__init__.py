@@ -10,3 +10,7 @@ from MeasureDGO import MeasureDGO
 from IdentifyNetworkNodes import IdentifyNetworkNodes
 from SelectConnectedComponents import SelectConnectedComponents
 from MeasureLinesFromOutlet import MeasureLinesFromOutlet
+from SelectFullLengthPaths import SelectFullLengthPaths
+from PairNetworkNodes import PairNetworkNodes
+from MatchNetworkSegments import MatchNetworkSegments
+from MarkMainDrain import MarkMainDrain
