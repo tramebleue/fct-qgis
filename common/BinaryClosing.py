@@ -100,6 +100,8 @@ class BinaryClosing(GeoAlgorithm):
 
         progress.setText('Read input ...')
         mat = datasource.GetRasterBand(bandNumber).ReadAsArray()
+        nodata = datasource.GetRasterBand(bandNumber).GetNoDataValue()
+        mat[mat == nodata] = 0
 
         progress.setText('SciPy Morphology Closing ...')
         mat = binary_closing(mat, structure=structure, iterations=iterations)

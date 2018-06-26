@@ -247,7 +247,7 @@ class MatchNetworkSegments(GeoAlgorithm):
                         passed_through.add(na)
 
             # if n1 == 234101:
-            #         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Targets -> %s' % targets)
+            #    ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Targets -> %s' % targets)
 
             for t1 in targets:
 

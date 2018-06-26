@@ -173,19 +173,19 @@ class ValleyBottom(GeoAlgorithm):
                             })
         
         self.nextStep('Compute large buffer ...',progress)
-        LargeBufferToClip = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        LargeBuffer = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
                             {
                               'INPUT': SplittedNetwork.getOutputValue('OUTPUT'),
                               'DISTANCE': LARGE_BUFFER_DISTANCE,
                               'DISSOLVE': True
                             })
 
-        self.nextStep('Clip large buffer ...',progress)
-        LargeBuffer = Processing.runAlgorithm('qgis:clip', None,
-                            {
-                              'INPUT': LargeBufferToClip.getOutputValue('OUTPUT'),
-                              'OVERLAY': self.getParameterValue(self.INPUT_ZOI)
-                            })
+        # self.nextStep('Clip large buffer ...',progress)
+        # LargeBuffer = Processing.runAlgorithm('qgis:clip', None,
+        #                     {
+        #                       'INPUT': LargeBufferToClip.getOutputValue('OUTPUT'),
+        #                       'OVERLAY': self.getParameterValue(self.INPUT_ZOI)
+        #                     })
         
         self.nextStep('Compute small buffer ...',progress)
         SmallBuffer = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
@@ -199,18 +199,18 @@ class ValleyBottom(GeoAlgorithm):
         ThiessenPolygons = Processing.runAlgorithm('qgis:voronoipolygons', None,
                             {
                               'INPUT': NetworkPoints.getOutputValue('OUTPUT'),
-                              'BUFFER': 50.0
+                              'BUFFER': 10.0
                             })
 
         self.nextStep('Clip thiessen polygons ...',progress)
-        ClippedThiessenPolygons = Processing.runAlgorithm('qgis:clip', handleResult('Thiessen polygons'),
+        ClippedThiessenPolygons = Processing.runAlgorithm('qgis:clip', None,
                             {
                               'INPUT': ThiessenPolygons.getOutputValue('OUTPUT'),
                               'OVERLAY': LargeBuffer.getOutputValue('OUTPUT')
                             })
 
         self.nextStep('Clip DEM ...',progress)
-        ClippedDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('DEM (ZOI Clipped)'),
+        ClippedDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('Clipped DEM'),
                             {
                               'INPUT': self.getParameterValue(self.INPUT_DEM),
                               'MASK': LargeBuffer.getOutputValue('OUTPUT'),
@@ -222,9 +222,9 @@ class ValleyBottom(GeoAlgorithm):
                             })
 
         self.nextStep('Extract minimum DEM ...',progress)
-        MinDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
+        MinDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('Minimum DEM'),
                             {
-                              'INPUT': ClippedDEM.getOutputValue('OUTPUT'),
+                              'INPUT': self.getParameterValue(self.INPUT_DEM),
                               'MASK': SmallBuffer.getOutputValue('OUTPUT'),
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': False,
@@ -234,7 +234,7 @@ class ValleyBottom(GeoAlgorithm):
                             })
 
         self.nextStep('Compute reference elevation for every polygon ...',progress)
-        ReferencePolygons = Processing.runAlgorithm('qgis:zonalstatistics', None,
+        ReferencePolygons = Processing.runAlgorithm('qgis:zonalstatistics', handleResult('Reference polygons'),
                             {
                               'INPUT_RASTER': MinDEM.getOutputValue('OUTPUT'),
                               'RASTER_BAND': 1,
@@ -243,7 +243,7 @@ class ValleyBottom(GeoAlgorithm):
                               'GLOBAL_EXTENT': False
                             })
 
-        layer = gdal.Open(self.getParameterValue(self.INPUT_DEM))
+        layer = gdal.Open(ClippedDEM.getOutputValue('OUTPUT'))
         geotransform = layer.GetGeoTransform()
         pixel_width = geotransform[1]
         pixel_height = -geotransform[5]
@@ -263,7 +263,7 @@ class ValleyBottom(GeoAlgorithm):
                             })
 
         self.nextStep('Compute relative DEM and extract bottom ...',progress)
-        ValleyBottomRasterToClip = Processing.runAlgorithm('fluvialtoolbox:differentialrasterthreshold', None,
+        ValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:differentialrasterthreshold', None,
                             {
                               'INPUT_DEM': ClippedDEM.getOutputValue('OUTPUT'),
                               'REFERENCE_DEM': ReferenceDEM.getOutputValue('OUTPUT'),
@@ -271,35 +271,35 @@ class ValleyBottom(GeoAlgorithm):
                               'MAX_THRESHOLD': MAX_THRESHOLD,
                             })
 
-        self.nextStep('Clip Raster Bottom ...',progress)
-        RawValleyBottomRaster = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
-                            {
-                              'INPUT': ValleyBottomRasterToClip.getOutputValue('OUTPUT'),
-                              'MASK': LargeBuffer.getOutputValue('OUTPUT'),
-                              'ALPHA_BAND': False,
-                              'CROP_TO_CUTLINE': True,
-                              'KEEP_RESOLUTION': True,
-                              'COMPRESS': LZW_COMPRESS,
-                              'TILED': True
-                            })
+        # self.nextStep('Clip Raster Bottom ...',progress)
+        # RawValleyBottomRaster = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
+        #                     {
+        #                       'INPUT': ValleyBottomRasterToClip.getOutputValue('OUTPUT'),
+        #                       'MASK': LargeBuffer.getOutputValue('OUTPUT'),
+        #                       'ALPHA_BAND': False,
+        #                       'CROP_TO_CUTLINE': True,
+        #                       'KEEP_RESOLUTION': True,
+        #                       'COMPRESS': LZW_COMPRESS,
+        #                       'TILED': True
+        #                     })
 
-        self.setOutputValue(self.VALLEYBOTTOM_RASTER, RawValleyBottomRaster.getOutputValue('OUTPUT'))
+        self.setOutputValue(self.VALLEYBOTTOM_RASTER, ValleyBottomRaster.getOutputValue('OUTPUT'))
 
         if MIN_OBJECT_DISTANCE > 0:
 
           self.nextStep('Merge close objects...',progress)
-          ValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:binaryclosing', None,
+          CleanedValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:binaryclosing', handleResult('Binary Closing'),
                             {
-                              'INPUT': RawValleyBottomRaster.getOutputValue('OUTPUT'),
+                              'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
                               'DISTANCE': MIN_OBJECT_DISTANCE,
                               'ITERATIONS': 5
                             })
         else:
 
           self.nextStep('Sieve result ...',progress)
-          ValleyBottomRaster = Processing.runAlgorithm('gdalogr:sieve', None,
+          CleanedValleyBottomRaster = Processing.runAlgorithm('gdalogr:sieve', None,
                             {
-                              'INPUT': RawValleyBottomRaster.getOutputValue('OUTPUT'),
+                              'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
                               'THRESHOLD': SIEVE_THRESHOLD,
                               'CONNECTIONS': FOUR_CONNECTIVITY
                             })
@@ -307,9 +307,9 @@ class ValleyBottom(GeoAlgorithm):
         # Polygonize Valley Bottom
 
         self.nextStep('Polygonize ...',progress)
-        UncleanedValleyBottom = Processing.runAlgorithm('gdalogr:polygonize', handleResult('Uncleaned Valley Bottom'),
+        ValleyBottomPolygons = Processing.runAlgorithm('gdalogr:polygonize', handleResult('Uncleaned Valley Bottom'),
                             {
-                              'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
+                              'INPUT': CleanedValleyBottomRaster.getOutputValue('OUTPUT'),
                               'FIELD': 'VALUE'
                             })
 
@@ -354,9 +354,9 @@ class ValleyBottom(GeoAlgorithm):
         if self.getParameterValue(self.DO_CLEAN):
 
             self.nextStep('Remove small objects and parts ...',progress)
-            ValleyBottom = Processing.runAlgorithm('fluvialtoolbox:removesmallpolygonalobjects', None,
+            CleanedValleyBottomPolygons = Processing.runAlgorithm('fluvialtoolbox:removesmallpolygonalobjects', None,
                                 {
-                                  'INPUT': UncleanedValleyBottom.getOutputValue('OUTPUT'),
+                                  'INPUT': ValleyBottomPolygons.getOutputValue('OUTPUT'),
                                   'MIN_AREA': CLEAN_MIN_AREA,
                                   'MIN_HOLE_AREA': CLEAN_MIN_HOLE_AREA,
                                   'FIELD': 'VALUE',
@@ -366,7 +366,7 @@ class ValleyBottom(GeoAlgorithm):
             self.nextStep('Simplify result ...',progress)
             SimplifiedValleyBottom = Processing.runAlgorithm('qgis:simplifygeometries', None,
                                 {
-                                  'INPUT': ValleyBottom.getOutputValue('OUTPUT'),
+                                  'INPUT': CleanedValleyBottomPolygons.getOutputValue('OUTPUT'),
                                   'TOLERANCE': SIMPLIFY_TOLERANCE
                                 })
 
@@ -381,6 +381,6 @@ class ValleyBottom(GeoAlgorithm):
 
         else:
 
-            self.setOutputValue(self.OUTPUT, UncleanedValleyBottom.getOutputValue('OUTPUT'))
+            self.setOutputValue(self.OUTPUT, ValleyBottomPolygons.getOutputValue('OUTPUT'))
 
         self.nextStep('Done !',progress)

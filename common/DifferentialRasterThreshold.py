@@ -88,6 +88,9 @@ class DifferentialRasterThreshold(GeoAlgorithm):
         
         reference = refds.GetRasterBand(1).ReadAsArray()
         ref_nodata = refds.GetRasterBand(1).GetNoDataValue()
+        if ref_nodata is None:
+            ref_nodata = nodata
+
         reference = np.ma.masked_where(reference == ref_nodata, reference)
         
         relative = dem - reference
