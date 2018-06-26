@@ -142,8 +142,8 @@ def minimum_oriented_boundingbox(geom):
 
     exterior = hull.asPolygon()[0]
     p0 = QgsPoint(exterior[0])
-    min_area = QgsGeometry.fromRect(hull.boundingBox()).area()
-    min_box = None
+    min_box = QgsGeometry.fromRect(geom.boundingBox())
+    min_area = min_box.area()
 
     for i, p in enumerate(exterior[:-1]):
 
@@ -338,6 +338,7 @@ class LeftRightDGO(GeoAlgorithm):
         for current, dgo in enumerate(dgos):
 
             pk = dgo.attribute(primary_key)
+            ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Processing DGO %s ...' % pk)
 
             if not centroid_index.has_key(pk):
                 continue

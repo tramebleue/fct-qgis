@@ -125,11 +125,11 @@ class ValleyBottom(GeoAlgorithm):
         display_result = self.getParameterValue(self.DISPLAY_INTERMEDIATE_RESULT)
 
         # Hard coded parameters
-        SIMPLIFY_TOLERANCE = 20
+        SIMPLIFY_TOLERANCE = 25
         SPLIT_MAX_LENGTH = self.getParameterValue(self.DISAGGREGATION_DISTANCE)
         SIEVE_THRESHOLD = 40
-        SMOOTH_ITERATIONS = 5
-        SMOOTH_OFFSET = .25
+        SMOOTH_ITERATIONS = 6
+        SMOOTH_OFFSET = .15
 
         # Constants
         FOUR_CONNECTIVITY = 0

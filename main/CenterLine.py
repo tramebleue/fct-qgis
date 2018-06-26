@@ -122,7 +122,7 @@ class CenterLine(GeoAlgorithm):
         NearTable = Processing.runAlgorithm('fluvialtoolbox:neartable', None,
                             {
                                 'FROM': ExtremePoints.getOutputValue('OUTPUT'),
-                                'FROM_ID_FIELD': 'GID',
+                                'FROM_ID_FIELD': 'FID',
                                 'TO': PolyToLine.getOutputValue('OUTPUT'),
                                 'TO_ID_FIELD': 'GID',
                                 'NEIGHBORS': 1,

@@ -36,6 +36,8 @@ from processing.tools import dataobjects, vector
 from processing.core.Processing import Processing
 from processing.core.ProcessingLog import ProcessingLog
 
+from ..core import vector as vector_helper
+
 class NearTable(GeoAlgorithm):
 
     FROM_LAYER = 'FROM'
@@ -95,8 +97,8 @@ class NearTable(GeoAlgorithm):
             progress.setPercentage(int(current * total))
 
         fields = QgsFields()
-        fields.append(QgsField('SOURCE_ID', layer.dataProvider().fields().field(id_field).type()))
-        fields.append(QgsField('NEAR_ID', to_layer.dataProvider().fields().field(to_id_field).type()))
+        fields.append(QgsField('SOURCE_ID', vector_helper.resolveField(layer, id_field).type()))
+        fields.append(QgsField('NEAR_ID', vector_helper.resolveField(to_layer, to_id_field).type()))
         fields.append(QgsField('NEAR_DIST', QVariant.Double))
         fields.append(QgsField('NEAR_RANK', QVariant.Int))
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
