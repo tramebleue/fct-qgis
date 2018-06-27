@@ -3,11 +3,13 @@ from PyQt4.QtGui import QIcon, QAction
 from qgis.gui import QgsMapLayerProxyModel
 from processing.core.Processing import Processing
 from processing.core.AlgorithmProvider import AlgorithmProvider
-from common import *
-from main import *
-from graph import *
-from modeler import *
-from spatial_components import *
+from algorithms.hydrography import hydrographyAlgorithms
+from algorithms.lateral import lateralAlgorithms
+from algorithms.metrics import metricsAlgorithms
+from algorithms.raster import rasterAlgorithms
+from algorithms.spatial_components import spatial_componentsAlgorithms
+from algorithms.unstable import unstableAlgorithms
+from algorithms.vector import vectorAlgorithms
 
 from maptools import ReverseFlowDirectionTool, ConnectTool, NodePairingTool
 
@@ -156,74 +158,22 @@ class FluvialToolboxProvider(AlgorithmProvider):
     #    return QIcon(":/plugins/fluvialtoolbox/icon.svg")
 
     def _loadAlgorithms(self):
-        algs = [ SplitLine(),
-                 SplitLineIntoSegments(),
-                 JoinByNearest(),
-                 Sequencing(),
-                 DifferentialRasterThreshold(),
-                 RemoveSmallPolygonalObjects(),
-                 ExtremePoints(),
-                 ExtractUniquePoints(),
-                 NearTable(),
-                 SplitLineAtNearestPoint(),
-                 ValleyBottom(),
-                 CenterLine(),
-                 ValleyBottomWidth(),
-                 SimpleRasterStatistics(),
-                 Sequencing2(),
-                 SelectStreamFromSourceToOutlet(),
-                 SelectStreamFromOutletToSources(),
-                 SelectGraphCycle(),
-                 SelectionReverseFlowDirection(),
-                 GraphEndpoints(),
-                 SelectByDistance(),
-                 MeasureDistanceToPointLayer(),
-                 AggregateLineSegments(),
-                 AggregateLineSegmentsByCat(),
-                 TrianglesToEdges(),
-                 PointOnSurface(),
-                 FastDeleteExteriorPolygons(),
-                 UniqueValuesTable(),
-                 ComputeFrictionCost(),
-                 RandomPoints(),
-                 ShortestDistanceToTargets(),
-                 NodesFromEdges(),
-                 LineMidpoints(),
-                 MeasurePointsAlongLine(),
-                 ProjectPointsAlongLine(),
-                 SegmentMeanSlope(),
-                 DirectedGraphFromUndirected(),
-                 LongestPathInDirectedAcyclicGraph(),
-                 PolygonSkeleton(),
-                 DisaggregatePolygon(),
-                 LongestPathInDirectedAcyclicGraphMultiFlow(),
-                 MedialAxis(),
-                 LocalFeatureSize(),
-                 PlanformMetrics(),
-                 PathLengthOrder(),
-                 SelectNearestFeature(),
-                 ExtractRasterValueAtPoints(),
-                 StrahlerOrder(),
-                 SimplifyVisvalingam(),
-                 LeftRightDGO(),
-                 BinaryClosing(),
-                 MatchPolygonWithNearestCentroid(),
-                 ProjectPointsAlongMostImportantLine(),
-                 MatchPolygonWithMostImportantLine(),
-                 LeftRightBox(),
-                 SafePolygonIntersection(),
-                 MeasureDGO(),
-                 IdentifyNetworkNodes(),
-                 SelectConnectedComponents(),
-                 MeasureLinesFromOutlet(),
-                 SelectFullLengthPaths(),
-                 PairNetworkNodes(),
-                 MatchNetworkSegments(),
-                 MarkMainDrain() ]
+
+        algs = hydrographyAlgorithms() + \
+               lateralAlgorithms() + \
+               metricsAlgorithms() + \
+               rasterAlgorithms() + \
+               spatial_componentsAlgorithms() + \
+               unstableAlgorithms() + \
+               vectorAlgorithms()
+        
         try:
-          from shapelish import *
+
+          from algorithms.shapelish import *
           algs.append(FastVariableDistanceBuffer())
           algs.append(FastFixedDistanceBuffer())
+
         except ImportError:
           pass
+          
         self.algs.extend(algs)

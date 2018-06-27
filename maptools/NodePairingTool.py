@@ -6,7 +6,7 @@ from qgis.utils import iface
 from PyQt4.QtGui import QCursor, QPixmap
 from PyQt4.QtCore import Qt, SIGNAL
 from collections import defaultdict
-from ..ui import PickLayerDialog
+from ui import PickLayerDialog
 
 
 class NodePairingTool(QgsMapTool):
