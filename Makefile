@@ -15,7 +15,6 @@ install: resources.py
 	@echo -n Install to $(TARGET) ...
 	@mkdir -p $(TARGET)
 	@cp $(PY_FILES) $(TARGET)
-	# @cp $(MODEL_FILES) $(TARGET)
 	@for m in $(MODULES); do mkdir -p $(TARGET)/$$m; done
 	@for f in $(MODULES_PY_FILES); do cp $$f $(TARGET)/$$f; done
 	@cp -R algorithms $(TARGET)

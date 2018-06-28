@@ -24,7 +24,7 @@ __copyright__ = '(C) 2018, Christophe Rousson'
 
 __revision__ = '$Format:%H$'
 
-from qgis.core import QgsFeature, QgsField
+from qgis.core import QgsFeature, QgsField, QgsPoint, QgsGeometry
 from PyQt4.QtCore import QVariant
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.Processing import Processing
@@ -234,7 +234,7 @@ class SegmentMeanSlope(GeoAlgorithm):
         self.group, self.i18n_group = self.trAlgorithm('Metrics')
 
         self.addParameter(ParameterVector(self.INPUT_LINESTRINGS,
-                                          self.tr('Input Linetsrings'), [ParameterVector.VECTOR_TYPE_LINE]))
+                                          self.tr('Input Linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
 
         self.addParameter(ParameterRaster(self.INPUT_DEM,
                                           self.tr('Elevations (DEM)')))

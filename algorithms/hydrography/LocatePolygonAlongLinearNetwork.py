@@ -40,7 +40,7 @@ from collections import defaultdict
 from math import sqrt
 import numpy as np
 
-class MeasureDGO(GeoAlgorithm):
+class LocatePolygonAlongLinearNetwork(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     OUTPUT_LAYER = 'OUTPUT'
@@ -50,7 +50,7 @@ class MeasureDGO(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Polygon Linear Referencing')
+        self.name, self.i18n_name = self.trAlgorithm('Locate Polygon Along Linear Network')
         self.group, self.i18n_group = self.trAlgorithm('Hydrography')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
@@ -72,7 +72,7 @@ class MeasureDGO(GeoAlgorithm):
                                               parent=self.INPUT_LAYER,
                                               datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
-        self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Measured Linear Location')))
+        self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Polygon Linear Location')))
 
     def processAlgorithm(self, progress):
 

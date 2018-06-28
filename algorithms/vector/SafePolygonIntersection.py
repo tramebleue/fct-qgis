@@ -45,7 +45,7 @@ class SafePolygonIntersection(GeoAlgorithm):
         self.group, self.i18n_group = self.trAlgorithm('Tools for Vectors')
 
         self.addParameter(ParameterVector(self.INPUT,
-                                          self.tr('Input layer'), [ParameterVector.VECTOR_TYPE_POLYGON]))
+                                          self.tr('Input layer'), [ParameterVector.VECTOR_TYPE_POLYGON, ParameterVector.VECTOR_TYPE_LINE]))
         self.addParameter(ParameterVector(self.INPUT2,
                                           self.tr('Intersect layer'), [ParameterVector.VECTOR_TYPE_POLYGON]))
 

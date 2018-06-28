@@ -36,6 +36,9 @@ from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
+
+from ...core import vector as vector_helper
+
 from math import sqrt
 
 class MeasurePointsAlongLine(GeoAlgorithm):
@@ -106,11 +109,13 @@ class MeasurePointsAlongLine(GeoAlgorithm):
         line_index = QgsSpatialIndex(line_layer.getFeatures())
 
         writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
-            point_layer.fields().toList() + [
-                QgsField(measure_field, QVariant.Double, len=10, prec=4)
-            ],
+            vector_helper.createUniqueFieldsList(
+                point_layer,
+                vector_helper.resolveField(line_layer, measure_field)
+            ),
             point_layer.dataProvider().geometryType(),
             point_layer.crs())
+        
         total = 100.0 / point_layer.featureCount()
 
         for current, feature in enumerate(point_layer.getFeatures()):

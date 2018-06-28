@@ -65,7 +65,7 @@ class SourceEntry(object):
         return self.distance == other.distance
 
 
-class PathLengthOrder(GeoAlgorithm):
+class LengthOrder(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     OUTPUT_LAYER = 'OUTPUT'
@@ -75,25 +75,28 @@ class PathLengthOrder(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Path Length Order')
+        self.name, self.i18n_name = self.trAlgorithm('Length Order')
         self.group, self.i18n_group = self.trAlgorithm('Hydrography')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
+        
         self.addParameter(ParameterTableField(self.DISTANCE_FIELD,
                                           self.tr('Distance Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
+        
         self.addParameter(ParameterTableField(self.FROM_NODE_FIELD,
                                           self.tr('From Node Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
+        
         self.addParameter(ParameterTableField(self.TO_NODE_FIELD,
                                           self.tr('To Node Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
-        self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Path Length Order')))
+        self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Length Order')))
 
     def processAlgorithm(self, progress):
 

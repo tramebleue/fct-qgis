@@ -39,6 +39,9 @@ from math import sqrt
 from math import pi as PI
 import numpy as np
 
+from heapq import heappush, heappop, heapify
+from functools import total_ordering
+
 def angle_sign(a, b, c):
 
     xab = b.x() - a.x()
@@ -87,6 +90,12 @@ class Bend(object):
 
     def __init__(self, points):
         self.points = points
+
+    @classmethod
+    def merge(cls, bend1, bend2):
+
+        assert(bend1.points[-1] == bend2.points[0])
+        return cls(bend1.points[:-1] + bend2.points)
 
     @property
     def p_origin(self):
@@ -162,6 +171,35 @@ def clamp_angle(angle):
         angle = angle - 360
     return angle
 
+@total_ordering
+class QueueEntry(object):
+
+    def __init__(self, index):
+
+        self.index = index
+        self.priority = float('inf')
+        self.previous = None
+        self.next = None
+        self.interdistance = 0.0
+        self.duplicate = False
+        self.removed = False
+
+    def __hash__(self):
+        
+        return self.key.__hash__()
+
+    def __lt__(self, other):
+        
+        return self.priority < other.priority
+
+    def __eq__(self, other):
+        
+        return self.priority == other.priority
+
+    def __repr__(self):
+
+        return 'QueueEntry %d previous = %s, next = %s, priority = %f, interdistance = %f' % (self.index, self.previous, self.next, self.priority, self.interdistance)
+
 class PlanformMetrics(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT_LAYER'
@@ -169,6 +207,8 @@ class PlanformMetrics(GeoAlgorithm):
     SEGMENTS = 'SEGMENTS'
     INFLECTION_POINTS = 'INFLECTION_POINTS'
     STEMS = 'STEMS'
+    RESOLUTION = 'RESOLUTION'
+    LMAX = 'LMAX'
 
     def defineCharacteristics(self):
 
@@ -178,6 +218,14 @@ class PlanformMetrics(GeoAlgorithm):
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Center Line'), [ParameterVector.VECTOR_TYPE_LINE]))
 
+        self.addParameter(ParameterNumber(self.RESOLUTION,
+                                          self.tr('Amplitude Minimum Value'),
+                                          minValue=0.0, default=5.0))
+
+        self.addParameter(ParameterNumber(self.LMAX,
+                                          self.tr('Maximum Interdistance'),
+                                          minValue=0.0, default=200.0))
+
         self.addOutput(OutputVector(self.FLOW_AXIS, self.tr('Flow Axis')))
         self.addOutput(OutputVector(self.SEGMENTS, self.tr('Segments With Planform Metrics')))
         self.addOutput(OutputVector(self.INFLECTION_POINTS, self.tr('Inflection Points')))
@@ -186,11 +234,13 @@ class PlanformMetrics(GeoAlgorithm):
     def processAlgorithm(self, progress):
 
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
+        resolution = self.getParameterValue(self.RESOLUTION)
+        lmax = self.getParameterValue(self.LMAX)
 
         axis_writer = self.getOutputFromName(self.FLOW_AXIS).getVectorWriter(
             layer.fields().toList() + [
-                QgsField('BENDID', QVariant.Int, len=10),
-                QgsField('ANGLE', QVariant.Double, len=10, prec=6)
+                QgsField('BENDID', QVariant.Int, len=10)
+                # QgsField('ANGLE', QVariant.Double, len=10, prec=6)
             ],
             QGis.WKBLineString,
             layer.crs())
@@ -225,24 +275,19 @@ class PlanformMetrics(GeoAlgorithm):
             QGis.WKBLineString,
             layer.crs())
 
-        def write_axis_segment(fid, p0, p1, feature, angle):
+        def write_axis_segment(fid, p0, p1, feature):
             
             new_feature = QgsFeature()
             new_feature.setGeometry(QgsGeometry.fromPolyline([p0, p1]))
             new_feature.setAttributes(feature.attributes() + [
-                    fid,
-                    clamp_angle(angle)
+                    fid
+                    # clamp_angle(angle)
                 ])
             axis_writer.addFeature(new_feature)
 
         def write_segment(fid, points, feature):
             
             bend = Bend(points)
-            stem, stem_idx = bend.max_amplitude_stem()
-
-            if stem is None:
-                ProcessingLog.addToLog(ProcessingLog.LOG_INFO, str(points))
-                return
 
             new_feature = QgsFeature()
             new_feature.setGeometry(QgsGeometry.fromPolyline(points))
@@ -258,6 +303,12 @@ class PlanformMetrics(GeoAlgorithm):
                     # bend.curvature_radius()
                 ])
             segment_writer.addFeature(new_feature)
+
+            stem, stem_idx = bend.max_amplitude_stem()
+
+            if stem is None:
+                ProcessingLog.addToLog(ProcessingLog.LOG_INFO, str(points))
+                return
 
             stem_feature = QgsFeature()
             stem_feature.setGeometry(stem)
@@ -280,6 +331,10 @@ class PlanformMetrics(GeoAlgorithm):
         total = 100.0 / layer.featureCount()
         fid = 0
         point_id = 0
+        # Total count of detected inflection points
+        detected = 0
+        # Total count of retained inflection points
+        retained = 0
 
         for current, feature in enumerate(vector.features(layer)):
 
@@ -291,7 +346,10 @@ class PlanformMetrics(GeoAlgorithm):
             current_segment = [ a ]
             current_axis_direction = None
 
-            write_inflection_point(point_id, a)
+            bends = list()
+            inflection_points = list()
+
+            # write_inflection_point(point_id, a)
             point_id = point_id + 1
 
             for c in points_iterator:
@@ -309,9 +367,13 @@ class PlanformMetrics(GeoAlgorithm):
                     else:
                         angle = 0.0
                     
-                    write_axis_segment(fid, p0, pi, feature, angle)
-                    write_segment(fid, current_segment, feature)
-                    write_inflection_point(point_id, pi)
+                    # write_axis_segment(fid, p0, pi, feature, angle)
+                    # write_segment(fid, current_segment, feature)
+                    # write_inflection_point(point_id, pi)
+
+                    bend = Bend(current_segment)
+                    bends.append(bend)
+                    inflection_points.append(p0)
                     
                     current_sign = sign
                     current_segment = [ pi, b ]
@@ -329,16 +391,140 @@ class PlanformMetrics(GeoAlgorithm):
                 a, b = b, c
 
             p0 = current_segment[0]
+
             if current_axis_direction:
                 angle = current_axis_direction.angle(qgs_vector(p0, b)) * 180 / PI
             else:
                 angle = 0.0
 
-            write_axis_segment(fid, p0, b, feature, angle)
+            # write_axis_segment(fid, p0, b, feature, angle)
             current_segment.append(b)
-            write_segment(fid, current_segment, feature)
-            write_inflection_point(point_id, b)
+            
+            # write_segment(fid, current_segment, feature)
+            # write_inflection_point(point_id, b)
+            bend = Bend(current_segment)
+            bends.append(bend)
+            inflection_points.append(p0)
+            inflection_points.append(b)
+
             fid = fid + 1
             point_id = point_id + 1
 
+            detected = detected + len(inflection_points)
+
+            # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Inflections points = %d' % len(inflection_points))
+            # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Bends = %d' % len(bends))
+
+            # Filter out smaller bends
+
+            entries = list()
+
+            entry = QueueEntry(0)
+            entry.previous = None
+            entry.next = 1
+            entry.priority = float('inf')
+            entry.interdistance = float('inf')
+            entries.append(entry)
+
+            for k in range(1, len(inflection_points)-1):
+                
+                entry = QueueEntry(k)
+                entry.previous = k-1
+                entry.next = k+1
+                entry.priority = bends[k-1].amplitude() + bends[k].amplitude()
+                entry.interdistance = qgs_vector(inflection_points[k-1], inflection_points[k]).length() + \
+                                      qgs_vector(inflection_points[k], inflection_points[k+1]).length()
+                entries.append(entry)
+
+            k = len(inflection_points) - 1
+            entry = QueueEntry(k)
+            entry.previous = k-1
+            entry.next = None
+            entry.priority = float('inf')
+            entry.interdistance = float('inf')
+            entries.append(entry)
+
+            queue = list(entries)
+            heapify(queue)
+
+            while queue:
+
+                entry = heappop(queue)
+                k = entry.index
+
+                # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Entry = %s' % entry)
+
+                if entry.priority > 2*resolution:
+                    break
+
+                if entry.duplicate or entry.removed:
+                    continue
+
+                if entry.interdistance > lmax:
+                    continue
+
+                previous_entry = entries[entry.previous]
+                next_entry = entries[entry.next]
+
+                if previous_entry.previous is None:
+                    continue
+
+                if next_entry.next is None:
+                    continue
+
+                new_entry = QueueEntry(k)
+                
+                entries[previous_entry.previous].next = k
+                new_entry.previous = previous_entry.previous
+                
+                entries[next_entry.next].previous = k
+                new_entry.next = next_entry.next
+
+                before_bend = Bend.merge(bends[new_entry.previous], bends[entry.previous])
+                after_bend = Bend.merge(bends[k], bends[entry.next])
+
+                bends[new_entry.previous] = before_bend
+                bends[k] = after_bend
+
+                new_entry.priority = before_bend.amplitude() + after_bend.amplitude()
+                new_entry.interdistance = qgs_vector(inflection_points[new_entry.previous], inflection_points[k]).length() + \
+                                      qgs_vector(inflection_points[k], inflection_points[new_entry.next]).length()
+
+                heappush(queue, new_entry)
+
+                entries[k] = new_entry
+                previous_entry.removed = True
+                next_entry.removed = True
+                entry.duplicate = True
+
+            # Output results
+
+            index = 0
+
+            while True:
+
+                entry = entries[index]
+                point = inflection_points[index]
+
+                if entry.next is None:
+
+                    point_id = point_id + 1
+                    write_inflection_point(point_id, point)
+                    retained = retained + 1
+                    break
+                
+                bend = bends[index]
+                point_id = point_id + 1
+                fid = fid + 1
+
+                # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Points = %s' % bend.points)
+                write_inflection_point(point_id, point)
+                retained = retained + 1
+                write_axis_segment(fid, bend.p_origin, bend.p_end, feature)
+                write_segment(fid, bend.points, feature)
+
+                index = entry.next
+
             progress.setPercentage(int(current * total))
+
+        ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Retained inflection points = %d / %d' % (retained, detected))
