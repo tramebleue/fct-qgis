@@ -224,7 +224,7 @@ class ValleyBottom(GeoAlgorithm):
         self.nextStep('Extract minimum DEM ...',progress)
         MinDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('Minimum DEM'),
                             {
-                              'INPUT': self.getParameterValue(self.INPUT_DEM),
+                              'INPUT': ClippedDEM.getOutputValue('OUTPUT'),
                               'MASK': SmallBuffer.getOutputValue('OUTPUT'),
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': False,
