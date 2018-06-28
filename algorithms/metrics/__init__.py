@@ -2,6 +2,7 @@ from LocalFeatureSize import LocalFeatureSize
 from PlanformMetrics import PlanformMetrics
 from SegmentMeanSlope import SegmentMeanSlope
 from Sinuosity import Sinuosity
+from WeightedMean import WeightedMean
 
 def metricsAlgorithms():
 
@@ -9,5 +10,6 @@ def metricsAlgorithms():
         LocalFeatureSize(),
         PlanformMetrics(),
         SegmentMeanSlope(),
-        Sinuosity()
+        Sinuosity(),
+        WeightedMean()
     ]
