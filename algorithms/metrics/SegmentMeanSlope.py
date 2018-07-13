@@ -38,6 +38,9 @@ from processing.core.ProcessingLog import ProcessingLog
 from processing.gui.Postprocessing import handleAlgorithmResults
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
+
+from ...core import vector as vector_helper
+
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
@@ -264,11 +267,12 @@ class SegmentMeanSlope(GeoAlgorithm):
         updown_ordering = (self.getParameterValue(self.LINE_ORDERING) == 0)
 
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
-            line_layer.fields().toList() + [
+            vector_helper.createUniqueFieldsList(
+                line_layer,
                 QgsField('ZMIN', QVariant.Double, len=10, prec=4),
                 QgsField('ZMEAN', QVariant.Double, len=10, prec=4),
                 QgsField('SLOPE', QVariant.Double, len=10, prec=6)
-            ],
+            ),
             line_layer.dataProvider().geometryType(),
             line_layer.crs())
         

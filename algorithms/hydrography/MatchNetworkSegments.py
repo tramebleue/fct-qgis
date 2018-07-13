@@ -76,6 +76,8 @@ class MatchNetworkSegments(GeoAlgorithm):
     NETWORK2 = 'NETWORK2'
     NETWORK2_PK_FIELD = 'NETWORK2_PK_FIELD'
     PAIRS = 'PAIRS'
+    NETWORK1_PAIR_FIELD = 'NETWORK1_PAIR_FIELD'
+    NETWORK2_PAIR_FIELD = 'NETWORK2_PAIR_FIELD'
     OUTPUT = 'OUTPUT'
 
     def defineCharacteristics(self):
@@ -96,6 +98,16 @@ class MatchNetworkSegments(GeoAlgorithm):
 
         self.addParameter(ParameterVector(self.PAIRS,
                                           self.tr('Input to Paired Node Pairs'), [ParameterVector.VECTOR_TYPE_POINT]))
+
+        self.addParameter(ParameterTableField(self.NETWORK1_PAIR_FIELD,
+                                          self.tr('Network 1 Pair Field'),
+                                          parent=self.PAIRS,
+                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
+
+        self.addParameter(ParameterTableField(self.NETWORK2_PAIR_FIELD,
+                                          self.tr('Network 2 Pair Field'),
+                                          parent=self.PAIRS,
+                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
         
         self.addOutput(OutputVector(self.OUTPUT, self.tr('Matched Segments')))
 
@@ -105,6 +117,8 @@ class MatchNetworkSegments(GeoAlgorithm):
         network2 = dataobjects.getObjectFromUri(self.getParameterValue(self.NETWORK2))
         pair_layer = dataobjects.getObjectFromUri(self.getParameterValue(self.PAIRS))
         network2_pk_field = self.getParameterValue(self.NETWORK2_PK_FIELD)
+        network1_pair_field = self.getParameterValue(self.NETWORK1_PAIR_FIELD)
+        network2_pair_field = self.getParameterValue(self.NETWORK2_PAIR_FIELD)
 
         # TODO check input structure
         
@@ -153,8 +167,8 @@ class MatchNetworkSegments(GeoAlgorithm):
         total = 100.0 / pair_layer.featureCount()
         for current, pair in enumerate(pair_layer.getFeatures()):
 
-            n1 = pair.attribute('GID')
-            n2 = pair.attribute('TGID')
+            n1 = pair.attribute(network1_pair_field)
+            n2 = pair.attribute(network2_pair_field)
 
             if n2 is None or n2 == NULL:
                 continue
@@ -172,6 +186,10 @@ class MatchNetworkSegments(GeoAlgorithm):
 
             for fid in seq1:
 
+                if fid in seen_segments:
+                    # segment has already been output
+                    continue
+
                 segment = network1.getFeatures(QgsFeatureRequest(fid)).next()
                 midpoint = segment.geometry().interpolate(0.5 * segment.geometry().length())
                 distance = float('inf')
@@ -184,7 +202,7 @@ class MatchNetworkSegments(GeoAlgorithm):
                         distance = d
                         paired = target_segment
 
-                if paired and fid not in seen_segments:
+                if paired:
 
                     out_feature = QgsFeature()
                     out_feature.setGeometry(segment.geometry())

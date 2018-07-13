@@ -173,11 +173,16 @@ class ValleyBottom(GeoAlgorithm):
                             })
         
         self.nextStep('Compute large buffer ...',progress)
-        LargeBuffer = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        LargeBuffer0 = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
                             {
                               'INPUT': SplittedNetwork.getOutputValue('OUTPUT'),
                               'DISTANCE': LARGE_BUFFER_DISTANCE,
                               'DISSOLVE': True
+                            })
+
+        LargeBuffer = Processing.runAlgorithm('qgis:clip', None, {
+                              'INPUT': LargeBuffer0.getOutputValue('OUTPUT'),
+                              'OVERLAY': self.getParameterValue(self.INPUT_ZOI)
                             })
 
         # self.nextStep('Clip large buffer ...',progress)
@@ -250,7 +255,7 @@ class ValleyBottom(GeoAlgorithm):
         del layer
 
         self.nextStep('Convert to reference DEM ...',progress)
-        ReferenceDEM = Processing.runAlgorithm('gdalogr:rasterize',  handleResult('Reference DEM'),
+        ReferenceDEM0 = Processing.runAlgorithm('gdalogr:rasterize',  None,
                             {
                               'INPUT': ReferencePolygons.getOutputValue('OUTPUT_LAYER'),
                               'FIELD': '_min',
@@ -260,6 +265,17 @@ class ValleyBottom(GeoAlgorithm):
                               'WIDTH': pixel_width,
                               'HEIGHT': pixel_height,
                               'EXTRA': '-tap'
+                            })
+
+        ReferenceDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('Clipped DEM'),
+                            {
+                              'INPUT': ReferenceDEM0.getOutputValue('OUTPUT'),
+                              'MASK': LargeBuffer.getOutputValue('OUTPUT'),
+                              'ALPHA_BAND': False,
+                              'CROP_TO_CUTLINE': True,
+                              'KEEP_RESOLUTION': True,
+                              'COMPRESS': LZW_COMPRESS,
+                              'TILED': True
                             })
 
         self.nextStep('Compute relative DEM and extract bottom ...',progress)

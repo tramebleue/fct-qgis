@@ -42,8 +42,7 @@ from math import sqrt
 
 class SelectConnectedComponents(GeoAlgorithm):
 
-    INPUT_LAYER = 'INPUT'
-    # OUTPUT_LAYER = 'OUTPUT'
+    INPUT = 'INPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
 
@@ -52,28 +51,28 @@ class SelectConnectedComponents(GeoAlgorithm):
         self.name, self.i18n_name = self.trAlgorithm('Select Connected Components')
         self.group, self.i18n_group = self.trAlgorithm('Hydrography')
 
-        self.addParameter(ParameterVector(self.INPUT_LAYER,
+        self.addParameter(ParameterVector(self.INPUT,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
+        
         self.addParameter(ParameterTableField(self.FROM_NODE_FIELD,
                                           self.tr('From Node Field'),
-                                          parent=self.INPUT_LAYER,
-                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
-        self.addParameter(ParameterTableField(self.TO_NODE_FIELD,
-                                          self.tr('To Node Field'),
-                                          parent=self.INPUT_LAYER,
+                                          parent=self.INPUT,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
-        # self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Stream')))
+        self.addParameter(ParameterTableField(self.TO_NODE_FIELD,
+                                          self.tr('To Node Field'),
+                                          parent=self.INPUT,
+                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
     def processAlgorithm(self, progress):
 
-        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
+        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT))
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
 
         progress.setText(self.tr("Build layer index ..."))
 
-        # Index : Node A -> Edges starting from Node A
+        # Index : Node -> List of edges connnected to Node
         node_index = defaultdict(list)
         total = 100.0 / layer.featureCount()
 
@@ -82,31 +81,53 @@ class SelectConnectedComponents(GeoAlgorithm):
             from_node = feature.attribute(from_node_field)
             to_node = feature.attribute(to_node_field)
 
-            node_index[from_node].append(feature.id())
-            node_index[to_node].append(feature.id())
+            node_index[from_node].append((feature.id(), to_node))
+            node_index[to_node].append((feature.id(), from_node))
             
             progress.setPercentage(int(current * total))
 
 
         progress.setText(self.tr("Select connected components ..."))
-        features = vector.features(layer)
-        total = 100.0 / len(features)
-        
-        selected = set(layer.selectedFeaturesIds())
+
+        total = 100.0 / layer.featureCount()
+        current = 0
+
+        stack = list()
+        seen_nodes = set()
         selection = set()
 
-        for current, feature in enumerate(features):
+        for feature in vector.features(layer):
 
             from_node = feature.attribute(from_node_field)
             to_node = feature.attribute(to_node_field)
 
-            for fid in set(node_index[from_node]).union(set(node_index[to_node])):
-                if not fid in selected:
-                    selection.add(fid)
+            selection.add(feature.id())
+            stack.append(from_node)
+            stack.append(to_node)
 
+            current += 1
             progress.setPercentage(int(current * total))
 
-        layer.setSelectedFeatures(list(selection.union(selected)))
+        while stack:
+
+            node = stack.pop()
+
+            if node in seen_nodes:
+                continue
+
+            seen_nodes.add(node)
+
+            for fid, next_node in node_index[node]:
+
+                if not fid in selection:
+
+                    selection.add(fid)
+                    stack.append(next_node)
+
+                    current += 1
+                    progress.setPercentage(int(current * total))
+
+        layer.setSelectedFeatures(list(selection))
 
 
         

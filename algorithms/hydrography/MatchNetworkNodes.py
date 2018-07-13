@@ -42,7 +42,7 @@ from collections import defaultdict
 from math import sqrt
 
 
-class PairNetworkNodes(GeoAlgorithm):
+class MatchNetworkNodes(GeoAlgorithm):
 
     SOURCE = 'SOURCE'
     TARGET = 'TARGET'
@@ -50,7 +50,7 @@ class PairNetworkNodes(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Pair Network Nodes')
+        self.name, self.i18n_name = self.trAlgorithm('Match Network Nodes')
         self.group, self.i18n_group = self.trAlgorithm('Hydrography')
 
         self.addParameter(ParameterVector(self.SOURCE,
@@ -101,7 +101,8 @@ class PairNetworkNodes(GeoAlgorithm):
                 f = target_layer.getFeatures(QgsFeatureRequest(fid)).next()
                 d = f.geometry().distance(geom)
                 
-                if (f.attribute('TYPE') == ptype or f.attribute('TYPE') == 'NODE') and d < distance:
+                # if (f.attribute('TYPE') == ptype or f.attribute('TYPE') == 'NODE') and d < distance:
+                if d < distance:
 
                     distance = d
                     pair = fid
@@ -130,7 +131,8 @@ class PairNetworkNodes(GeoAlgorithm):
                 f = source_layer.getFeatures(QgsFeatureRequest(fid)).next()
                 d = f.geometry().distance(geom)
                 
-                if (ptype == 'NODE' or f.attribute('TYPE') == ptype) and d < distance:
+                # if (ptype == 'NODE' or f.attribute('TYPE') == ptype) and d < distance:
+                if d < distance:
 
                     distance = d
                     pair = fid

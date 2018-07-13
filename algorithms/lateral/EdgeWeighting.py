@@ -36,9 +36,11 @@ from processing.core.parameters import ParameterTable, ParameterTableField
 from processing.core.outputs import OutputVector, OutputTable
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
+
+from ...core import vector as vector_helper
 from math import sqrt
 
-class ComputeFrictionCost(GeoAlgorithm):
+class EdgeWeighting(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     # TARGET_FIELD = 'TARGET_FIELD'
@@ -53,7 +55,7 @@ class ComputeFrictionCost(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Compute Friction Cost')
+        self.name, self.i18n_name = self.trAlgorithm('Edge Weighting')
         self.group, self.i18n_group = self.trAlgorithm('Lateral Continuity')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
@@ -65,7 +67,7 @@ class ComputeFrictionCost(GeoAlgorithm):
         #                                   datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
         self.addParameter(ParameterVector(self.FRICTION_LAYER,
-                                          self.tr('Friction Layer'), [ParameterVector.VECTOR_TYPE_POLYGON]))
+                                          self.tr('Cost Layer'), [ParameterVector.VECTOR_TYPE_POLYGON]))
 
         self.addParameter(ParameterTableField(self.CLASS_FIELD,
                                           self.tr('Class Field'),
@@ -84,7 +86,7 @@ class ComputeFrictionCost(GeoAlgorithm):
                                              self.tr('Cost Aggregation'),
                                              options=[self.tr('Weighted by Length'), self.tr('Maximum')], default=0))
 
-        self.addOutput(OutputVector(self.OUTPUT, self.tr('Friction Costs')))
+        self.addOutput(OutputVector(self.OUTPUT, self.tr('Weighted Edges')))
 
     def processAlgorithm(self, progress):
 
@@ -118,33 +120,33 @@ class ComputeFrictionCost(GeoAlgorithm):
 
         total = 100.0 / layer.featureCount()
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
-            layer.fields().toList() + [
-                QgsField(cost_field, type=QVariant.Double, len=10, prec=2)
-            ],
+            vector_helper.createUniqueFieldsList(
+                layer,
+                vector_helper.resolveField(friction_layer, class_field),
+                vector_helper.resolveField(cost_table, cost_field)
+            ),
             layer.dataProvider().geometryType(),
             layer.crs())
 
         for current, feature in enumerate(layer.getFeatures()):
 
             cost = 0
+            centroid = feature.geometry().centroid()
 
-            for match_id in friction_index.intersects(feature.geometry().boundingBox()):
+            for match_id in friction_index.intersects(centroid.boundingBox()):
                 
                 match = friction_layer.getFeatures(QgsFeatureRequest(match_id)).next()
                 
-                if feature.geometry().intersects(match.geometry()):
+                if match.geometry().contains(centroid):
 
                     friction_class = match.attribute(class_field)
-
-                    if mode_weighted:
-                        intersection = feature.geometry().intersection(match.geometry())
-                        cost = cost + intersection.length() * costs.get(friction_class, max_cost)
-                    else:
-                        cost = max(cost, costs.get(friction_class, max_cost))
+                    cost = max(cost, costs.get(friction_class, max_cost))
+                    break
 
             outfeature = QgsFeature()
             outfeature.setAttributes(
                     feature.attributes() + [
+                        friction_class,
                         cost
                     ]
                 )

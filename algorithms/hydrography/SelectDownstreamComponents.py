@@ -38,7 +38,7 @@ from processing.core.ProcessingLog import ProcessingLog
 from math import sqrt
 
 
-class SelectStreamFromSourceToOutlet(GeoAlgorithm):
+class SelectDownstreamComponents(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     # OUTPUT_LAYER = 'OUTPUT'
@@ -47,7 +47,7 @@ class SelectStreamFromSourceToOutlet(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Select Stream From Source To Outlet')
+        self.name, self.i18n_name = self.trAlgorithm('Select Downstream Components')
         self.group, self.i18n_group = self.trAlgorithm('Hydrography')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,

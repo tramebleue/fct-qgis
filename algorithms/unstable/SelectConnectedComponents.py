@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    SelectStreamFromOutletToSources.py
+    SelectStreamFromSourceToOutlet.py
     ---------------------
     Date                 : November 2016
     Copyright            : (C) 2016 by Christophe Rousson
@@ -35,10 +35,12 @@ from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
+
+from collections import defaultdict
 from math import sqrt
 
 
-class SelectStreamFromOutletToSources(GeoAlgorithm):
+class SelectConnectedComponents(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     # OUTPUT_LAYER = 'OUTPUT'
@@ -47,8 +49,8 @@ class SelectStreamFromOutletToSources(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Select Stream From Outlet To Sources')
-        self.group, self.i18n_group = self.trAlgorithm('Hydrography')
+        self.name, self.i18n_name = self.trAlgorithm('Select Connected Components')
+        self.group, self.i18n_group = self.trAlgorithm('Unstable')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
@@ -71,37 +73,40 @@ class SelectStreamFromOutletToSources(GeoAlgorithm):
 
         progress.setText(self.tr("Build layer index ..."))
 
-        to_node_index = dict()
-        features = vector.features(layer)
+        # Index : Node A -> Edges starting from Node A
+        node_index = defaultdict(list)
         total = 100.0 / layer.featureCount()
 
         for current, feature in enumerate(layer.getFeatures()):
 
+            from_node = feature.attribute(from_node_field)
             to_node = feature.attribute(to_node_field)
-            if to_node_index.has_key(to_node):
-                to_node_index[to_node].append(feature.id())
-            else:
-                to_node_index[to_node] = [ feature.id() ]
+
+            node_index[from_node].append(feature.id())
+            node_index[to_node].append(feature.id())
             
             progress.setPercentage(int(current * total))
 
 
-        progress.setText(self.tr("Select connected reaches ..."))
-
-        process_stack = [ segment for segment in layer.selectedFeatures() ]
+        progress.setText(self.tr("Select connected components ..."))
+        features = vector.features(layer)
+        total = 100.0 / len(features)
+        
+        selected = set(layer.selectedFeaturesIds())
         selection = set()
 
-        while process_stack:
+        for current, feature in enumerate(features):
 
-            segment = process_stack.pop()
-            selection.add(segment.id())
-            from_node = segment.attribute(from_node_field)
+            from_node = feature.attribute(from_node_field)
+            to_node = feature.attribute(to_node_field)
 
-            if to_node_index.has_key(from_node):
-                q = QgsFeatureRequest().setFilterFids(to_node_index[from_node])
-                for next_segment in layer.getFeatures(q):
-                    # Prevent infinite loop
-                    if not next_segment.id() in selection:
-                        process_stack.append(next_segment)
+            for fid in set(node_index[from_node]).union(set(node_index[to_node])):
+                if not fid in selected:
+                    selection.add(fid)
 
-        layer.setSelectedFeatures(list(selection))
+            progress.setPercentage(int(current * total))
+
+        layer.setSelectedFeatures(list(selection.union(selected)))
+
+
+        

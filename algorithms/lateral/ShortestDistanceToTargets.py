@@ -152,13 +152,25 @@ class GraphIterator(object):
     def __init__(self, graph, origin):
 
         self.graph = graph
+        self.origin = origin 
+
+    def __enter__(self):
+
         self.heap = list()
         self.seen = dict()
-        entry = QueueEntry(origin, None, 0)
+        entry = QueueEntry(self.origin, None, 0)
         heappush(self.heap, entry)
-        self.seen[origin] = entry
+        self.seen[self.origin] = entry
+
+        return self
+
+    def __exit__(self,  exc_type, exc_val, exc_tb):
+
+        self.heap = None
+        self.seen = None
 
     def __iter__(self):
+
         try:
             while True:
                 yield self.__next__()
@@ -181,6 +193,10 @@ class GraphIterator(object):
         for node, edge_weight in self.graph.edges(next_entry.key):
             
             weight = next_entry.weight + edge_weight
+            # length = next_entry.length + edge.length
+            # max_weight = max(next_entry.weight, edge_weight)
+            # weight = length * max_weight
+
             if self.seen.has_key(node):
                 seen_entry = self.seen[node]
                 if weight < seen_entry.weight:
@@ -218,11 +234,6 @@ class GraphIterator(object):
 
         path.reverse()
         return path, weight
-
-    def release(self):
-        self.graph = None
-        self.heap = None
-        self.seen = None
 
 class ShortestDistanceToTargets(GeoAlgorithm):
 
@@ -336,34 +347,33 @@ class ShortestDistanceToTargets(GeoAlgorithm):
         for current, feature in enumerate(vector.features(node_layer)):
 
             origin = feature.attribute(fid_field)
-            iterator = GraphIterator(graph, origin)
             
-            for entry in iterator:
-                if entry.key in targets:
-                    weight = entry.weight
-                    break
-            else:
-                weight = np.infty
+            with GraphIterator(graph, origin) as iterator:
+            
+                for entry in iterator:
+                    if entry.key in targets:
+                        weight = entry.weight
+                        break
+                else:
+                    weight = np.infty
 
-            if weight != np.infty:
-                
-                path, weight = iterator.path(entry.key)
-                weights = [ iterator.seen[k].weight for k in path ]
-                max_w = max([ weights[0] ] + [ weights[i+1] - w for i, w in enumerate(weights[:-1])  ])
-                outfeature = QgsFeature()
-                outfeature.setGeometry(feature.geometry())
-                outfeature.setAttributes([
-                        feature.attribute(fid_field),
-                        float(weight),
-                        float(max_w),
-                        len(path)
-                    ])
-                writer.addFeature(outfeature)
+                if weight != np.infty:
+                    
+                    path, weight = iterator.path(entry.key)
+                    weights = [ iterator.seen[k].weight for k in path ]
+                    max_w = max([ weights[0] ] + [ weights[i+1] - w for i, w in enumerate(weights[:-1])  ])
+                    outfeature = QgsFeature()
+                    outfeature.setGeometry(feature.geometry())
+                    outfeature.setAttributes([
+                            feature.attribute(fid_field),
+                            float(weight),
+                            float(max_w),
+                            len(path)
+                        ])
+                    writer.addFeature(outfeature)
 
-            else:
+                else:
 
-                ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "No path found from node %s" % origin)
-
-            iterator.release()
+                    ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "No path found from node %s" % origin)
 
             progress.setPercentage(int(current * total))

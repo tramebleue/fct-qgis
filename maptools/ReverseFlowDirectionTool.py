@@ -33,6 +33,7 @@ class ReverseFlowDirectionTool(QgsMapToolIdentifyFeature):
         self.cursor = QCursor(Qt.CrossCursor)
         self.from_node_field = 'NODE_A'
         self.to_node_field = 'NODE_B'
+        self.flip_field = 'FLIP'
 
     @classmethod
     def initGui(cls, plugin):
@@ -60,6 +61,7 @@ class ReverseFlowDirectionTool(QgsMapToolIdentifyFeature):
             self.layer = layer
             self.from_node_field_idx = layer.fieldNameIndex(self.from_node_field)
             self.to_node_field_idx = layer.fieldNameIndex(self.to_node_field)
+            self.flip_field_idx = layer.fieldNameIndex(self.flip_field)
 
     def activate(self):
 
@@ -90,9 +92,11 @@ class ReverseFlowDirectionTool(QgsMapToolIdentifyFeature):
         from_node = feature.attribute(self.from_node_field)
         to_node = feature.attribute(self.to_node_field)
         geometry = reversePolyline(feature.geometry())
+        flip = feature.attribute(self.flip_field)
 
         self.layer.changeAttributeValue(feature.id(), self.from_node_field_idx, to_node, from_node)
         self.layer.changeAttributeValue(feature.id(), self.to_node_field_idx, from_node, to_node)
+        self.layer.changeAttributeValue(feature.id(), self.flip_field_idx, 1 - flip)
         self.layer.changeGeometry(feature.id(), geometry)
         
         self.layer.commitChanges()

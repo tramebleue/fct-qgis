@@ -43,6 +43,7 @@ class NetworkNodes(GeoAlgorithm):
     OUTPUT_LAYER = 'OUTPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
+    MEAS_FIELD = 'MEAS_FIELD'
 
     def defineCharacteristics(self):
 
@@ -51,16 +52,24 @@ class NetworkNodes(GeoAlgorithm):
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
+        
         self.addParameter(ParameterTableField(self.FROM_NODE_FIELD,
                                           self.tr('From Node Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
+        
         self.addParameter(ParameterTableField(self.TO_NODE_FIELD,
                                           self.tr('To Node Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
-        self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Graph Endpoints')))
+        self.addParameter(ParameterTableField(self.MEAS_FIELD,
+                                          self.tr('Measure Field'),
+                                          parent=self.INPUT_LAYER,
+                                          datatype=ParameterTableField.DATA_TYPE_NUMBER,
+                                          optional=True))
+
+        self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Nodes')))
 
     def node_type(self, in_degree, out_degree):
 
@@ -98,6 +107,7 @@ class NetworkNodes(GeoAlgorithm):
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
+        measure_field = self.getParameterValue(self.MEAS_FIELD)
 
         progress.setText(self.tr("Build node index ..."))
 
@@ -105,7 +115,8 @@ class NetworkNodes(GeoAlgorithm):
                 QgsField('GID', type=QVariant.Int, len=10),
                 QgsField('DIN', type=QVariant.Int, len=6),
                 QgsField('DOUT', type=QVariant.Int, len=6),
-                QgsField('TYPE', type=QVariant.String, len=4)
+                QgsField('TYPE', type=QVariant.String, len=4),
+                QgsField('MEAS', type=QVariant.Double, len=10, prec=2)
             ]
         
         outlayer = QgsVectorLayer('Point', 'endpoints', 'memory')
@@ -113,7 +124,7 @@ class NetworkNodes(GeoAlgorithm):
         outlayer.dataProvider().addAttributes(fields)
         outlayer.startEditing()
 
-        def writeEndpoint(gid, point):
+        def writeEndpoint(gid, point, measure):
 
             f = QgsFeature()
             f.setGeometry(QgsGeometry.fromPoint(point))
@@ -121,7 +132,8 @@ class NetworkNodes(GeoAlgorithm):
                     gid,
                     0,
                     0,
-                    'XOUT'
+                    'XOUT',
+                    measure
                 ])
             outlayer.addFeature(f)
 
@@ -132,18 +144,22 @@ class NetworkNodes(GeoAlgorithm):
 
             from_node = feature.attribute(from_node_field)
             to_node = feature.attribute(to_node_field)
+            if measure_field:
+                measure = feature.attribute(measure_field)
+            else:
+                measure = 0.0
 
             if node_index.has_key(from_node):
                 node_index[from_node].append(to_node)
             else:
                 node_index[from_node] = [ to_node ]
                 polyline = self.asPolyline(feature.geometry())
-                writeEndpoint(from_node, polyline[0])
+                writeEndpoint(from_node, polyline[0], measure)
 
             if not node_index.has_key(to_node):
                 node_index[to_node] = list()
                 polyline = self.asPolyline(feature.geometry())
-                writeEndpoint(to_node, polyline[-1])
+                writeEndpoint(to_node, polyline[-1], measure - feature.geometry().length())
 
             progress.setPercentage(int(current * total))
 
@@ -171,13 +187,15 @@ class NetworkNodes(GeoAlgorithm):
         for current, feature in enumerate(outlayer.getFeatures()):
 
             gid = feature.attribute('GID')
+            measure = feature.attribute('MEAS')
             din = in_degree[gid]
             dout = len(node_index[gid])
             feature.setAttributes([
                     gid,
                     din,
                     dout,
-                    self.node_type(din, dout)
+                    self.node_type(din, dout),
+                    measure
                 ])
             writer.addFeature(feature)
 

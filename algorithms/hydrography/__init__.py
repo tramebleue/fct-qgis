@@ -8,18 +8,22 @@ from LengthOrder import LengthOrder
 from LongestPathInDirectedAcyclicGraph import LongestPathInDirectedAcyclicGraph
 from LongestPathInDirectedAcyclicGraphMultiFlow import LongestPathInDirectedAcyclicGraphMultiFlow
 from MarkMainDrain import MarkMainDrain
+from MatchNearestLine import MatchNearestLine
+from MatchNearestLineUpdate import MatchNearestLineUpdate
+from MatchNetworkNodes import MatchNetworkNodes
 from MatchNetworkSegments import MatchNetworkSegments
 from MeasureLinesFromOutlet import MeasureLinesFromOutlet
 from MeasurePointsAlongLine import MeasurePointsAlongLine
 from NetworkNodes import NetworkNodes
-from PairNetworkNodes import PairNetworkNodes
 from ProjectPointsAlongLine import ProjectPointsAlongLine
 from SelectConnectedComponents import SelectConnectedComponents
+from SelectDownstreamComponents import SelectDownstreamComponents
 from SelectFullLengthPaths import SelectFullLengthPaths
 from SelectGraphCycle import SelectGraphCycle
 from SelectionReverseFlowDirection import SelectionReverseFlowDirection
-from SelectStreamFromOutletToSources import SelectStreamFromOutletToSources
-from SelectStreamFromSourceToOutlet import SelectStreamFromSourceToOutlet
+from SelectMainDrain import SelectMainDrain
+from SelectSmallTributaries import SelectSmallTributaries
+from SelectUpstreamComponents import SelectUpstreamComponents
 from Sequencing import Sequencing
 from StrahlerOrder import StrahlerOrder
 
@@ -27,6 +31,7 @@ from StrahlerOrder import StrahlerOrder
 def hydrographyAlgorithms():
 
     return [
+
         AggregateLineSegments(),
         AggregateLineSegmentsByCat(),
         DensifyNetworkNodes(),
@@ -37,18 +42,23 @@ def hydrographyAlgorithms():
         LongestPathInDirectedAcyclicGraph(),
         LongestPathInDirectedAcyclicGraphMultiFlow(),
         MarkMainDrain(),
+        MatchNearestLine(),
+        MatchNearestLineUpdate(),
+        MatchNetworkNodes(),
         MatchNetworkSegments(),
         MeasureLinesFromOutlet(),
         MeasurePointsAlongLine(),
         NetworkNodes(),
-        PairNetworkNodes(),
         ProjectPointsAlongLine(),
         SelectConnectedComponents(),
+        SelectDownstreamComponents(),
         SelectFullLengthPaths(),
         SelectGraphCycle(),
         SelectionReverseFlowDirection(),
-        SelectStreamFromOutletToSources(),
-        SelectStreamFromSourceToOutlet(),
+        SelectMainDrain(),
+        SelectSmallTributaries(),
+        SelectUpstreamComponents(),
         Sequencing(),
         StrahlerOrder()
+
     ]

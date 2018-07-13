@@ -1,3 +1,4 @@
+from FilterByMinRank import FilterByMinRank
 from LocalFeatureSize import LocalFeatureSize
 from PlanformMetrics import PlanformMetrics
 from SegmentMeanSlope import SegmentMeanSlope
@@ -8,6 +9,7 @@ from WeightedMean import WeightedMean
 def metricsAlgorithms():
 
     return [
+    	FilterByMinRank(),
         LocalFeatureSize(),
         PlanformMetrics(),
         SegmentMeanSlope(),

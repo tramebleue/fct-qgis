@@ -1,8 +1,10 @@
 from JoinByNearest import JoinByNearest
 from LineMidpoints import LineMidpoints
 from MeasureDistanceToPointLayer import MeasureDistanceToPointLayer
+from MergeGeometries import MergeGeometries
 from PointOnSurface import PointOnSurface
 from RandomPoints import RandomPoints
+from RegularHexPoints import RegularHexPoints
 from RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from SafePolygonIntersection import SafePolygonIntersection
 from SelectByDistance import SelectByDistance
@@ -19,8 +21,10 @@ def vectorAlgorithms():
         JoinByNearest(),
         LineMidpoints(),
         MeasureDistanceToPointLayer(),
+        MergeGeometries(),
         PointOnSurface(),
         RandomPoints(),
+        RegularHexPoints(),
         RemoveSmallPolygonalObjects(),
         SafePolygonIntersection(),
         SelectByDistance(),

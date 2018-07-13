@@ -11,7 +11,7 @@ from algorithms.spatial_components import spatial_componentsAlgorithms
 from algorithms.unstable import unstableAlgorithms
 from algorithms.vector import vectorAlgorithms
 
-from maptools import ReverseFlowDirectionTool, ConnectTool, NodePairingTool
+from maptools import SelectUpstreamAction, ReverseFlowDirectionTool, ConnectTool, NodePairingTool
 
 import resources
 
@@ -31,6 +31,8 @@ class FluvialToolbox(object):
         icon_path = ':/plugins/FluvialToolbox/icon.png'
         
         Processing.addProvider(self.provider)
+
+        SelectUpstreamAction.initGui(self)
 
         self.maptools = [
             ReverseFlowDirectionTool.initGui(self),

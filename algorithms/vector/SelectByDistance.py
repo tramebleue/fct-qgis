@@ -65,14 +65,21 @@ class SelectByDistance(GeoAlgorithm):
         spatial_index = QgsSpatialIndex(distance_layer.getFeatures())
 
         total = 100.0 / target_layer.featureCount()
+        selection = set()
+
         for current, feature in enumerate(target_layer.getFeatures()):
             
-            centroid = feature.geometry().centroid().asPoint()
+            search_box = feature.geometry().boundingBox()
+            search_box.grow(distance)
             
-            for c in spatial_index.nearestNeighbor(centroid, 1):
-                nearest = distance_layer.getFeatures(QgsFeatureRequest(c)).next()
-                if (feature.geometry().distance(nearest.geometry())) <= distance:
-                    target_layer.select(feature.id())
+            for candid in spatial_index.intersects(search_box):
+
+                candidate = distance_layer.getFeatures(QgsFeatureRequest(candid)).next()
+
+                if (feature.geometry().distance(candidate.geometry())) <= distance:
+                    selection.add(feature.id())
                     break
 
             progress.setPercentage(int(current * total))
+
+        target_layer.setSelectedFeatures(list(selection))

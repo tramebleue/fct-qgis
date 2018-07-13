@@ -82,11 +82,11 @@ class WeightedMean(GeoAlgorithm):
 
     def processAlgorithm(self, progress):
 
-    	layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT))
-    	target = dataobjects.getObjectFromUri(self.getParameterValue(self.TARGET))
-    	metric_field = self.getParameterValue(self.METRIC_FIELD)
-    	fk_field = self.getParameterValue(self.INPUT_FK_FIELD)
-    	pk_field = self.getParameterValue(self.TARGET_PK_FIELD)
+        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT))
+        target = dataobjects.getObjectFromUri(self.getParameterValue(self.TARGET))
+        metric_field = self.getParameterValue(self.METRIC_FIELD)
+        fk_field = self.getParameterValue(self.INPUT_FK_FIELD)
+        pk_field = self.getParameterValue(self.TARGET_PK_FIELD)
 
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
             vector_helper.createUniqueFieldsList(
@@ -105,14 +105,14 @@ class WeightedMean(GeoAlgorithm):
 
         for current, feature in enumerate(features):
 
-        	key = feature.attribute(fk_field)
-        	metric = feature.attribute(metric_field)
-        	weight = feature.geometry().length()
+            key = feature.attribute(fk_field)
+            metric = feature.attribute(metric_field)
+            weight = feature.geometry().length()
 
-        	value, cum_weight = values[key]
-        	values[key] = (value + weight * metric, cum_weight + weight)
+            value, cum_weight = values[key]
+            values[key] = (value + weight * metric, cum_weight + weight)
 
-        	progress.setPercentage(int(current * total))
+            progress.setPercentage(int(current * total))
 
         progress.setText(self.tr('Aggregate value by target key ...'))
 
@@ -120,17 +120,19 @@ class WeightedMean(GeoAlgorithm):
 
         for current, feature in enumerate(target.getFeatures()):
 
-        	key = feature.attribute(pk_field)
-        	value, cum_weight = values[key]
+            key = feature.attribute(pk_field)
+            value, cum_weight = values[key]
 
-        	if cum_weight > 0.0:
-        		value = value / cum_weight
+            if cum_weight > 0.0:
+                value = value / cum_weight
+            else:
+                value = None
 
-        	out_feature = QgsFeature()
-        	out_feature.setGeometry(feature.geometry())
-        	out_feature.setAttributes(feature.attributes() + [
-        			value
-        		])
-        	writer.addFeature(out_feature)
+            out_feature = QgsFeature()
+            out_feature.setGeometry(feature.geometry())
+            out_feature.setAttributes(feature.attributes() + [
+                    value
+                ])
+            writer.addFeature(out_feature)
 
-        	progress.setPercentage(int(current * total))
+            progress.setPercentage(int(current * total))

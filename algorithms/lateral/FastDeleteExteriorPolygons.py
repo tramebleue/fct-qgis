@@ -39,25 +39,34 @@ from math import sqrt
 
 class FastDeleteExteriorPolygons(GeoAlgorithm):
 
-    INPUT_LAYER = 'INPUT'
-    REFERENCE_LAYER = 'REFERENCE_LAYER'
+    INPUT = 'INPUT'
+    REFERENCE = 'REFERENCE'
+    OUTPUT = 'OUTPUT'
 
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Fast Delete Exterior Polygons')
         self.group, self.i18n_group = self.trAlgorithm('Lateral Continuity')
 
-        self.addParameter(ParameterVector(self.INPUT_LAYER,
+        self.addParameter(ParameterVector(self.INPUT,
                                           self.tr('Polygon Layer'), [ParameterVector.VECTOR_TYPE_POLYGON]))
-        self.addParameter(ParameterVector(self.REFERENCE_LAYER,
+        self.addParameter(ParameterVector(self.REFERENCE,
                                           self.tr('Reference Layer'), [ParameterVector.VECTOR_TYPE_POLYGON]))
+
+        self.addOutput(OutputVector(self.OUTPUT, self.tr('Cleaned')))
 
     def processAlgorithm(self, progress):
 
-        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
-        reference = dataobjects.getObjectFromUri(self.getParameterValue(self.REFERENCE_LAYER))
+        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT))
+        reference = dataobjects.getObjectFromUri(self.getParameterValue(self.REFERENCE))
 
-        layer.startEditing()
+        index = QgsSpatialIndex(reference.getFeatures())
+
+        writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
+            layer.fields().toList(),
+            layer.dataProvider().geometryType(),
+            layer.crs())
+
         total = 100.0 / layer.featureCount()
         deleted = 0
 
@@ -66,16 +75,19 @@ class FastDeleteExteriorPolygons(GeoAlgorithm):
             centroid = feature.geometry().centroid()
             contained = False
 
-            for ref in reference.getFeatures():
+            for refid in index.intersects(feature.geometry().boundingBox()):
+
+                ref = reference.getFeatures(QgsFeatureRequest(refid)).next()
+
                 if ref.geometry().contains(centroid):
+
                     contained = True
+                    writer.addFeature(feature)
                     break
 
             if not contained:
-                layer.deleteFeature(feature.id())
                 deleted = deleted + 1
 
             progress.setPercentage(int(current * total))
 
-        layer.commitChanges()
         ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Deleted %d features" % deleted)

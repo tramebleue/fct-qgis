@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    SelectGraphCycle.py
+    SelectStreamFromOutletToSources.py
     ---------------------
     Date                 : November 2016
     Copyright            : (C) 2016 by Christophe Rousson
@@ -37,14 +37,8 @@ from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
 from math import sqrt
 
-class NodeData(object):
 
-    def __init__(self, index):
-        self.index = index
-        self.lowlink = index
-
-
-class SelectGraphCycle(GeoAlgorithm):
+class SelectUpstreamComponents(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     # OUTPUT_LAYER = 'OUTPUT'
@@ -53,7 +47,7 @@ class SelectGraphCycle(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Select Graph Cycle')
+        self.name, self.i18n_name = self.trAlgorithm('Select Upstream Components')
         self.group, self.i18n_group = self.trAlgorithm('Hydrography')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
@@ -75,78 +69,39 @@ class SelectGraphCycle(GeoAlgorithm):
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
 
-        progress.setText(self.tr("Build graph index ..."))
+        progress.setText(self.tr("Build layer index ..."))
 
-        node_index = dict()
-        feature_index = dict()
+        to_node_index = dict()
+        features = vector.features(layer)
         total = 100.0 / layer.featureCount()
 
         for current, feature in enumerate(layer.getFeatures()):
 
-            from_node = feature.attribute(from_node_field)
             to_node = feature.attribute(to_node_field)
-
-            if node_index.has_key(from_node):
-                node_index[from_node].append(to_node)
+            if to_node_index.has_key(to_node):
+                to_node_index[to_node].append(feature.id())
             else:
-                node_index[from_node] = [ to_node ]
-
-            if not node_index.has_key(to_node):
-                node_index[to_node] = list()
-
-            if feature_index.has_key((from_node, to_node)):
-                feature_index[(from_node, to_node)].append(feature.id())
-            else:
-                feature_index[(from_node, to_node)] = [ feature.id() ]
+                to_node_index[to_node] = [ feature.id() ]
             
             progress.setPercentage(int(current * total))
 
-        progress.setText(self.tr("Find cycles ..."))
 
-        stack = list()
-        self.index = 0
-        seen_nodes = dict()
+        progress.setText(self.tr("Select connected reaches ..."))
 
-        def connect(node):
-            """
-            Tarjan Strongly Connected Component Algorithm
-            https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
-            """
+        process_stack = [ segment for segment in layer.selectedFeatures() ]
+        selection = set()
 
-            data = NodeData(self.index)
-            seen_nodes[node] = data
-            self.index = self.index + 1
-            stack.append(node)
+        while process_stack:
 
-            for next_node in node_index[node]:
-                if not seen_nodes.has_key(next_node):
-                    connect(next_node)
-                    data.lowlink = min(data.lowlink, seen_nodes[next_node].lowlink)
-                elif next_node in stack:
-                    data.lowlink = min(data.lowlink, seen_nodes[next_node].index)
+            segment = process_stack.pop()
+            selection.add(segment.id())
+            from_node = segment.attribute(from_node_field)
 
-            if data.index == data.lowlink:
+            if to_node_index.has_key(from_node):
+                q = QgsFeatureRequest().setFilterFids(to_node_index[from_node])
+                for next_segment in layer.getFeatures(q):
+                    # Prevent infinite loop
+                    if not next_segment.id() in selection:
+                        process_stack.append(next_segment)
 
-                first_back_node = stack.pop()
-                
-                if first_back_node != node:
-                    if (first_back_node, node) in feature_index:
-                        for feature_id in feature_index[(first_back_node, node)]:
-                            layer.select(feature_id)
-                    else:
-                        ProcessingLog.addToLog(
-                            ProcessingLog.LOG_INFO,
-                            "Unmatched feature : %d -> %d" % (first_back_node, node))
-                
-                back_node = first_back_node
-                while node != back_node:
-                    next_back_node = stack.pop()
-                    for feature_id in feature_index[(next_back_node, back_node)]:
-                        layer.select(feature_id)
-                    back_node = next_back_node
-
-            # progress.setPercentage(int(current * total))
-
-        for node in node_index.keys():
-            if not seen_nodes.has_key(node):
-                connect(node)
+        layer.setSelectedFeatures(list(selection))

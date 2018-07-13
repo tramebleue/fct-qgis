@@ -40,15 +40,15 @@ from ...core import vector as vector_helper
 
 from collections import defaultdict
 
-class MarkMainDrain(GeoAlgorithm):
+class SelectMainDrain(GeoAlgorithm):
 
     NETWORK = 'NETWORK'
     COST_FIELD = 'COST_FIELD'
-    OUTPUT = 'OUTPUT'
+    # OUTPUT = 'OUTPUT'
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Mark Main Drain')
+        self.name, self.i18n_name = self.trAlgorithm('Select Main Drain')
         self.group, self.i18n_group = self.trAlgorithm('Hydrography')
 
         self.addParameter(ParameterVector(self.NETWORK,
@@ -59,7 +59,7 @@ class MarkMainDrain(GeoAlgorithm):
                                           parent=self.NETWORK,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
         
-        self.addOutput(OutputVector(self.OUTPUT, self.tr('Main Drain')))
+        # self.addOutput(OutputVector(self.OUTPUT, self.tr('Main Drain')))
 
 
     def processAlgorithm(self, progress):
@@ -67,22 +67,23 @@ class MarkMainDrain(GeoAlgorithm):
         network = dataobjects.getObjectFromUri(self.getParameterValue(self.NETWORK))
         cost_field = self.getParameterValue(self.COST_FIELD)
 
-        writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
-            vector_helper.createUniqueFieldsList(
-                network,
-                QgsField('DP', QVariant.Int, len=2)
-            ),
-            network.dataProvider().geometryType(),
-            network.crs())
+        # writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
+        #     vector_helper.createUniqueFieldsList(
+        #         network,
+        #         QgsField('DP', QVariant.Int, len=2)
+        #     ),
+        #     network.dataProvider().geometryType(),
+        #     network.crs())
 
         progress.setText(self.tr('Build Upward Index ...'))
 
         # forwardtracks = { nb: list(segment, na, cost) }
         forwardtracks = defaultdict(list)
-        total = 100.0 / network.featureCount()
+        features = vector.features(network)
+        total = 100.0 / len(features)
         anodes = set()
 
-        for current, feature in enumerate(network.getFeatures()):
+        for current, feature in enumerate(features):
 
             toi = feature.attribute('TOI')
             if toi == 0:
@@ -137,6 +138,7 @@ class MarkMainDrain(GeoAlgorithm):
         total = 100.0 / network.featureCount()
         current = 0
         seen_segments = set()
+        selection = set()
 
         for source in sources:
 
@@ -150,12 +152,7 @@ class MarkMainDrain(GeoAlgorithm):
 
                     feature = network.getFeatures(QgsFeatureRequest(segment)).next()
                     
-                    out_feature = QgsFeature()
-                    out_feature.setGeometry(feature.geometry())
-                    out_feature.setAttributes(feature.attributes() + [
-                            1
-                        ])
-                    writer.addFeature(out_feature)
+                    selection.add(segment)
 
                     seen_segments.add(segment)
 
@@ -164,22 +161,7 @@ class MarkMainDrain(GeoAlgorithm):
 
                 na = nb
 
-        progress.setText(self.tr('Output unmatched segments ...'))
+        network.setSelectedFeatures(list(selection))
 
-        for feature in network.getFeatures():
-
-            if feature.id() not in seen_segments:
-
-                out_feature = QgsFeature()
-                out_feature.setGeometry(feature.geometry())
-                out_feature.setAttributes(feature.attributes() + [
-                        0
-                    ])
-                writer.addFeature(out_feature)
-
-                seen_segments.add(segment)
-                current = current + 1
-                progress.setPercentage(int(current * total))
-
-
+        
 
