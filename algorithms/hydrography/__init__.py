@@ -11,6 +11,7 @@ from MarkMainDrain import MarkMainDrain
 from MatchNearestLine import MatchNearestLine
 from MatchNearestLineUpdate import MatchNearestLineUpdate
 from MatchNetworkNodes import MatchNetworkNodes
+from MatchNetworkNodesTopology import MatchNetworkNodesTopology
 from MatchNetworkSegments import MatchNetworkSegments
 from MeasureLinesFromOutlet import MeasureLinesFromOutlet
 from MeasurePointsAlongLine import MeasurePointsAlongLine
@@ -45,6 +46,7 @@ def hydrographyAlgorithms():
         MatchNearestLine(),
         MatchNearestLineUpdate(),
         MatchNetworkNodes(),
+        MatchNetworkNodesTopology(),
         MatchNetworkSegments(),
         MeasureLinesFromOutlet(),
         MeasurePointsAlongLine(),

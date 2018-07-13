@@ -73,7 +73,7 @@ class MatchNetworkNodes(GeoAlgorithm):
             vector_helper.createUniqueFieldsList(
                 source_layer,
                 QgsField('LAYER', QVariant.Int, len=2),
-                QgsField('TGID', QVariant.Int, len=10),
+                QgsField('PAIRID', QVariant.Int, len=10),
                 QgsField('TX', QVariant.Double, len=10, prec=2),
                 QgsField('TY', QVariant.Double, len=10, prec=2)
             ),
