@@ -363,7 +363,7 @@ class MatchNetworkNodesTopology(GeoAlgorithm):
             root = Pair.root()
             stack = list()
             parent = root
-            source_matched = False
+            # source_matched = False
             
             for s2 in match_source(point, network2, network2_index, index2, points2, max_distance):
 
@@ -373,11 +373,13 @@ class MatchNetworkNodesTopology(GeoAlgorithm):
                 tree_size += 1
                 heappush(stack, child)
                 seen_pairs[(source, s2)] = child
-                source_matched = True
+                # source_matched = True
 
-            if not source_matched:
+            # if not source_matched:
+            if not stack:
 
                 sources.extend(downstream_nodes(source, index1, points1))
+                continue
 
             # Find all possible pairs descending from source
 

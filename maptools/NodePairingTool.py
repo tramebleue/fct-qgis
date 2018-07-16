@@ -65,7 +65,7 @@ class NodePairingTool(QgsMapTool):
         index = defaultdict(list)
 
         for feature in layer.getFeatures():
-            target_id = feature.attribute('TGID')
+            target_id = feature.attribute('PAIRID')
             index[target_id].append(feature.id())
 
         self.link_index = index
@@ -75,9 +75,9 @@ class NodePairingTool(QgsMapTool):
         self.source = layer
         self.source_index = QgsSpatialIndex(layer.getFeatures())
         self.build_link_index(layer)
-        self.tgid_field_idx = layer.fieldNameIndex('TGID')
-        self.tx_field_idx = layer.fieldNameIndex('TX')
-        self.ty_field_idx = layer.fieldNameIndex('TY')
+        self.tgid_field_idx = layer.fieldNameIndex('PAIRID')
+        self.tx_field_idx = layer.fieldNameIndex('PAIRX')
+        self.ty_field_idx = layer.fieldNameIndex('PAIRY')
 
     def setTargetLayer(self, layer):
 

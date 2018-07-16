@@ -81,11 +81,6 @@ class LengthOrder(GeoAlgorithm):
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
         
-        self.addParameter(ParameterTableField(self.DISTANCE_FIELD,
-                                          self.tr('Distance Field'),
-                                          parent=self.INPUT_LAYER,
-                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
-        
         self.addParameter(ParameterTableField(self.FROM_NODE_FIELD,
                                           self.tr('From Node Field'),
                                           parent=self.INPUT_LAYER,
@@ -93,6 +88,11 @@ class LengthOrder(GeoAlgorithm):
         
         self.addParameter(ParameterTableField(self.TO_NODE_FIELD,
                                           self.tr('To Node Field'),
+                                          parent=self.INPUT_LAYER,
+                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
+
+        self.addParameter(ParameterTableField(self.DISTANCE_FIELD,
+                                          self.tr('Distance Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 

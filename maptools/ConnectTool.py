@@ -17,6 +17,7 @@ class ConnectTool(QgsMapToolIdentifyFeature):
         self.cursor = QCursor(Qt.CrossCursor)
         self.from_node_field = 'NODE_A'
         self.to_node_field = 'NODE_B'
+        self.fictif_field = 'fictif'
         self.target_feature_id = None
 
     @classmethod
@@ -45,6 +46,7 @@ class ConnectTool(QgsMapToolIdentifyFeature):
             self.layer = layer
             self.from_node_field_idx = layer.fieldNameIndex(self.from_node_field)
             self.to_node_field_idx = layer.fieldNameIndex(self.to_node_field)
+            self.fictif_field_idx = layer.fieldNameIndex(self.fictif_field)
 
     def activate(self):
 
@@ -72,24 +74,47 @@ class ConnectTool(QgsMapToolIdentifyFeature):
 
         layer = self.layer
 
-        if self.doConnect and self.target_feature_id is not None:
+        if self.doConnect:
 
-            layer.startEditing()
+            if self.target_feature_id is not None:
 
-            target_feature = layer.getFeatures(QgsFeatureRequest(self.target_feature_id)).next()
+                target_feature = layer.getFeatures(QgsFeatureRequest(self.target_feature_id)).next()
 
-            connect_node = feature.attribute(self.from_node_field)
-            target_feature.setAttribute(self.to_node_field_idx, connect_node)
-            layer.updateFeature(target_feature)
-        
-            layer.commitChanges()
+                a = target_feature.geometry().interpolate(target_feature.geometry().length()).asPoint()
+                b = feature.geometry().interpolate(0.0).asPoint()
 
-            iface.messageBar().pushMessage(
-                "Connect Tool",
-                "Selected line has been connected to node %s" % connect_node,
-                QgsMessageBar.INFO,
-                2
-            )
+                layer.startEditing()
+
+                connect_node = feature.attribute(self.from_node_field)
+                # target_feature.setAttribute(self.to_node_field_idx, connect_node)
+                # layer.updateFeature(target_feature)
+
+                new_feature = QgsFeature()
+                attrs = target_feature.attributes()
+                attrs[self.from_node_field_idx] = target_feature.attribute(self.to_node_field)
+                attrs[self.to_node_field_idx] = connect_node
+                attrs[self.fictif_field_idx] = 'Oui'
+                new_feature.setAttributes(attrs)
+                new_feature.setGeometry(QgsGeometry.fromPolyline([ a, b ]))
+                layer.addFeature(new_feature)
+            
+                layer.commitChanges()
+
+                iface.messageBar().pushMessage(
+                    "Connect Tool",
+                    "Selected line has been connected to node %s" % connect_node,
+                    QgsMessageBar.INFO,
+                    2
+                )
+
+            else:
+
+                iface.messageBar().pushMessage(
+                    "Connect Tool",
+                    "Current selection is empty.",
+                    QgsMessageBar.INFO,
+                    2
+                )
 
         else:
             
