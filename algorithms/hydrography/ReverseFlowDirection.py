@@ -74,7 +74,7 @@ def reverseFlowDirection(layer, from_node_field, to_node_field, progress=None):
     layer.commitChanges()
 
 
-class SelectionReverseFlowDirection(GeoAlgorithm):
+class ReverseFlowDirection(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     # OUTPUT_LAYER = 'OUTPUT'
@@ -83,7 +83,7 @@ class SelectionReverseFlowDirection(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Selection Reverse Flow Direction')
+        self.name, self.i18n_name = self.trAlgorithm('Reverse Flow Direction')
         self.group, self.i18n_group = self.trAlgorithm('Hydrography')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,

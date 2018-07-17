@@ -17,11 +17,11 @@ from MeasureLinesFromOutlet import MeasureLinesFromOutlet
 from MeasurePointsAlongLine import MeasurePointsAlongLine
 from NetworkNodes import NetworkNodes
 from ProjectPointsAlongLine import ProjectPointsAlongLine
+from ReverseFlowDirection import ReverseFlowDirection
 from SelectConnectedComponents import SelectConnectedComponents
 from SelectDownstreamComponents import SelectDownstreamComponents
 from SelectFullLengthPaths import SelectFullLengthPaths
 from SelectGraphCycle import SelectGraphCycle
-from SelectionReverseFlowDirection import SelectionReverseFlowDirection
 from SelectMainDrain import SelectMainDrain
 from SelectSmallTributaries import SelectSmallTributaries
 from SelectUpstreamComponents import SelectUpstreamComponents
@@ -52,11 +52,11 @@ def hydrographyAlgorithms():
         MeasurePointsAlongLine(),
         NetworkNodes(),
         ProjectPointsAlongLine(),
+        ReverseFlowDirection(),
         SelectConnectedComponents(),
         SelectDownstreamComponents(),
         SelectFullLengthPaths(),
         SelectGraphCycle(),
-        SelectionReverseFlowDirection(),
         SelectMainDrain(),
         SelectSmallTributaries(),
         SelectUpstreamComponents(),
