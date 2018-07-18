@@ -44,7 +44,7 @@ class DensifyNetworkNodes(GeoAlgorithm):
     OUTPUT = 'OUTPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
-    MEASURE_FIELD = 'MEASURE_FIELD'
+    MEASURE_FIELD = 'MEAS_FIELD'
     MAX_DISTANCE = 'MAX_DISTANCE'
 
     def defineCharacteristics(self):

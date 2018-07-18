@@ -40,7 +40,7 @@ class ExtremePoints(GeoAlgorithm):
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Extreme Points')
-        self.group, self.i18n_group = self.trAlgorithm('Hydrography')
+        self.group, self.i18n_group = self.trAlgorithm('Unstable')
 
         self.addParameter(ParameterVector(self.INPUT,
                                           self.tr('Input layer'), [ParameterVector.VECTOR_TYPE_LINE]))

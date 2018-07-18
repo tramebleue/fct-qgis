@@ -64,8 +64,8 @@ class Sequencing(GeoAlgorithm):
     SEARCH_DISTANCE = 'SEARCH_DISTANCE'
     
     OUTPUT_LAYER = 'OUTPUT'
-    ENDPOINTS_LAYER = 'ENDPOINTS_LAYER'
-    UNMATCHED_LAYER = 'UNMATCHED_LAYER'
+    ENDPOINTS_LAYER = 'ENDPOINTS'
+    UNMATCHED_LAYER = 'UNMATCHED'
 
     def defineCharacteristics(self):
 

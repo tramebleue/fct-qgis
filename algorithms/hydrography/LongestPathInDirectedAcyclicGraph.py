@@ -96,10 +96,9 @@ class NodeInfo(object):
 
 class LongestPathInDirectedAcyclicGraph(GeoAlgorithm):
 
-    EDGE_LAYER = 'EDGE_LAYER'
-    NODE_A_FIELD = 'NODE_A_FIELD'
-    NODE_B_FIELD = 'NODE_B_FIELD'
-
+    EDGE_LAYER = 'INPUT'
+    NODE_A_FIELD = 'FROM_NODE_FIELD'
+    NODE_B_FIELD = 'TO_NODE_FIELD'
     OUTPUT_LAYER = 'OUTPUT'
 
     def defineCharacteristics(self):

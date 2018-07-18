@@ -23,7 +23,7 @@ from SelectDownstreamComponents import SelectDownstreamComponents
 from SelectFullLengthPaths import SelectFullLengthPaths
 from SelectGraphCycle import SelectGraphCycle
 from SelectMainDrain import SelectMainDrain
-from SelectSmallTributaries import SelectSmallTributaries
+from SelectShortTributaries import SelectShortTributaries
 from SelectUpstreamComponents import SelectUpstreamComponents
 from Sequencing import Sequencing
 from StrahlerOrder import StrahlerOrder
@@ -58,7 +58,7 @@ def hydrographyAlgorithms():
         SelectFullLengthPaths(),
         SelectGraphCycle(),
         SelectMainDrain(),
-        SelectSmallTributaries(),
+        SelectShortTributaries(),
         SelectUpstreamComponents(),
         Sequencing(),
         StrahlerOrder()

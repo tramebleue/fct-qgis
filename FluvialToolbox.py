@@ -151,10 +151,10 @@ class FluvialToolboxProvider(AlgorithmProvider):
         super(FluvialToolboxProvider, self).unload()
 
     def getName(self):
-        return 'Fluvial Toolbox'
+        return 'Fluvial Corridor Toolbox'
 
     def getDescription(self):
-        return 'Fluvial Toolbox'
+        return 'Fluvial Corridor Toolbox'
 
     # def getIcon(self):
     #    return QIcon(":/plugins/fluvialtoolbox/icon.svg")

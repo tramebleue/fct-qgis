@@ -49,7 +49,7 @@ class MarkMainDrain(GeoAlgorithm):
     def defineCharacteristics(self):
 
         self.name, self.i18n_name = self.trAlgorithm('Mark Main Drain')
-        self.group, self.i18n_group = self.trAlgorithm('Hydrography')
+        self.group, self.i18n_group = self.trAlgorithm('Unstable')
 
         self.addParameter(ParameterVector(self.NETWORK,
                                           self.tr('Input Network Layer'), [ParameterVector.VECTOR_TYPE_LINE]))

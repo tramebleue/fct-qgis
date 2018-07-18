@@ -65,7 +65,7 @@ class SourceEntry(object):
         return self.distance == other.distance
 
 
-class SelectSmallTributaries(GeoAlgorithm):
+class SelectShortTributaries(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     OUTPUT_LAYER = 'OUTPUT'
@@ -76,7 +76,7 @@ class SelectSmallTributaries(GeoAlgorithm):
 
     def defineCharacteristics(self):
 
-        self.name, self.i18n_name = self.trAlgorithm('Select Small Tributaries')
+        self.name, self.i18n_name = self.trAlgorithm('Select Short Tributaries')
         self.group, self.i18n_group = self.trAlgorithm('Hydrography')
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,

@@ -127,6 +127,7 @@ class SelectConnectedComponents(GeoAlgorithm):
                     current += 1
                     progress.setPercentage(int(current * total))
 
+        # layer.selectByIds(list(selection))
         layer.setSelectedFeatures(list(selection))
 
 

@@ -48,36 +48,10 @@ def reversePolyline(geometry):
             polyline.reverse()
             return QgsGeometry.fromPolyline(polyline)
 
-def reverseFlowDirection(layer, from_node_field, to_node_field, progress=None):
-
-    from_node_field_idx = layer.fieldNameIndex(from_node_field)
-    to_node_field_idx = layer.fieldNameIndex(to_node_field)
-
-    if layer.selectedFeatureCount() == 0:
-        return
-
-    layer.startEditing()
-    total = 100.0 / layer.selectedFeatureCount()
-    for current, feature in enumerate(layer.selectedFeatures()):
-
-        from_node = feature.attribute(from_node_field)
-        to_node = feature.attribute(to_node_field)
-        geometry = reversePolyline(feature.geometry())
-
-        layer.changeAttributeValue(feature.id(), from_node_field_idx, to_node, from_node)
-        layer.changeAttributeValue(feature.id(), to_node_field_idx, from_node, to_node)
-        layer.changeGeometry(feature.id(), geometry)
-
-        if progress:
-            progress.setPercentage(int(current * total))
-
-    layer.commitChanges()
-
-
 class ReverseFlowDirection(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
-    # OUTPUT_LAYER = 'OUTPUT'
+    OUTPUT_LAYER = 'OUTPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
 
@@ -88,16 +62,18 @@ class ReverseFlowDirection(GeoAlgorithm):
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
+        
         self.addParameter(ParameterTableField(self.FROM_NODE_FIELD,
                                           self.tr('From Node Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
+        
         self.addParameter(ParameterTableField(self.TO_NODE_FIELD,
                                           self.tr('To Node Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
-        # self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Stream')))
+        self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Reversed Flow')))
 
     def processAlgorithm(self, progress):
 
@@ -105,4 +81,24 @@ class ReverseFlowDirection(GeoAlgorithm):
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
 
-        reverseFlowDirection(layer, from_node_field, to_node_field, progress)
+        writer = self.getOutputFromName(self.OUTPUT_LAYER).getVectorWriter(
+            layer.fields().toList(),
+            layer.dataProvider().geometryType(),
+            layer.crs())
+
+        features = vector.features(layer)
+        total = 100.0 / len(features)
+
+        for current, feature in enumerate(features):
+
+            from_node = feature.attribute(from_node_field)
+            to_node = feature.attribute(to_node_field)
+            geometry = reversePolyline(feature.geometry())
+
+            feature[from_node_field] = to_node
+            feature[to_node_field] = from_node
+            feature.setGeometry(geometry)
+
+            writer.addFeature(feature)
+
+            progress.setPercentage(int(current * total))
