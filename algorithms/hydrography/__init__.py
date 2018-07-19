@@ -1,17 +1,18 @@
 from AggregateLineSegments import AggregateLineSegments
 from AggregateLineSegmentsByCat import AggregateLineSegmentsByCat
 from DensifyNetworkNodes import DensifyNetworkNodes
-from ExtremePoints import ExtremePoints
+# from ExtremePoints import ExtremePoints
 from IdentifyNetworkNodes import IdentifyNetworkNodes
-from LocatePolygonAlongLinearNetwork import LocatePolygonAlongLinearNetwork
+from LocatePolygonAlongLine import LocatePolygonAlongLine
+# from LocatePolygonAlongLinearNetwork import LocatePolygonAlongLinearNetwork
 from LengthOrder import LengthOrder
 from LongestPathInDirectedAcyclicGraph import LongestPathInDirectedAcyclicGraph
 from LongestPathInDirectedAcyclicGraphMultiFlow import LongestPathInDirectedAcyclicGraphMultiFlow
-from MarkMainDrain import MarkMainDrain
+# from MarkMainDrain import MarkMainDrain
 from MatchNearestLine import MatchNearestLine
 from MatchNearestLineUpdate import MatchNearestLineUpdate
 from MatchNetworkNodes import MatchNetworkNodes
-from MatchNetworkNodesTopology import MatchNetworkNodesTopology
+# from MatchNetworkNodesTopology import MatchNetworkNodesTopology
 from MatchNetworkSegments import MatchNetworkSegments
 from MeasureLinesFromOutlet import MeasureLinesFromOutlet
 from MeasurePointsAlongLine import MeasurePointsAlongLine
@@ -36,17 +37,18 @@ def hydrographyAlgorithms():
         AggregateLineSegments(),
         AggregateLineSegmentsByCat(),
         DensifyNetworkNodes(),
-        ExtremePoints(),
+        # ExtremePoints(),
         IdentifyNetworkNodes(),
         LengthOrder(),
-        LocatePolygonAlongLinearNetwork(),
+        LocatePolygonAlongLine(),
+        # LocatePolygonAlongLinearNetwork(),
         LongestPathInDirectedAcyclicGraph(),
         LongestPathInDirectedAcyclicGraphMultiFlow(),
-        MarkMainDrain(),
+        # MarkMainDrain(),
         MatchNearestLine(),
         MatchNearestLineUpdate(),
         MatchNetworkNodes(),
-        MatchNetworkNodesTopology(),
+        # MatchNetworkNodesTopology(),
         MatchNetworkSegments(),
         MeasureLinesFromOutlet(),
         MeasurePointsAlongLine(),

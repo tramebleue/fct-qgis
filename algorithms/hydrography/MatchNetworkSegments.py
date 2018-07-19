@@ -126,7 +126,7 @@ class MatchNetworkSegments(GeoAlgorithm):
             vector_helper.createUniqueFieldsList(
                 network1,
                 vector_helper.resolveField(network2, network2_pk_field),
-                QgsField('DPCOST', QVariant.Double, len=10, prec=2)
+                QgsField('MATCHDIST', QVariant.Double, len=10, prec=2)
             ),
             network1.dataProvider().geometryType(),
             network1.crs())

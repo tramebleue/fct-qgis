@@ -84,8 +84,8 @@ def lineLocatePoint(line, point):
 
 class ProjectPointsAlongLine(GeoAlgorithm):
 
-    INPUT_POINTS = 'INPUT_POINTS'
-    INPUT_LINES = 'INPUT_LINES'
+    INPUT_POINTS = 'INPUT'
+    INPUT_LINES = 'LINES'
     MEASURE_FIELD = 'MEASURE_FIELD'
     LINE_PK = 'LINE_PK'
     MAX_DISTANCE = 'MAX_DISTANCE'
@@ -110,7 +110,8 @@ class ProjectPointsAlongLine(GeoAlgorithm):
         self.addParameter(ParameterTableField(self.MEASURE_FIELD,
                                           self.tr('Measure Field'),
                                           parent=self.INPUT_LINES,
-                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
+                                          datatype=ParameterTableField.DATA_TYPE_NUMBER,
+                                          optional=True))
 
         self.addParameter(ParameterNumber(self.MAX_DISTANCE,
                                           self.tr('Maximum Distance'),
@@ -143,7 +144,7 @@ class ProjectPointsAlongLine(GeoAlgorithm):
             vector_helper.createUniqueFieldsList(
                 point_layer,
                 vector_helper.resolveField(line_layer, line_pk_field),
-                QgsField(measure_field, QVariant.Double, len=10, prec=4)
+                QgsField(measure_field or 'MEAS', QVariant.Double, len=10, prec=4)
             ),
             point_layer.dataProvider().geometryType(),
             point_layer.crs())
@@ -166,15 +167,19 @@ class ProjectPointsAlongLine(GeoAlgorithm):
             for line in line_layer.getFeatures(q):
 
                 d = line.geometry().distance(feature.geometry())
+
                 if d < closest:
-                    m = lineLocatePoint(line.geometry(), feature.geometry())
-                    # if line is reversed
-                    measure = line.attribute(measure_field) + (line.geometry().length() - m)
-                    # else
-                    # measure = line.attribute(measure_field) + m
+
                     closest = d
+                    closest_point = line.geometry().nearestPoint(feature.geometry())
+                    m = lineLocatePoint(line.geometry(), closest_point)
+                    
+                    if measure_field is not None:
+                        measure = line.attribute(measure_field) - m
+                    else:
+                        measure = line.geometry().length() - m
+
                     closest_id = line.attribute(line_pk_field)
-                    closest_point = line.geometry().interpolate(m)
 
             if closest_id is not None:
 

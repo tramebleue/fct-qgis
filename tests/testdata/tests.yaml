@@ -260,6 +260,10 @@ tests:
         type: vector
         name: hydrography/expected/aggregated_lines.gml
         compare:
+          NODE_A: yes
+          NODE_B: yes
+          MEASA:
+            precision: 2
           geometry:
             precision: 7
 
@@ -279,6 +283,11 @@ tests:
         type: vector
         name: hydrography/expected/aggregated_lines_by_category.gml
         compare:
+          NODE_A: yes
+          NODE_B: yes
+          MEASA:
+            precision: 2
+          PATHID: yes
           geometry:
             precision: 7
 
@@ -295,6 +304,8 @@ tests:
         type: vector
         name: hydrography/expected/reverse_flow_direction.gml
         compare:
+          NODE_A: yes
+          NODE_B: yes
           geometry:
             precision: 7
 
@@ -311,6 +322,8 @@ tests:
         type: vector
         name: hydrography/expected/longest_path.gml
         compare:
+          NODE_A: yes
+          NODE_B: yes
           geometry:
             precision: 7
 
@@ -326,6 +339,133 @@ tests:
       OUTPUT:
         type: vector
         name: hydrography/expected/longest_path_multiflow.gml
+        compare:
+          NODE_A: yes
+          NODE_B: yes
+          geometry:
+            precision: 7
+
+  - name: Project Points Along Line
+    algorithm: fluvialcorridortoolbox:projectpointsalongnearestline
+    params:
+      INPUT:
+        type: vector
+        name: hydrography/points0.gml
+      LINES:
+        type: vector
+        name: hydrography/measured_line0.gml
+      MEASURE_FIELD: MEASA
+      LINE_PK: LINEID
+      MAX_DISTANCE: 200.0
+    results:
+      OUTPUT:
+        type: vector
+        name: hydrography/expected/projected_points.gml
+        compare:
+          geometry:
+            precision: 7
+
+  - name: Locate Polygon Along Line
+    algorithm: fluvialcorridortoolbox:locatepolygonalongline
+    params:
+      INPUT:
+        type: vector
+        name: hydrography/polygons0.shp
+      LINES:
+        type: vector
+        name: hydrography/network2.shp
+      AXIS: PATHID
+      MEASURE: MEAS_A
+    results:
+      OUTPUT:
+        type: vector
+        name: hydrography/expected/polygon_linear_location.shp
+        compare:
+          geometry:
+            precision: 7
+
+  - name: Measure Polygon Location Along Line
+    algorithm: fluvialcorridortoolbox:projectpointsalongnearestline
+    params:
+      INPUT:
+        type: vector
+        name: hydrography/expected/polygon_linear_location.shp
+      LINES:
+        type: vector
+        name: hydrography/network2.shp
+      MEASURE_FIELD: MEAS_A
+      LINE_PK: gid
+      MAX_DISTANCE: 200.0
+    results:
+      OUTPUT:
+        type: vector
+        name: hydrography/expected/polygon_measured_linear_location.shp
+        compare:
+          geometry:
+            precision: 7
+
+  - name: Match Nearest Line
+    algorithm: fluvialcorridortoolbox:matchnearestline
+    params:
+      INPUT:
+        type: vector
+        name: hydrography/hydrography3.shp
+      TARGET:
+        type: vector
+        name: hydrography/hydrography4.shp
+      TARGET_PK: ID_TRONCON
+      MAX_DISTANCE: 50.0
+    results:
+      OUTPUT:
+        type: vector
+        name: hydrography/expected/matched_lines.shp
+        compare:
+          geometry:
+            precision: 7
+
+  - name: Match Network Nodes
+    algorithm: fluvialcorridortoolbox:matchnetworknodes
+    params:
+      NETWORK1:
+        type: vector
+        name: hydrography/hydrography4.shp
+      NODES1:
+        type: vector
+        name: hydrography/hydrography4_nodes.shp
+      NETWORK2:
+        type: vector
+        name: hydrography/hydrography3.shp
+      NODES2:
+        type: vector
+        name: hydrography/hydrography3_nodes.shp
+      MAX_DISTANCE: 50.0
+    results:
+      OUTPUT:
+        type: vector
+        name: hydrography/expected/matched_network_nodes.shp
+        compare:
+          geometry:
+            precision: 7
+  
+  - name: Match Network Segments
+    algorithm: fluvialcorridortoolbox:matchnetworksegments
+    params:
+      NETWORK1:
+        type: vector
+        name: hydrography/hydrography3.shp
+      NETWORK2:
+        type: vector
+        name: hydrography/hydrography4.shp
+      NETWORK2_PK_FIELD: ID_TRONCON
+      PAIRS:
+        type: vector
+        name: hydrography/expected/matched_network_nodes.shp
+      NETWORK1_PAIR_FIELD: PAIRID
+      NETWORK2_PAIR_FIELD: GID
+    results:
+      OUTPUT:
+        type: vector
+        name: hydrography/expected/matched_segments.shp
         compare:
           geometry:
             precision: 7
