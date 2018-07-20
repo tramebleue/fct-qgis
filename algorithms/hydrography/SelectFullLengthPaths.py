@@ -28,6 +28,7 @@ from qgis.core import QGis, QgsFeature, QgsGeometry, QgsPoint, QgsSpatialIndex, 
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsFeatureRequest, QgsExpression
 from PyQt4.QtCore import QVariant
+import processing
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
@@ -40,6 +41,7 @@ class SelectFullLengthPaths(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
     PATHID_FIELD = 'PATHID_FIELD'
+    OUTPUT = 'OUTPUT'
 
     def defineCharacteristics(self):
 
@@ -54,9 +56,11 @@ class SelectFullLengthPaths(GeoAlgorithm):
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
+        self.addOutput(OutputVector(self.OUTPUT, self.tr('Selected (Full Length components)'), True))
+
     def processAlgorithm(self, progress):
 
-        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
+        layer = processing.getObject(self.getParameterValue(self.INPUT_LAYER))
         pathid_field = self.getParameterValue(self.PATHID_FIELD)
 
         if layer.selectedFeatureCount() == 0:
@@ -85,5 +89,9 @@ class SelectFullLengthPaths(GeoAlgorithm):
             if pathid in paths:
                 selection.append(feature.id())
 
+        # QGis 2.18
+        # layer.selectByIds(list(selection), QgsVectorLayer.SetSelection)
         layer.setSelectedFeatures(selection)
 
+        # Redirect Input to Output
+        self.setOutputValue(self.OUTPUT, self.getParameterValue(self.INPUT_LAYER))

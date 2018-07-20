@@ -14,6 +14,7 @@ from SplitLineIntoSegments import SplitLineIntoSegments
 from UniquePoints import UniquePoints
 from UniqueValuesTable import UniqueValuesTable
 from UpdateFieldByExpression import UpdateFieldByExpression
+from UpdateFieldByExpressionInPlace import UpdateFieldByExpressionInPlace
 
 
 def vectorAlgorithms():
@@ -34,5 +35,6 @@ def vectorAlgorithms():
         SplitLineIntoSegments(),
         UniquePoints(),
         UniqueValuesTable(),
-        UpdateFieldByExpression()
+        UpdateFieldByExpression(),
+        UpdateFieldByExpressionInPlace()
     ]

@@ -28,6 +28,7 @@ from qgis.core import QGis, QgsFeature, QgsGeometry, QgsPoint, QgsSpatialIndex, 
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsFeatureRequest, QgsExpression
 from PyQt4.QtCore import QVariant
+import processing
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
@@ -45,6 +46,7 @@ class SelectConnectedComponents(GeoAlgorithm):
     INPUT = 'INPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
+    OUTPUT = 'OUTPUT'
 
     def defineCharacteristics(self):
 
@@ -64,9 +66,11 @@ class SelectConnectedComponents(GeoAlgorithm):
                                           parent=self.INPUT,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
+        self.addOutput(OutputVector(self.OUTPUT, self.tr('Selected (Connected components)'), True))
+
     def processAlgorithm(self, progress):
 
-        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT))
+        layer = processing.getObject(self.getParameterValue(self.INPUT))
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
 
@@ -127,8 +131,12 @@ class SelectConnectedComponents(GeoAlgorithm):
                     current += 1
                     progress.setPercentage(int(current * total))
 
-        # layer.selectByIds(list(selection))
+        # QGis 2.18
+        # layer.selectByIds(list(selection), QgsVectorLayer.SetSelection)
         layer.setSelectedFeatures(list(selection))
+
+        # Redirect Input to Output
+        self.setOutputValue(self.OUTPUT, self.getParameterValue(self.INPUT))
 
 
         

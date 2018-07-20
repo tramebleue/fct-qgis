@@ -28,6 +28,7 @@ from qgis.core import QGis, QgsFeature, QgsGeometry, QgsPoint, QgsSpatialIndex, 
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsFeatureRequest, QgsExpression
 from PyQt4.QtCore import QVariant
+import processing
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
@@ -44,6 +45,7 @@ class SelectDownstreamComponents(GeoAlgorithm):
     # OUTPUT_LAYER = 'OUTPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
+    OUTPUT = 'OUTPUT'
 
     def defineCharacteristics(self):
 
@@ -61,11 +63,11 @@ class SelectDownstreamComponents(GeoAlgorithm):
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
-        # self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Stream')))
+        self.addOutput(OutputVector(self.OUTPUT, self.tr('Selected (Downstream components)'), True))
 
     def processAlgorithm(self, progress):
 
-        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
+        layer = processing.getObject(self.getParameterValue(self.INPUT_LAYER))
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
 
@@ -105,4 +107,9 @@ class SelectDownstreamComponents(GeoAlgorithm):
                     if not next_segment.id() in selection:
                         process_stack.append(next_segment)
 
+        # QGis 2.18
+        # layer.selectByIds(list(selection), QgsVectorLayer.SetSelection)
         layer.setSelectedFeatures(list(selection))
+
+        # Redirect Input to Output
+        self.setOutputValue(self.OUTPUT, self.getParameterValue(self.INPUT_LAYER))

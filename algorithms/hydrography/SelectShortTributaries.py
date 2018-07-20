@@ -28,6 +28,7 @@ from qgis.core import QGis, QgsFeature, QgsGeometry, QgsPoint, QgsSpatialIndex, 
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsFeatureRequest, QgsExpression
 from PyQt4.QtCore import QVariant
+import processing
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
@@ -73,6 +74,7 @@ class SelectShortTributaries(GeoAlgorithm):
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
     MAX_LENGTH = 'MAX_LENGTH'
+    OUTPUT = 'OUTPUT'
 
     def defineCharacteristics(self):
 
@@ -101,9 +103,11 @@ class SelectShortTributaries(GeoAlgorithm):
                                           self.tr('Maximum Length'),
                                           minValue=0.0, default=500.0))
 
+        self.addOutput(OutputVector(self.OUTPUT, self.tr('Selected (Short tributaries)'), True))
+
     def processAlgorithm(self, progress):
 
-        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
+        layer = processing.getObject(self.getParameterValue(self.INPUT_LAYER))
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
         distance_field = self.getParameterValue(self.DISTANCE_FIELD)
@@ -195,4 +199,9 @@ class SelectShortTributaries(GeoAlgorithm):
             current = current + 1
             progress.setPercentage(int(current * total))
 
+        # QGis 2.18
+        # layer.selectByIds(list(small_edges), QgsVectorLayer.SetSelection)
         layer.setSelectedFeatures(list(small_edges))
+
+        # Redirect Input to Output
+        self.setOutputValue(self.OUTPUT, self.getParameterValue(self.INPUT_LAYER))

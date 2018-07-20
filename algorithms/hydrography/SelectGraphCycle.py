@@ -28,6 +28,7 @@ from qgis.core import QGis, QgsFeature, QgsGeometry, QgsPoint, QgsSpatialIndex, 
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsFeatureRequest, QgsExpression
 from PyQt4.QtCore import QVariant
+import processing
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterVector
 from processing.core.parameters import ParameterNumber
@@ -47,9 +48,9 @@ class NodeData(object):
 class SelectGraphCycle(GeoAlgorithm):
 
     INPUT_LAYER = 'INPUT'
-    # OUTPUT_LAYER = 'OUTPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
+    OUTPUT = 'OUTPUT'
 
     def defineCharacteristics(self):
 
@@ -58,20 +59,22 @@ class SelectGraphCycle(GeoAlgorithm):
 
         self.addParameter(ParameterVector(self.INPUT_LAYER,
                                           self.tr('Input linestrings'), [ParameterVector.VECTOR_TYPE_LINE]))
+        
         self.addParameter(ParameterTableField(self.FROM_NODE_FIELD,
                                           self.tr('From Node Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
+        
         self.addParameter(ParameterTableField(self.TO_NODE_FIELD,
                                           self.tr('To Node Field'),
                                           parent=self.INPUT_LAYER,
                                           datatype=ParameterTableField.DATA_TYPE_NUMBER))
 
-        # self.addOutput(OutputVector(self.OUTPUT_LAYER, self.tr('Stream')))
+        self.addOutput(OutputVector(self.OUTPUT, self.tr('Selected (Graph cycle)'), True))
 
     def processAlgorithm(self, progress):
 
-        layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
+        layer = processing.getObject(self.getParameterValue(self.INPUT_LAYER))
         from_node_field = self.getParameterValue(self.FROM_NODE_FIELD)
         to_node_field = self.getParameterValue(self.TO_NODE_FIELD)
 
@@ -106,6 +109,7 @@ class SelectGraphCycle(GeoAlgorithm):
         stack = list()
         self.index = 0
         seen_nodes = dict()
+        selection = set()
 
         def connect(node):
             """
@@ -132,7 +136,7 @@ class SelectGraphCycle(GeoAlgorithm):
                 if first_back_node != node:
                     if (first_back_node, node) in feature_index:
                         for feature_id in feature_index[(first_back_node, node)]:
-                            layer.select(feature_id)
+                            selection.add(feature_id)
                     else:
                         ProcessingLog.addToLog(
                             ProcessingLog.LOG_INFO,
@@ -142,7 +146,7 @@ class SelectGraphCycle(GeoAlgorithm):
                 while node != back_node:
                     next_back_node = stack.pop()
                     for feature_id in feature_index[(next_back_node, back_node)]:
-                        layer.select(feature_id)
+                        selection.add(feature_id)
                     back_node = next_back_node
 
             # progress.setPercentage(int(current * total))
@@ -150,3 +154,10 @@ class SelectGraphCycle(GeoAlgorithm):
         for node in node_index.keys():
             if not seen_nodes.has_key(node):
                 connect(node)
+
+        # QGis 2.18
+        # layer.selectByIds(list(selection), QgsVectorLayer.SetSelection)
+        layer.setSelectedFeatures(list(selection))
+
+        # Redirect Input to Output
+        self.setOutputValue(self.OUTPUT, self.getParameterValue(self.INPUT_LAYER))
