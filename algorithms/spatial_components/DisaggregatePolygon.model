@@ -233,7 +233,7 @@
                         "DISTANCE_FIELD": "DMEDAXIS"
                     }, 
                     "active": true, 
-                    "consoleName": "fluvialtoolbox:measuredistancetopointlayer", 
+                    "consoleName": "fluvialcorridortoolbox:measuredistancetopointlayer", 
                     "description": "Distance To Medial Axis"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
@@ -270,7 +270,7 @@
                         "DISTANCE_FIELD": "LFS"
                     }, 
                     "active": true, 
-                    "consoleName": "fluvialtoolbox:measuredistancetopointlayer", 
+                    "consoleName": "fluvialcorridortoolbox:measuredistancetopointlayer", 
                     "description": "Distance To Boundary"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
@@ -571,7 +571,7 @@
                         }
                     }, 
                     "active": true, 
-                    "consoleName": "fluvialtoolbox:matchpolygonwithnearestcentroid", 
+                    "consoleName": "fluvialcorridortoolbox:matchpolygonwithnearestcentroid", 
                     "description": "Match Polygon With Nearest Centroid"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"
@@ -627,7 +627,7 @@
                         "LINE_DIRECTION": 0
                     }, 
                     "active": true, 
-                    "consoleName": "fluvialtoolbox:measurepointsalongline", 
+                    "consoleName": "fluvialcorridortoolbox:measurepointsalongline", 
                     "description": "Measure Points Along Line"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"

@@ -416,7 +416,7 @@
                         }
                     }, 
                     "active": true, 
-                    "consoleName": "fluvialtoolbox:splitlinesintosegments", 
+                    "consoleName": "fluvialcorridortoolbox:splitlinesintosegments", 
                     "description": "Split Lines Into Segments"
                 }, 
                 "class": "processing.modeler.ModelerAlgorithm.Algorithm"

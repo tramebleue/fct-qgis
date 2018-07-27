@@ -229,25 +229,26 @@ class Sequencing(GeoAlgorithm):
         #     self.getParameterValue(self.START_POINT_X),
         #     self.getParameterValue(self.START_POINT_Y))
 
-        search_from_feature = layer.selectedFeatures()[0]
-        coords = self.asPolyline(search_from_feature.geometry())
-        min_degree = float('inf')
-        start_node = None
+        for search_from_feature in layer.selectedFeatures():
+            
+            coords = self.asPolyline(search_from_feature.geometry())
+            min_degree = float('inf')
+            start_node = None
 
-        for start_point in [ coords[0], coords[-1] ]:
-        
-            candidate_endpoint = self.findNearestFeature(start_point, endpoints_layer, endpoints_index, search_distance)
-            if candidate_endpoint is not None:
-                candidate_degree = len(points_to_segments[candidate_endpoint.attribute('GID')])
-                if candidate_degree < min_degree:
-                    start_node = MeasuredNode(candidate_endpoint, 0.0)
-                    min_degree = candidate_degree
-        
-        if not start_node is None:
-            heappush(process_stack, start_node)
-            seen_nodes[start_node.id] = start_node
-        else:
-            raise GeoAlgorithmExecutionException(self.tr('Never '))
+            for start_point in [ coords[0], coords[-1] ]:
+            
+                candidate_endpoint = self.findNearestFeature(start_point, endpoints_layer, endpoints_index, search_distance)
+                if candidate_endpoint is not None:
+                    candidate_degree = len(points_to_segments[candidate_endpoint.attribute('GID')])
+                    if candidate_degree < min_degree:
+                        start_node = MeasuredNode(candidate_endpoint, 0.0)
+                        min_degree = candidate_degree
+            
+            if not start_node is None:
+                heappush(process_stack, start_node)
+                seen_nodes[start_node.id] = start_node
+            else:
+                raise GeoAlgorithmExecutionException(self.tr('Never '))
 
         # Step 3
 

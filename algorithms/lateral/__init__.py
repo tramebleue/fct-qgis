@@ -5,6 +5,7 @@ from FastDeleteExteriorPolygons import FastDeleteExteriorPolygons
 from NodesFromEdges import NodesFromEdges
 from ShortestDistanceToTargets import ShortestDistanceToTargets
 from TrianglesToEdges import TrianglesToEdges
+from WeightedDistanceToTargets import WeightedDistanceToTargets
 
 def lateralAlgorithms():
 
@@ -15,5 +16,6 @@ def lateralAlgorithms():
         FastDeleteExteriorPolygons(),
         NodesFromEdges(),
         ShortestDistanceToTargets(),
-        TrianglesToEdges()
+        TrianglesToEdges(),
+        WeightedDistanceToTargets()
     ]

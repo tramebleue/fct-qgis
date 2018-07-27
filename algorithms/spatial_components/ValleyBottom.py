@@ -125,7 +125,7 @@ class ValleyBottom(GeoAlgorithm):
         display_result = self.getParameterValue(self.DISPLAY_INTERMEDIATE_RESULT)
 
         # Hard coded parameters
-        SIMPLIFY_TOLERANCE = 25
+        SIMPLIFY_TOLERANCE = 10
         SPLIT_MAX_LENGTH = self.getParameterValue(self.DISAGGREGATION_DISTANCE)
         SIEVE_THRESHOLD = 40
         SMOOTH_ITERATIONS = 6
@@ -160,7 +160,7 @@ class ValleyBottom(GeoAlgorithm):
                             })
         
         self.nextStep('Split network ...',progress)
-        SplittedNetwork = Processing.runAlgorithm('fluvialtoolbox:splitlines', None,
+        SplittedNetwork = Processing.runAlgorithm('fluvialcorridortoolbox:splitlines', None,
                             {
                               'INPUT': SimplifiedNetwork.getOutputValue('OUTPUT'),
                               'MAXLENGTH': SPLIT_MAX_LENGTH
@@ -267,7 +267,7 @@ class ValleyBottom(GeoAlgorithm):
                               'EXTRA': '-tap'
                             })
 
-        ReferenceDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('Clipped DEM'),
+        ReferenceDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('Clipped Reference'),
                             {
                               'INPUT': ReferenceDEM0.getOutputValue('OUTPUT'),
                               'MASK': LargeBuffer.getOutputValue('OUTPUT'),
@@ -279,7 +279,7 @@ class ValleyBottom(GeoAlgorithm):
                             })
 
         self.nextStep('Compute relative DEM and extract bottom ...',progress)
-        ValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:differentialrasterthreshold', None,
+        ValleyBottomRaster = Processing.runAlgorithm('fluvialcorridortoolbox:differentialrasterthreshold', None,
                             {
                               'INPUT_DEM': ClippedDEM.getOutputValue('OUTPUT'),
                               'REFERENCE_DEM': ReferenceDEM.getOutputValue('OUTPUT'),
@@ -304,7 +304,7 @@ class ValleyBottom(GeoAlgorithm):
         if MIN_OBJECT_DISTANCE > 0:
 
           self.nextStep('Merge close objects...',progress)
-          CleanedValleyBottomRaster = Processing.runAlgorithm('fluvialtoolbox:binaryclosing', handleResult('Binary Closing'),
+          CleanedValleyBottomRaster = Processing.runAlgorithm('fluvialcorridortoolbox:binaryclosing', handleResult('Binary Closing'),
                             {
                               'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
                               'DISTANCE': MIN_OBJECT_DISTANCE,
@@ -370,7 +370,7 @@ class ValleyBottom(GeoAlgorithm):
         if self.getParameterValue(self.DO_CLEAN):
 
             self.nextStep('Remove small objects and parts ...',progress)
-            CleanedValleyBottomPolygons = Processing.runAlgorithm('fluvialtoolbox:removesmallpolygonalobjects', None,
+            CleanedValleyBottomPolygons = Processing.runAlgorithm('fluvialcorridortoolbox:removesmallpolygonalobjects', None,
                                 {
                                   'INPUT': ValleyBottomPolygons.getOutputValue('OUTPUT'),
                                   'MIN_AREA': CLEAN_MIN_AREA,
