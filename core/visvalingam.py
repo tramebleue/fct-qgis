@@ -3,7 +3,7 @@ from functools import total_ordering
 
 def triangle_area(a, b, c):
 
-    return abs((a.x - c.x) * (b.y - a.y) - (a.x - b.x) * (c.y - a.y))
+    return abs((a.x - c.x) * (b.y - a.y) - (a.x - b.x) * (c.y - a.y)) / 2
 
 class Point(object):
 
@@ -23,8 +23,6 @@ class Triangle(object):
         self.bo = b
         self.weight = self.area
         self.entry = None
-        self.previous = None
-        self.next = None
 
     @property
     def area(self):
@@ -33,17 +31,17 @@ class Triangle(object):
 @total_ordering
 class QueueEntry(object):
 
-    def __init__(self, triangle):
+    def __init__(self, index, triangle):
+        self.index = index
         self.triangle = triangle
-        self.weight = triangle.weight
         self.removed = False
         triangle.entry = self
 
     def __lt__(self, other):
-        return self.weight < other.weight
+        return self.triangle.weight < other.triangle.weight
 
     def __eq__(self, other):
-        return self.weight == other.weight
+        return self.triangle.weight == other.triangle.weight
 
 
 def pre_simplify(linestring):
@@ -66,13 +64,7 @@ def pre_simplify(linestring):
                       for a, b, c
                       in zip(linestring[:-2], linestring[1:-1], linestring[2:]) ]
 
-        for i in range(1, len(triangles)-1):
-
-            triangle = triangles[i]
-            triangle.next = triangles[i-1]
-            triangle.previous = triangles[i+1]
-
-        heap = heapify([ QueueEntry(t) for t in triangles ])
+        heap = heapify([ QueueEntry(i, t) for i, t in enumerate(triangles) ])
         max_weight = 0
 
         while heap:
@@ -81,6 +73,7 @@ def pre_simplify(linestring):
             if entry.removed:
                 continue
 
+            i = entry.index
             triangle = entry.triangle
             w = triangle.weight
 
@@ -89,23 +82,22 @@ def pre_simplify(linestring):
             else:
                 max_weight = w
 
-            if triangle.previous:
+            if i > 0:
 
-                t = triangle.previous
-                t.next = triangle.next
+                t = triangles[i-1]
                 t.c = triangle.c
                 t.weight = t.area
                 t.entry.removed = True
-                heappush(heap, QueueEntry(t))
+                heappush(heap, QueueEntry(i-1, t))
                 
-            if triangle.next:
+
+            if i < len(triangles)-1:
                 
-                t = triangle.next
-                t.previous = triangle.previous
+                t = triangles[i+1]
                 t.a = triangle.a
                 t.weight = t.area
                 t.entry.removed = True
-                heappush(heap, QueueEntry(t))
+                heappush(heap, QueueEntry(i+1, t))
 
         start = (linestring[0], float('inf'))
         end = (linestring[-1], float('inf'))

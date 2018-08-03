@@ -43,6 +43,7 @@ class ValleyBottom(GeoAlgorithm):
     INPUT_ZOI = 'INPUT_ZOI'
     OUTPUT = 'OUTPUT'
     VALLEYBOTTOM_RASTER = 'VALLEYBOTTOM_RASTER'
+    REFERENCE_DEM = 'REFERENCE_DEM'
     DISAGGREGATION_DISTANCE = 'DISAGGREGATION_DISTANCE'
     DISPLAY_INTERMEDIATE_RESULT = 'DISPLAY_INTERMEDIATE_RESULT'
     MERGE_DISTANCE = 'MERGE_DISTANCE'
@@ -104,6 +105,8 @@ class ValleyBottom(GeoAlgorithm):
         self.addOutput(OutputVector(self.OUTPUT, self.tr('Valley Bottom')))
 
         self.addOutput(OutputRaster(self.VALLEYBOTTOM_RASTER, self.tr('Valley Bottom Raster')))
+
+        self.addOutput(OutputRaster(self.REFERENCE_DEM, self.tr('Reference DEM')))
 
     def nextStep(self, description, progress):
 
@@ -267,7 +270,7 @@ class ValleyBottom(GeoAlgorithm):
                               'EXTRA': '-tap'
                             })
 
-        ReferenceDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('Clipped Reference'),
+        ReferenceDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
                             {
                               'INPUT': ReferenceDEM0.getOutputValue('OUTPUT'),
                               'MASK': LargeBuffer.getOutputValue('OUTPUT'),
@@ -275,7 +278,8 @@ class ValleyBottom(GeoAlgorithm):
                               'CROP_TO_CUTLINE': True,
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
-                              'TILED': True
+                              'TILED': True,
+                              'OUTPUT': self.getOutputValue(self.REFERENCE_DEM)
                             })
 
         self.nextStep('Compute relative DEM and extract bottom ...',progress)

@@ -35,7 +35,7 @@ from processing.core.parameters import ParameterTableField
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
-from visvalingam import simplify
+from ...core.visvalingam import simplify
 
 def simplify_linestring(linestring, tolerance):
 

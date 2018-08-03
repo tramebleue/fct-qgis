@@ -1,3 +1,4 @@
+from DeduplicateLines import DeduplicateLines
 from JoinByNearest import JoinByNearest
 from LineMidpoints import LineMidpoints
 from MeasureDistanceToPointLayer import MeasureDistanceToPointLayer
@@ -20,6 +21,7 @@ from UpdateFieldByExpressionInPlace import UpdateFieldByExpressionInPlace
 def vectorAlgorithms():
 
     return [
+        DeduplicateLines(),
         JoinByNearest(),
         LineMidpoints(),
         MeasureDistanceToPointLayer(),
