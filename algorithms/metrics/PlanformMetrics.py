@@ -37,6 +37,7 @@ from processing.tools import dataobjects, vector
 from processing.core.ProcessingLog import ProcessingLog
 from math import sqrt
 from math import pi as PI
+from math import degrees
 import numpy as np
 
 from heapq import heappush, heappop, heapify
@@ -209,6 +210,7 @@ class PlanformMetrics(GeoAlgorithm):
     STEMS = 'STEMS'
     RESOLUTION = 'RESOLUTION'
     LMAX = 'LMAX'
+    MAX_ANGLE = 'MAX_ANGLE'
 
     def defineCharacteristics(self):
 
@@ -226,6 +228,10 @@ class PlanformMetrics(GeoAlgorithm):
                                           self.tr('Maximum Interdistance'),
                                           minValue=0.0, default=200.0))
 
+        self.addParameter(ParameterNumber(self.MAX_ANGLE,
+                                          self.tr('Maximum Axis Angle (Degrees)'),
+                                          minValue=0.0, default=50.0))
+
         self.addOutput(OutputVector(self.FLOW_AXIS, self.tr('Flow Axis')))
         self.addOutput(OutputVector(self.SEGMENTS, self.tr('Segments With Planform Metrics')))
         self.addOutput(OutputVector(self.INFLECTION_POINTS, self.tr('Inflection Points')))
@@ -236,6 +242,7 @@ class PlanformMetrics(GeoAlgorithm):
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT_LAYER))
         resolution = self.getParameterValue(self.RESOLUTION)
         lmax = self.getParameterValue(self.LMAX)
+        max_angle = self.getParameterValue(self.MAX_ANGLE)
 
         axis_writer = self.getOutputFromName(self.FLOW_AXIS).getVectorWriter(
             layer.fields().toList() + [
@@ -262,7 +269,9 @@ class PlanformMetrics(GeoAlgorithm):
 
         inflection_points_writer = self.getOutputFromName(self.INFLECTION_POINTS).getVectorWriter(
             [
-                QgsField('GID', QVariant.Int, len=10)
+                QgsField('GID', QVariant.Int, len=10),
+                QgsField('ANGLE', QVariant.Double, len=10, prec=6),
+                QgsField('INTERDIST', QVariant.Double, len=10, prec=6)
             ],
             QGis.WKBPoint,
             layer.crs())
@@ -318,15 +327,16 @@ class PlanformMetrics(GeoAlgorithm):
                 ])
             stem_writer.addFeature(stem_feature)
 
-        def write_inflection_point(point_id, point):
+        def write_inflection_point(point_id, point, angle, interdistance):
 
             new_feature = QgsFeature()
             new_feature.setGeometry(QgsGeometry.fromPoint(point))
             new_feature.setAttributes([
-                    point_id
+                    point_id,
+                    angle,
+                    interdistance
                 ])
             inflection_points_writer.addFeature(new_feature)
-
 
         total = 100.0 / layer.featureCount()
         fid = 0
@@ -348,6 +358,26 @@ class PlanformMetrics(GeoAlgorithm):
 
             bends = list()
             inflection_points = list()
+
+            def axis_angle(entry):
+
+                if entry.previous is None or entry.next is None:
+                    return 0.0
+
+                a = inflection_points[entry.previous]
+                b = inflection_points[entry.index]
+                c = inflection_points[entry.next]
+                ab = qgs_vector(a, b)
+                bc = qgs_vector(b, c)
+
+                return clamp_angle(degrees(ab.angle(bc)))
+
+            def interdistance(entry):
+
+                l1 = entry.previous and qgs_vector(inflection_points[entry.previous], inflection_points[entry.index]).length() or 0.0
+                l2 = entry.next and qgs_vector(inflection_points[entry.index], inflection_points[entry.next]).length() or 0.0
+                
+                return l1 + l2
 
             # write_inflection_point(point_id, a)
             point_id = point_id + 1
@@ -497,6 +527,81 @@ class PlanformMetrics(GeoAlgorithm):
                 next_entry.removed = True
                 entry.duplicate = True
 
+            # Filter out large axis angles
+
+            if max_angle > 0.0:
+
+                index = 0
+                queue = list()                           
+
+                while True:
+
+                    entry = entries[index]
+
+                    if entry.previous is None or entry.next is None:
+
+                        entry.priority = 0.0
+                        queue.append(entry)
+                        
+                        if entry.next is None:
+                            break
+                        else:
+                            index = entry.next
+                            continue
+
+                    # -priority to sort entries from large to small angle
+                    entry.priority = -abs(axis_angle(entry))
+                    queue.append(entry)
+
+                    index = entry.next
+
+                heapify(queue)
+
+                while queue:
+
+                    entry = heappop(queue)
+                    angle = -entry.priority
+
+                    if angle < max_angle:
+                        break
+
+                    if entry.duplicate or entry.removed:
+                        continue
+
+                    if entry.previous is None or entry.next is None:
+                        continue
+
+                    if entry.interdistance > 2*lmax:
+                        continue
+
+                    previous_entry = entries[entry.previous]
+                    next_entry = entries[entry.next]
+
+                    merged_bend = Bend.merge(bends[entry.previous], bends[entry.index])
+                    bends[entry.previous] = merged_bend
+                    
+                    previous_entry.duplicate = True
+                    new_previous_entry = QueueEntry(previous_entry.index)
+                    new_previous_entry.previous = previous_entry.previous
+                    new_previous_entry.next = entry.next
+                    angle = axis_angle(new_previous_entry)
+                    dist = new_previous_entry.interdistance = interdistance(new_previous_entry)
+                    new_previous_entry.priority = -abs(angle)
+                    entries[new_previous_entry.index] = new_previous_entry
+                    heappush(queue, new_previous_entry)
+
+                    next_entry.duplicate = True
+                    new_next_entry = QueueEntry(next_entry.index)
+                    new_next_entry.previous = entry.previous
+                    new_next_entry.next = next_entry.next
+                    angle = axis_angle(new_next_entry)
+                    dist = new_next_entry.interdistance = interdistance(new_next_entry)
+                    new_next_entry.priority = -abs(angle)
+                    entries[new_next_entry.index] = new_next_entry
+                    heappush(queue, new_next_entry)
+
+                    entry.removed = True
+
             # Output results
 
             index = 0
@@ -509,7 +614,9 @@ class PlanformMetrics(GeoAlgorithm):
                 if entry.next is None:
 
                     point_id = point_id + 1
-                    write_inflection_point(point_id, point)
+                    angle = axis_angle(entry)
+                    dist = interdistance(entry)
+                    write_inflection_point(point_id, point, angle, dist)
                     retained = retained + 1
                     break
                 
@@ -518,7 +625,9 @@ class PlanformMetrics(GeoAlgorithm):
                 fid = fid + 1
 
                 # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, 'Points = %s' % bend.points)
-                write_inflection_point(point_id, point)
+                angle = axis_angle(entry)
+                dist = interdistance(entry)
+                write_inflection_point(point_id, point, angle, dist)
                 retained = retained + 1
                 write_axis_segment(fid, bend.p_origin, bend.p_end, feature)
                 write_segment(fid, bend.points, feature)
