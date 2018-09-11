@@ -5,6 +5,7 @@ from MeasureDistanceToPointLayer import MeasureDistanceToPointLayer
 from MergeGeometries import MergeGeometries
 from PointOnSurface import PointOnSurface
 from RandomPoints import RandomPoints
+from RandomPoissonDiscSampling import RandomPoissonDiscSampling
 from RegularHexPoints import RegularHexPoints
 from RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from SafePolygonIntersection import SafePolygonIntersection
@@ -28,6 +29,7 @@ def vectorAlgorithms():
         MergeGeometries(),
         PointOnSurface(),
         RandomPoints(),
+        RandomPoissonDiscSampling(),
         RegularHexPoints(),
         RemoveSmallPolygonalObjects(),
         SafePolygonIntersection(),

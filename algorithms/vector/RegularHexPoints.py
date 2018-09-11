@@ -67,15 +67,6 @@ class RegularHexPoints(GeoAlgorithm):
 
         self.addOutput(OutputVector(self.OUTPUT, self.tr('Regular Hex Points')))
 
-
-    def getLayerField(self, layer, fielname):
-
-        idx = layer.fieldNameIndex(fielname)
-        if idx != -1:
-            return layer.fields().toList()[idx]
-        else:
-            return None
-
     def processAlgorithm(self, progress):
 
         layer = dataobjects.getObjectFromUri(self.getParameterValue(self.INPUT))
