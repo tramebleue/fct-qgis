@@ -46,7 +46,7 @@ from itertools import chain
 class PoissonDiscSampler(object):
     """ 2D Poisson Disc Sampler
 
-        Generate samples from a blue noise [4] distribution,
+        Generate samples from a blue noise distribution [4],
         ie. randomly but maintaining a minimal distance between samples.
 
     [1] Bridson (2007). Fast Poisson disk sampling in arbitrary dimensions.
@@ -147,7 +147,7 @@ class PoissonDiscSampler(object):
 
     def next(self):
         """ Emit a new random sample,
-            or return None if no sample could be generated.
+            or return None if no new sample could be generated.
         """
 
         if not self.samples:
