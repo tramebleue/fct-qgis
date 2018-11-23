@@ -3,11 +3,13 @@ from AggregateLineSegmentsByCat import AggregateLineSegmentsByCat
 from DensifyNetworkNodes import DensifyNetworkNodes
 # from ExtremePoints import ExtremePoints
 from IdentifyNetworkNodes import IdentifyNetworkNodes
+from InverseLongitudinalTransform import InverseLongitudinalTransform
 from LocatePolygonAlongLine import LocatePolygonAlongLine
 # from LocatePolygonAlongLinearNetwork import LocatePolygonAlongLinearNetwork
 from LengthOrder import LengthOrder
 from LongestPathInDirectedAcyclicGraph import LongestPathInDirectedAcyclicGraph
 from LongestPathInDirectedAcyclicGraphMultiFlow import LongestPathInDirectedAcyclicGraphMultiFlow
+from LongitudinalTransform import LongitudinalTransform
 # from MarkMainDrain import MarkMainDrain
 from MatchNearestLine import MatchNearestLine
 from MatchNearestLineUpdate import MatchNearestLineUpdate
@@ -39,11 +41,13 @@ def hydrographyAlgorithms():
         DensifyNetworkNodes(),
         # ExtremePoints(),
         IdentifyNetworkNodes(),
+        InverseLongitudinalTransform(),
         LengthOrder(),
         LocatePolygonAlongLine(),
         # LocatePolygonAlongLinearNetwork(),
         LongestPathInDirectedAcyclicGraph(),
         LongestPathInDirectedAcyclicGraphMultiFlow(),
+        LongitudinalTransform(),
         # MarkMainDrain(),
         MatchNearestLine(),
         MatchNearestLineUpdate(),

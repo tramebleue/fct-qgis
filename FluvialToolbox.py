@@ -11,7 +11,7 @@ from algorithms.spatial_components import spatial_componentsAlgorithms
 from algorithms.unstable import unstableAlgorithms
 from algorithms.vector import vectorAlgorithms
 
-from maptools import SelectUpstreamAction, ReverseFlowDirectionTool, ConnectTool, NodePairingTool
+# from maptools import SelectUpstreamAction, ReverseFlowDirectionTool, ConnectTool, NodePairingTool
 
 import resources
 
@@ -32,12 +32,12 @@ class FluvialToolbox(object):
         
         Processing.addProvider(self.provider)
 
-        SelectUpstreamAction.initGui(self)
+        # SelectUpstreamAction.initGui(self)
 
         self.maptools = [
-            ReverseFlowDirectionTool.initGui(self),
-            ConnectTool.initGui(self),
-            NodePairingTool.initGui(self)
+            # ReverseFlowDirectionTool.initGui(self),
+            # ConnectTool.initGui(self),
+            # NodePairingTool.initGui(self)
         ]
 
     def unload(self):

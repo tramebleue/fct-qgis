@@ -1,6 +1,7 @@
 from Detrend import Detrend
 from FilterByMinRank import FilterByMinRank
 from LocalFeatureSize import LocalFeatureSize
+from OrthogonalTransects import OrthogonalTransects
 from PlanformMetrics import PlanformMetrics
 from SegmentMeanSlope import SegmentMeanSlope
 from SegmentMeanValue import SegmentMeanValue
@@ -14,6 +15,7 @@ def metricsAlgorithms():
     	Detrend(),
     	FilterByMinRank(),
         LocalFeatureSize(),
+        OrthogonalTransects(),
         PlanformMetrics(),
         SegmentMeanSlope(),
         SegmentMeanValue(),

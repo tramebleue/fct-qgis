@@ -18,7 +18,7 @@ install: resources.py
 	@for m in $(MODULES); do mkdir -p $(TARGET)/$$m; done
 	@for f in $(MODULES_PY_FILES); do cp $$f $(TARGET)/$$f; done
 	@cp -R algorithms $(TARGET)
-	@cp -R maptools $(TARGET)
+	# @cp -R maptools $(TARGET)
 	@cp $(ICONS) $(TARGET)
 	@cp *.qrc $(TARGET)
 	@cp metadata.txt $(TARGET)
