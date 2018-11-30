@@ -227,7 +227,7 @@ class SegmentMeanSlope(GeoAlgorithm):
     INPUT_LINESTRINGS = 'INPUT_LINESTRINGS'
     INPUT_DEM = 'INPUT_DEM'
     LINE_ORDERING = 'LINE_ORDERING'
-    MEASURE_STEP = 'MEASURE_STEP'
+    # MEASURE_STEP = 'MEASURE_STEP'
     NODATA = 'NODATA'
     OUTPUT = 'OUTPUT'
 
@@ -292,6 +292,12 @@ class SegmentMeanSlope(GeoAlgorithm):
                 length = feature.geometry().length()
                 zmean = zmin + slope * 0.5 * length
                 
+                # zmin = np.min(b)
+                # zmax = np.max(b)
+                # zstart = b[0]
+                # zend = b[-1]
+                # slope = (zstart - zend) / length
+
                 if updown_ordering:
                     zmin = zmin + slope * length
                     slope = -slope

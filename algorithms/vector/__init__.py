@@ -1,4 +1,5 @@
 from DeduplicateLines import DeduplicateLines
+from InterpolateLine import InterpolateLine
 from JoinByNearest import JoinByNearest
 from LineMidpoints import LineMidpoints
 from MeasureDistanceToPointLayer import MeasureDistanceToPointLayer
@@ -9,6 +10,7 @@ from RandomPoissonDiscSampling import RandomPoissonDiscSampling
 from RegularHexPoints import RegularHexPoints
 from RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from SafePolygonIntersection import SafePolygonIntersection
+from SegmentEndpoints import SegmentEndpoints
 from SelectByDistance import SelectByDistance
 from SelectNearestFeature import SelectNearestFeature
 from SplitLine import SplitLine
@@ -23,6 +25,7 @@ def vectorAlgorithms():
 
     return [
         DeduplicateLines(),
+        InterpolateLine(),
         JoinByNearest(),
         LineMidpoints(),
         MeasureDistanceToPointLayer(),
@@ -33,6 +36,7 @@ def vectorAlgorithms():
         RegularHexPoints(),
         RemoveSmallPolygonalObjects(),
         SafePolygonIntersection(),
+        SegmentEndpoints(),
         SelectByDistance(),
         SelectNearestFeature(),
         SplitLine(),

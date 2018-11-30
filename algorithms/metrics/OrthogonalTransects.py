@@ -77,6 +77,14 @@ class OrthogonalTransects(GeoAlgorithm):
         total = 100.0 / len(features)
 
         def transect(segment, length):
+            """
+            Parameters
+            ----------
+
+            segment: QgsGeometry, (2-points) Polyline
+            length: float, distance
+                total length of transect to be generated
+            """
 
             start_point = segment.interpolate(0.0).asPoint()
             end_point = segment.interpolate(segment.length()).asPoint()

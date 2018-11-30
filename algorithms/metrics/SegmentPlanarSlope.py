@@ -44,7 +44,7 @@ from ...core import vector as vector_helper
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
-from math import sqrt
+from math import sqrt, atan2, degrees
 
 class ElevationService(object):
 
@@ -221,8 +221,32 @@ class ElevationService(object):
 def fixed_precision(x, precision):
     return round(float(x) * precision) / precision
 
+def azimuth(tangle):
+    """
+    Converts trigonometric angle (counter-clockwise from east axis)
+    to geographic angle (clockwise from north axis)
 
-class Detrend(GeoAlgorithm):
+    Input and output angles are expressed in decimal degrees.
+
+    Parameter
+    ---------
+
+    tangle: float
+        Trigonometric angle in degrees
+
+    Returns
+    -------
+
+    Geographic azimuth in degrees (float).
+    """
+
+    if tangle > 90:
+        return -tangle + 90 + 360
+    else:
+        return -tangle + 90
+
+
+class SegmentPlanarSlope(GeoAlgorithm):
 
     INPUT_LINESTRINGS = 'INPUT_LINESTRINGS'
     INPUT_DEM = 'INPUT_DEM'
@@ -233,7 +257,7 @@ class Detrend(GeoAlgorithm):
 
     def defineCharacteristics(self):
         
-        self.name, self.i18n_name = self.trAlgorithm('Detrend MNT')
+        self.name, self.i18n_name = self.trAlgorithm('Segment Planar Slope')
         self.group, self.i18n_group = self.trAlgorithm('Metrics')
 
         self.addParameter(ParameterVector(self.INPUT_LINESTRINGS,
@@ -269,9 +293,11 @@ class Detrend(GeoAlgorithm):
         writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
             vector_helper.createUniqueFieldsList(
                 line_layer,
-                QgsField('A', QVariant.Double, len=10, prec=6),
-                QgsField('B', QVariant.Double, len=10, prec=6),
-                QgsField('C', QVariant.Double, len=10, prec=6)
+                QgsField('DX', QVariant.Double, len=10, prec=6),
+                QgsField('DY', QVariant.Double, len=10, prec=6),
+                QgsField('Z0', QVariant.Double, len=10, prec=6),
+                QgsField('SLOPE', QVariant.Double, len=10, prec=6),
+                QgsField('SLDIR', QVariant.Double, len=10, prec=6)
             ),
             line_layer.dataProvider().geometryType(),
             line_layer.crs())
@@ -287,14 +313,16 @@ class Detrend(GeoAlgorithm):
                 X[:,2] = 1.0
                 A, res, rank, eigen_values = np.linalg.lstsq(X, Z)
 
-                a, b, c = A
+                dx, dy, z0 = A
 
                 outfeature = QgsFeature()
                 outfeature.setGeometry(feature.geometry())
                 outfeature.setAttributes(feature.attributes() + [
-                        float(a),
-                        float(b),
-                        float(c)
+                        float(dx),
+                        float(dy),
+                        float(z0),
+                        sqrt(float(dx)**2 + float(dy)**2),
+                        azimuth(degrees(atan2(dy, dx)))
                     ])
                 writer.addFeature(outfeature)
 

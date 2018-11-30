@@ -39,7 +39,38 @@ from processing.core.ProcessingLog import ProcessingLog
 from ...core import vector as vector_helper
 from math import sqrt
 
-def lineLocatePoint(line, point):
+def sign(x):
+    if x == 0:
+        return 0
+    elif x > 0:
+        return 1
+    else:
+        return -1
+
+def side_of_line(o, a, b):
+    """
+    Parameters
+    ----------
+
+    o, a, b: QgsPoint
+
+    Returns
+    -------
+
+    -1 if B is right to OA,
+     1 if B is left to OA,
+     0 if O, A and B are colinear
+    """
+
+    ax = a.x() - o.x()
+    ay = a.y() - o.y()
+    bx = b.x() - o.x()
+    by = b.y() - o.y()
+    cross = (ax * by) - (ay * bx)
+
+    return sign(cross)
+
+def lineLocatePoint(line, point, origin):
     """
     Returns a distance representing the location along this linestring of the closest point
     on this linestring geometry to the specified point.
@@ -56,6 +87,9 @@ def lineLocatePoint(line, point):
     point: QgsGeometry, Point
         point to seek proximity to
 
+    origin: QgsGeometry, Point
+        determine side of line with respect of `origin`
+
     Returns
     -------
 
@@ -67,6 +101,7 @@ def lineLocatePoint(line, point):
     measure = 0.0
     closest = float('inf')
     closest_measure = 0.0
+    closest_side = 0
     vertices = line.asPolyline()
 
     for v0, v1 in zip(vertices[:-1], vertices[1:]):
@@ -77,10 +112,20 @@ def lineLocatePoint(line, point):
         if d < closest:
             closest = d
             closest_measure = measure + QgsGeometry.fromPoint(v0).distance(point)
+            closest_side = side_of_line(v0, v1, origin.asPoint())
 
         measure = measure + segment.length()
 
-    return closest_measure
+    return closest_measure, closest_side
+
+def sideAsText(side):
+
+    if side == -1:
+        return 'RIGHT'
+    elif side == 1:
+        return 'LEFT'
+    else:
+        return ''
 
 class ProjectPointsAlongLine(GeoAlgorithm):
 
@@ -144,7 +189,8 @@ class ProjectPointsAlongLine(GeoAlgorithm):
             vector_helper.createUniqueFieldsList(
                 point_layer,
                 vector_helper.resolveField(line_layer, line_pk_field),
-                QgsField(measure_field or 'MEAS', QVariant.Double, len=10, prec=4)
+                QgsField(measure_field or 'MEAS', QVariant.Double, len=10, prec=4),
+                QgsField('SIDE', QVariant.String, len=4)
             ),
             point_layer.dataProvider().geometryType(),
             point_layer.crs())
@@ -154,9 +200,11 @@ class ProjectPointsAlongLine(GeoAlgorithm):
         for current, feature in enumerate(point_layer.getFeatures()):
 
             measure = 0.0
+            side = 0
             closest = float('inf')
             closest_id = None
-            closest_point = feature.geometry()
+            source_point = feature.geometry()
+            closest_point = source_point
 
             rect = feature.geometry().boundingBox()
             rect.grow(max_distance)
@@ -172,7 +220,7 @@ class ProjectPointsAlongLine(GeoAlgorithm):
 
                     closest = d
                     closest_point = line.geometry().nearestPoint(feature.geometry())
-                    m = lineLocatePoint(line.geometry(), closest_point)
+                    m, side = lineLocatePoint(line.geometry(), closest_point, source_point)
                     
                     if measure_field is not None:
                         measure = line.attribute(measure_field) - m
@@ -183,11 +231,14 @@ class ProjectPointsAlongLine(GeoAlgorithm):
 
             if closest_id is not None:
 
+                # Add distance ?
+
                 outfeature = QgsFeature()
                 outfeature.setGeometry(closest_point)
                 outfeature.setAttributes(feature.attributes() + [
                         closest_id,
-                        measure
+                        measure,
+                        sideAsText(side)
                     ])
                 writer.addFeature(outfeature)
 
