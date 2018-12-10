@@ -170,6 +170,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
 
         self.current_step = 0
         
+        # TODO: add native:mergelines to merge multi-parts polylines
+        
         self.nextStep('Clip stream network by ZOI ...', feedback)
         ClippedNetwork = processing.run('qgis:clip',
                             {
@@ -182,29 +184,38 @@ class ValleyBottom(QgsProcessingAlgorithm):
         SimplifiedNetwork = processing.run('qgis:simplifygeometries',
                             {
                               'INPUT': ClippedNetwork['OUTPUT'],
+                              'METHOD': 0,
                               'TOLERANCE': SIMPLIFY_TOLERANCE,
                               'OUTPUT': 'memory'
                             })
         
         self.nextStep('Split network ...',feedback)
-        SplittedNetwork = processing.run('fluvialcorridortoolbox:splitlines',
+        NetworkPoints = processing.run('qgis:pointsalonglines',
                             {
                               'INPUT': SimplifiedNetwork['OUTPUT'],
-                              'MAXLENGTH': SPLIT_MAX_LENGTH,
+                              'DISTANCE': SPLIT_MAX_LENGTH,
                               'OUTPUT': 'memory'
                             })
 
-        self.nextStep('Extract points ...',feedback)
-        NetworkPoints = processing.run('qgis:extractnodes',
-                            {
-                              'INPUT': SplittedNetwork['OUTPUT'],
-                              'OUTPUT': 'memory'
-                            })
+        # self.nextStep('Split network ...',feedback)
+        # SplittedNetwork = processing.run('fluvialcorridortoolbox:splitlines',
+        #                     {
+        #                       'INPUT': SimplifiedNetwork['OUTPUT'],
+        #                       'MAXLENGTH': SPLIT_MAX_LENGTH,
+        #                       'OUTPUT': 'memory'
+        #                     })
+
+        # self.nextStep('Extract points ...',feedback)
+        # NetworkPoints = processing.run('qgis:extractnodes',
+        #                     {
+        #                       'INPUT': SplittedNetwork['OUTPUT'],
+        #                       'OUTPUT': 'memory'
+        #                     })
         
         self.nextStep('Compute large buffer ...',feedback)
-        LargeBuffer0 = processing.run('qgis:fixeddistancebuffer',
+        LargeBuffer0 = processing.run('qgis:buffer',
                             {
-                              'INPUT': SplittedNetwork['OUTPUT'],
+                              'INPUT': SimplifiedNetwork['OUTPUT'],
                               'DISTANCE': LARGE_BUFFER_DISTANCE,
                               'DISSOLVE': True,
                               'OUTPUT': 'memory'
@@ -225,9 +236,9 @@ class ValleyBottom(QgsProcessingAlgorithm):
         #                     })
         
         self.nextStep('Compute small buffer ...',feedback)
-        SmallBuffer = processing.run('qgis:fixeddistancebuffer',
+        SmallBuffer = processing.run('qgis:buffer',
                             {
-                              'INPUT': SplittedNetwork['OUTPUT'],
+                              'INPUT': SimplifiedNetwork['OUTPUT'],
                               'DISTANCE': SMALL_BUFFER_DISTANCE,
                               'DISSOLVE': True,
                               'OUTPUT': 'memory'
