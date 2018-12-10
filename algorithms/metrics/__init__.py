@@ -1,3 +1,4 @@
+from DetrendDEM import DetrendDEM
 from FilterByMinRank import FilterByMinRank
 from LocalFeatureSize import LocalFeatureSize
 from OrthogonalTransects import OrthogonalTransects
@@ -12,6 +13,7 @@ from WeightedMean import WeightedMean
 def metricsAlgorithms():
 
     return [
+        DetrendDEM(),
     	FilterByMinRank(),
         LocalFeatureSize(),
         OrthogonalTransects(),
