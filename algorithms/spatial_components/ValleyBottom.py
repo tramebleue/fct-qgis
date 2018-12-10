@@ -28,15 +28,16 @@ from PyQt5.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterRasterLayer,
-                       QgsProcessingParameterVectorLayer,
+                       QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterBoolean,
                        QgsProcessingOutputVectorLayer,
                        QgsProcessingOutputRasterLayer)
 
-from processing.core.Processing import Processing
+# from processing.core.Processing import Processing
 # from processing.core.ProcessingLog import ProcessingLog
-from processing.gui.Postprocessing import handleAlgorithmResults
+# from processing.gui.Postprocessing import handleAlgorithmResults
+import processing
 import gdal
 
 
@@ -74,14 +75,14 @@ class ValleyBottom(QgsProcessingAlgorithm):
     def group(self):
       return self.tr(self.groupId())
 
-    def initAlgorithm(self, config):
+    def initAlgorithm(self, config=None):
         # Main parameters
 
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT_DEM,
                                           self.tr('Input DEM')))
-        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT_NETWORK,
+        self.addParameter(QgsProcessingParameterFeatureSource(self.INPUT_NETWORK,
                                           self.tr('Input Stream Network'), [QgsProcessing.TypeVectorLine]))
-        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT_ZOI,
+        self.addParameter(QgsProcessingParameterFeatureSource(self.INPUT_ZOI,
                                           self.tr('Zone of Interest'), [QgsProcessing.TypeVectorPolygon]))
 
         self.addParameter(QgsProcessingParameterNumber(self.DISAGGREGATION_DISTANCE,
@@ -123,15 +124,14 @@ class ValleyBottom(QgsProcessingAlgorithm):
 
         self.addOutput(QgsProcessingOutputRasterLayer(self.REFERENCE_DEM, self.tr('Reference DEM')))
 
-    def nextStep(self, description, progress):
-
-        # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, description)
-        progress.setProgressText(description)
-        # progress.setPercentage(int(100.0 * self.current_step / self.STEPS))
+    def nextStep(self, description, feedback):
+        feedback.pushInfo(description)
+        feedback.setProgress(int(100.0 * self.current_step / self.STEPS))
         self.current_step += 1
 
-    def processAlgorithm(self, parameters, context, progress):
+    def processAlgorithm(self, parameters, context, feedback):
 
+        # Value parameters
         LARGE_BUFFER_DISTANCE = self.parameterAsDouble(parameters, self.LARGE_BUFFER_DISTANCE_PARAM, context)
         SMALL_BUFFER_DISTANCE = self.parameterAsDouble(parameters, self.SMALL_BUFFER_DISTANCE_PARAM, context)
         MIN_THRESHOLD = self.parameterAsDouble(parameters, self.MIN_THRESHOLD_PARAM, context)
@@ -145,6 +145,11 @@ class ValleyBottom(QgsProcessingAlgorithm):
         do_clean = self.parameterAsBool(parameters, self.DO_CLEAN, context)
         display_result = self.parameterAsBool(parameters, self.DISPLAY_INTERMEDIATE_RESULT, context)
 
+        # Layer parameters
+        INPUT_NETWORK_LAYER = self.parameterAsVectorLayer(parameters, self.INPUT_NETWORK, context)
+        INPUT_DEM_LAYER = self.parameterAsRasterLayer(parameters, self.INPUT_DEM, context)
+        INPUT_ZOI_LAYER = self.parameterAsVectorLayer(parameters, self.INPUT_ZOI, context)
+
         # Hard coded parameters
         SIMPLIFY_TOLERANCE = 10
         SIEVE_THRESHOLD = 40
@@ -155,127 +160,140 @@ class ValleyBottom(QgsProcessingAlgorithm):
         FOUR_CONNECTIVITY = 0
         LZW_COMPRESS = 3
 
-        def handleResult(description):
-            def _handle(alg, *args, **kw):
-                if display_result:
-                    for out in alg.outputs:
-                        out.description = description
-                    handleAlgorithmResults(alg, *args, **kw)
-            return _handle
+        # def handleResult(description):
+        #     def _handle(alg, *args, **kw):
+        #         if display_result:
+        #             for out in alg.outputs:
+        #                 out.description = description
+        #             handleAlgorithmResults(alg, *args, **kw)
+        #     return _handle
 
         self.current_step = 0
         
-        self.nextStep('Clip stream network by ZOI ...', progress)
-        ClippedNetwork = Processing.runAlgorithm('qgis:clip', None,
+        self.nextStep('Clip stream network by ZOI ...', feedback)
+        ClippedNetwork = processing.run('qgis:clip',
                             {
-                              'INPUT': self.parameterAsVectorLayer(parameters, self.INPUT_NETWORK, context),
-                              'OVERLAY': self.parameterAsVectorLayer(parameters, self.INPUT_ZOI, context)
+                              'INPUT': INPUT_NETWORK_LAYER,
+                              'OVERLAY': INPUT_ZOI_LAYER,
+                              'OUTPUT': 'memory'
                             })
 
-        self.nextStep('Simplify network',progress)
-        SimplifiedNetwork = Processing.runAlgorithm('qgis:simplifygeometries', None,
+        self.nextStep('Simplify network',feedback)
+        SimplifiedNetwork = processing.run('qgis:simplifygeometries',
                             {
-                              'INPUT': ClippedNetwork.getOutputValue('OUTPUT'),
-                              'TOLERANCE': SIMPLIFY_TOLERANCE
+                              'INPUT': ClippedNetwork['OUTPUT'],
+                              'TOLERANCE': SIMPLIFY_TOLERANCE,
+                              'OUTPUT': 'memory'
                             })
         
-        self.nextStep('Split network ...',progress)
-        SplittedNetwork = Processing.runAlgorithm('fluvialcorridortoolbox:splitlines', None,
+        self.nextStep('Split network ...',feedback)
+        SplittedNetwork = processing.run('fluvialcorridortoolbox:splitlines',
                             {
-                              'INPUT': SimplifiedNetwork.getOutputValue('OUTPUT'),
-                              'MAXLENGTH': SPLIT_MAX_LENGTH
+                              'INPUT': SimplifiedNetwork['OUTPUT'],
+                              'MAXLENGTH': SPLIT_MAX_LENGTH,
+                              'OUTPUT': 'memory'
                             })
 
-        self.nextStep('Extract points ...',progress)
-        NetworkPoints = Processing.runAlgorithm('qgis:extractnodes', None,
+        self.nextStep('Extract points ...',feedback)
+        NetworkPoints = processing.run('qgis:extractnodes',
                             {
-                              'INPUT': SplittedNetwork.getOutputValue('OUTPUT')
+                              'INPUT': SplittedNetwork['OUTPUT'],
+                              'OUTPUT': 'memory'
                             })
         
-        self.nextStep('Compute large buffer ...',progress)
-        LargeBuffer0 = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        self.nextStep('Compute large buffer ...',feedback)
+        LargeBuffer0 = processing.run('qgis:fixeddistancebuffer',
                             {
-                              'INPUT': SplittedNetwork.getOutputValue('OUTPUT'),
+                              'INPUT': SplittedNetwork['OUTPUT'],
                               'DISTANCE': LARGE_BUFFER_DISTANCE,
-                              'DISSOLVE': True
+                              'DISSOLVE': True,
+                              'OUTPUT': 'memory'
                             })
 
-        LargeBuffer = Processing.runAlgorithm('qgis:clip', None, {
-                              'INPUT': LargeBuffer0.getOutputValue('OUTPUT'),
-                              'OVERLAY': self.parameterAsVectorLayer(parameters, self.INPUT_ZOI, context)
+        LargeBuffer = processing.run('qgis:clip', 
+                            {
+                              'INPUT': LargeBuffer0['OUTPUT'],
+                              'OVERLAY': INPUT_ZOI_LAYER,
+                              'OUTPUT': 'memory'
                             })
 
-        # self.nextStep('Clip large buffer ...',progress)
-        # LargeBuffer = Processing.runAlgorithm('qgis:clip', None,
+        # self.nextStep('Clip large buffer ...',feedback)
+        # LargeBuffer = processing.run('qgis:clip', None,
         #                     {
-        #                       'INPUT': LargeBufferToClip.getOutputValue('OUTPUT'),
+        #                       'INPUT': LargeBufferToClip['OUTPUT'],
         #                       'OVERLAY': self.getParameterValue(self.INPUT_ZOI)
         #                     })
         
-        self.nextStep('Compute small buffer ...',progress)
-        SmallBuffer = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        self.nextStep('Compute small buffer ...',feedback)
+        SmallBuffer = processing.run('qgis:fixeddistancebuffer',
                             {
-                              'INPUT': SplittedNetwork.getOutputValue('OUTPUT'),
+                              'INPUT': SplittedNetwork['OUTPUT'],
                               'DISTANCE': SMALL_BUFFER_DISTANCE,
-                              'DISSOLVE': True
+                              'DISSOLVE': True,
+                              'OUTPUT': 'memory'
                             })
 
-        self.nextStep('Compute thiessen polygons ...',progress)
-        ThiessenPolygons = Processing.runAlgorithm('qgis:voronoipolygons', None,
+        self.nextStep('Compute thiessen polygons ...',feedback)
+        ThiessenPolygons = processing.run('qgis:voronoipolygons',
                             {
-                              'INPUT': NetworkPoints.getOutputValue('OUTPUT'),
-                              'BUFFER': 10.0
+                              'INPUT': NetworkPoints['OUTPUT'],
+                              'BUFFER': 10.0,
+                              'OUTPUT': 'memory'
                             })
 
-        self.nextStep('Clip thiessen polygons ...',progress)
-        ClippedThiessenPolygons = Processing.runAlgorithm('qgis:clip', None,
+        self.nextStep('Clip thiessen polygons ...',feedback)
+        ClippedThiessenPolygons = processing.run('qgis:clip',
                             {
-                              'INPUT': ThiessenPolygons.getOutputValue('OUTPUT'),
-                              'OVERLAY': LargeBuffer.getOutputValue('OUTPUT')
+                              'INPUT': ThiessenPolygons['OUTPUT'],
+                              'OVERLAY': LargeBuffer['OUTPUT'],
+                              'OUTPUT': 'memory'
                             })
 
-        self.nextStep('Clip DEM ...',progress)
-        ClippedDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('Clipped DEM'),
+        self.nextStep('Clip DEM ...',feedback)
+        ClippedDEM = processing.run('gdalogr:cliprasterbymasklayer', handleResult('Clipped DEM'),
                             {
-                              'INPUT': self.parameterAsRasterLayer(parameters, self.INPUT_DEM, context),
-                              'MASK': LargeBuffer.getOutputValue('OUTPUT'),
+                              'INPUT': INPUT_DEM_LAYER,
+                              'MASK': LargeBuffer['OUTPUT'],
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': True,
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
-                              'TILED': True
+                              'TILED': True,
+                              'OUTPUT': 'memory'
                             })
 
-        self.nextStep('Extract minimum DEM ...',progress)
-        MinDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', handleResult('Minimum DEM'),
+        self.nextStep('Extract minimum DEM ...',feedback)
+        MinDEM = processing.run('gdalogr:cliprasterbymasklayer', handleResult('Minimum DEM'),
                             {
-                              'INPUT': ClippedDEM.getOutputValue('OUTPUT'),
-                              'MASK': SmallBuffer.getOutputValue('OUTPUT'),
+                              'INPUT': ClippedDEM['OUTPUT'],
+                              'MASK': SmallBuffer['OUTPUT'],
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': False,
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
-                              'TILED': True
+                              'TILED': True,
+                              'OUTPUT': 'memory'
                             })
 
-        self.nextStep('Compute reference elevation for every polygon ...',progress)
-        ReferencePolygons = Processing.runAlgorithm('qgis:zonalstatistics', handleResult('Reference polygons'),
+        self.nextStep('Compute reference elevation for every polygon ...',feedback)
+        ReferencePolygons = processing.run('qgis:zonalstatistics', handleResult('Reference polygons'),
                             {
-                              'INPUT_RASTER': MinDEM.getOutputValue('OUTPUT'),
+                              'INPUT_RASTER': MinDEM['OUTPUT'],
                               'RASTER_BAND': 1,
-                              'INPUT_VECTOR': ClippedThiessenPolygons.getOutputValue('OUTPUT'),
+                              'INPUT_VECTOR': ClippedThiessenPolygons['OUTPUT'],
                               'COLUMN_PREFIX': '_',
-                              'GLOBAL_EXTENT': False
+                              'GLOBAL_EXTENT': False,
+                              'OUTPUT': 'memory'
                             })
 
-        layer = gdal.Open(ClippedDEM.getOutputValue('OUTPUT'))
+        layer = gdal.Open(ClippedDEM['OUTPUT'])
         geotransform = layer.GetGeoTransform()
         pixel_width = geotransform[1]
         pixel_height = -geotransform[5]
         del layer
 
-        self.nextStep('Convert to reference DEM ...',progress)
-        ReferenceDEM0 = Processing.runAlgorithm('gdalogr:rasterize',  None,
+        self.nextStep('Convert to reference DEM ...',feedback)
+        ReferenceDEM0 = processing.run('gdalogr:rasterize',
                             {
                               'INPUT': ReferencePolygons.getOutputValue('OUTPUT_LAYER'),
                               'FIELD': '_min',
@@ -284,13 +302,14 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'DIMENSIONS': 1,
                               'WIDTH': pixel_width,
                               'HEIGHT': pixel_height,
-                              'EXTRA': '-tap'
+                              'EXTRA': '-tap',
+                              'OUTPUT': 'memory'
                             })
 
-        ReferenceDEM = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
+        ReferenceDEM = processing.run('gdalogr:cliprasterbymasklayer',
                             {
-                              'INPUT': ReferenceDEM0.getOutputValue('OUTPUT'),
-                              'MASK': LargeBuffer.getOutputValue('OUTPUT'),
+                              'INPUT': ReferenceDEM0['OUTPUT'],
+                              'MASK': LargeBuffer['OUTPUT'],
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': True,
                               'KEEP_RESOLUTION': True,
@@ -299,20 +318,21 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'OUTPUT': self.getOutputValue(self.REFERENCE_DEM)
                             })
 
-        self.nextStep('Compute relative DEM and extract bottom ...',progress)
-        ValleyBottomRaster = Processing.runAlgorithm('fluvialcorridortoolbox:differentialrasterthreshold', None,
+        self.nextStep('Compute relative DEM and extract bottom ...',feedback)
+        ValleyBottomRaster = processing.run('fluvialcorridortoolbox:differentialrasterthreshold',
                             {
-                              'INPUT_DEM': ClippedDEM.getOutputValue('OUTPUT'),
-                              'REFERENCE_DEM': ReferenceDEM.getOutputValue('OUTPUT'),
+                              'INPUT_DEM': ClippedDEM['OUTPUT'],
+                              'REFERENCE_DEM': ReferenceDEM['OUTPUT'],
                               'MIN_THRESHOLD': MIN_THRESHOLD,
                               'MAX_THRESHOLD': MAX_THRESHOLD,
+                              'OUTPUT': 'memory'
                             })
 
-        # self.nextStep('Clip Raster Bottom ...',progress)
-        # RawValleyBottomRaster = Processing.runAlgorithm('gdalogr:cliprasterbymasklayer', None,
+        # self.nextStep('Clip Raster Bottom ...',feedback)
+        # RawValleyBottomRaster = processing.run('gdalogr:cliprasterbymasklayer', None,
         #                     {
-        #                       'INPUT': ValleyBottomRasterToClip.getOutputValue('OUTPUT'),
-        #                       'MASK': LargeBuffer.getOutputValue('OUTPUT'),
+        #                       'INPUT': ValleyBottomRasterToClip['OUTPUT'],
+        #                       'MASK': LargeBuffer['OUTPUT'],
         #                       'ALPHA_BAND': False,
         #                       'CROP_TO_CUTLINE': True,
         #                       'KEEP_RESOLUTION': True,
@@ -320,65 +340,68 @@ class ValleyBottom(QgsProcessingAlgorithm):
         #                       'TILED': True
         #                     })
 
-        self.setOutputValue(self.VALLEYBOTTOM_RASTER, ValleyBottomRaster.getOutputValue('OUTPUT'))
+        self.setOutputValue(self.VALLEYBOTTOM_RASTER, ValleyBottomRaster['OUTPUT'])
 
         if MIN_OBJECT_DISTANCE > 0:
 
-          self.nextStep('Merge close objects...',progress)
-          CleanedValleyBottomRaster = Processing.runAlgorithm('fluvialcorridortoolbox:binaryclosing', handleResult('Binary Closing'),
+          self.nextStep('Merge close objects...',feedback)
+          CleanedValleyBottomRaster = processing.run('fluvialcorridortoolbox:binaryclosing', handleResult('Binary Closing'),
                             {
-                              'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
+                              'INPUT': ValleyBottomRaster['OUTPUT'],
                               'DISTANCE': MIN_OBJECT_DISTANCE,
-                              'ITERATIONS': 5
+                              'ITERATIONS': 5,
+                              'OUTPUT': 'memory'
                             })
         else:
 
-          self.nextStep('Sieve result ...',progress)
-          CleanedValleyBottomRaster = Processing.runAlgorithm('gdalogr:sieve', None,
+          self.nextStep('Sieve result ...',feedback)
+          CleanedValleyBottomRaster = processing.run('gdalogr:sieve',
                             {
-                              'INPUT': ValleyBottomRaster.getOutputValue('OUTPUT'),
+                              'INPUT': ValleyBottomRaster['OUTPUT'],
                               'THRESHOLD': SIEVE_THRESHOLD,
-                              'CONNECTIONS': FOUR_CONNECTIVITY
+                              'CONNECTIONS': FOUR_CONNECTIVITY,
+                              'OUTPUT': 'memory'
                             })
 
         # Polygonize Valley Bottom
 
-        self.nextStep('Polygonize ...',progress)
-        ValleyBottomPolygons = Processing.runAlgorithm('gdalogr:polygonize', handleResult('Uncleaned Valley Bottom'),
+        self.nextStep('Polygonize ...',feedback)
+        ValleyBottomPolygons = processing.run('gdalogr:polygonize', handleResult('Uncleaned Valley Bottom'),
                             {
-                              'INPUT': CleanedValleyBottomRaster.getOutputValue('OUTPUT'),
-                              'FIELD': 'VALUE'
+                              'INPUT': CleanedValleyBottomRaster['OUTPUT'],
+                              'FIELD': 'VALUE',
+                              'OUTPUT': 'memory'
                             })
 
         # if MIN_OBJECT_DISTANCE > 0:
 
-        #   self.nextStep('Simplify result ...',progress)
-        #   MergedValleyBottom0 = Processing.runAlgorithm('qgis:simplifygeometries', None,
+        #   self.nextStep('Simplify result ...',feedback)
+        #   MergedValleyBottom0 = processing.run('qgis:simplifygeometries', None,
         #                         {
-        #                           'INPUT': UncleanedValleyBottom.getOutputValue('OUTPUT'),
+        #                           'INPUT': UncleanedValleyBottom['OUTPUT'],
         #                           'TOLERANCE': SIMPLIFY_TOLERANCE
         #                         })
 
-        #   self.nextStep('Merge close objects (step 1) ...',progress)
-        #   MergedValleyBottom1 = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        #   self.nextStep('Merge close objects (step 1) ...',feedback)
+        #   MergedValleyBottom1 = processing.run('qgis:fixeddistancebuffer', None,
         #                       {
-        #                         'INPUT': MergedValleyBottom0.getOutputValue('OUTPUT'),
+        #                         'INPUT': MergedValleyBottom0['OUTPUT'],
         #                         'DISTANCE': MIN_OBJECT_DISTANCE,
         #                         'DISSOLVE': True
         #                       })
 
-        #   self.nextStep('Merge close objects (step 2) ...',progress)
-        #   MergedValleyBottom2 = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        #   self.nextStep('Merge close objects (step 2) ...',feedback)
+        #   MergedValleyBottom2 = processing.run('qgis:fixeddistancebuffer', None,
         #                       {
-        #                         'INPUT': MergedValleyBottom1.getOutputValue('OUTPUT'),
+        #                         'INPUT': MergedValleyBottom1['OUTPUT'],
         #                         'DISTANCE': -MIN_OBJECT_DISTANCE - (MIN_OBJECT_DISTANCE / 10),
         #                         'DISSOLVE': False
         #                       })
 
-        #   self.nextStep('Merge close objects (step 3) ...',progress)
-        #   MergedValleyBottom3 = Processing.runAlgorithm('qgis:fixeddistancebuffer', None,
+        #   self.nextStep('Merge close objects (step 3) ...',feedback)
+        #   MergedValleyBottom3 = processing.run('qgis:fixeddistancebuffer', None,
         #                       {
-        #                         'INPUT': MergedValleyBottom2.getOutputValue('OUTPUT'),
+        #                         'INPUT': MergedValleyBottom2['OUTPUT'],
         #                         'DISTANCE': (MIN_OBJECT_DISTANCE / 10),
         #                         'DISSOLVE': True
         #                       })
@@ -390,41 +413,44 @@ class ValleyBottom(QgsProcessingAlgorithm):
 
         if self.getParameterValue(self.DO_CLEAN):
 
-            self.nextStep('Remove small objects and parts ...',progress)
-            CleanedValleyBottomPolygons = Processing.runAlgorithm('fluvialcorridortoolbox:removesmallpolygonalobjects', None,
+            self.nextStep('Remove small objects and parts ...',feedback)
+            CleanedValleyBottomPolygons = processing.run('fluvialcorridortoolbox:removesmallpolygonalobjects', None,
                                 {
-                                  'INPUT': ValleyBottomPolygons.getOutputValue('OUTPUT'),
+                                  'INPUT': ValleyBottomPolygons['OUTPUT'],
                                   'MIN_AREA': CLEAN_MIN_AREA,
                                   'MIN_HOLE_AREA': CLEAN_MIN_HOLE_AREA,
                                   'FIELD': 'VALUE',
-                                  'VALUE': 1
+                                  'VALUE': 1,
+                                  'OUTPUT': 'memory'
                                 })
 
-            self.nextStep('Simplify result ...',progress)
-            SimplifiedValleyBottom = Processing.runAlgorithm('qgis:simplifygeometries', None,
+            self.nextStep('Simplify result ...',feedback)
+            SimplifiedValleyBottom = processing.run('qgis:simplifygeometries',
                                 {
-                                  'INPUT': CleanedValleyBottomPolygons.getOutputValue('OUTPUT'),
-                                  'TOLERANCE': SIMPLIFY_TOLERANCE
+                                  'INPUT': CleanedValleyBottomPolygons['OUTPUT'],
+                                  'TOLERANCE': SIMPLIFY_TOLERANCE,
+                                  'OUTPUT': 'memory'
                                 })
 
-            self.nextStep('Smooth polygons ...',progress)
-            SmoothedValleyBottom = Processing.runAlgorithm('qgis:smoothgeometry', None,
+            self.nextStep('Smooth polygons ...',feedback)
+            SmoothedValleyBottom = processing.run('qgis:smoothgeometry',
                                 {
-                                  'INPUT_LAYER': SimplifiedValleyBottom.getOutputValue('OUTPUT'),
+                                  'INPUT_LAYER': SimplifiedValleyBottom['OUTPUT'],
                                   'OUTPUT_LAYER': self.getOutputValue(self.OUTPUT),
                                   'ITERATIONS': SMOOTH_ITERATIONS,
-                                  'OFFSET': SMOOTH_OFFSET
+                                  'OFFSET': SMOOTH_OFFSET,
+                                  'OUTPUT': 'memory'
                                 })
 
         else:
 
-            self.setOutputValue(self.OUTPUT, ValleyBottomPolygons.getOutputValue('OUTPUT'))
+            self.setOutputValue(self.OUTPUT, ValleyBottomPolygons['OUTPUT'])
 
-        self.nextStep('Done !',progress)
+        self.nextStep('Done !',feedback)
 
 
     def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+        return QCoreApplication.translate('FluvialCorridorToolbox', string)
 
     def createInstance(self):
       return ValleyBottom()
