@@ -3,6 +3,7 @@ from PyQt5.QtCore import QCoreApplication
 from qgis.core import (QgsApplication,
                        QgsProcessingProvider)
 
+from .algorithms.spatial_components import spatial_componentsAlgorithms
 from .algorithms.vector import vector_algorithms
 
 class FluvialCorridorToolboxPlugin:
@@ -41,7 +42,7 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
         QgsProcessingProvider.__init__(self)
 
         # Libraries to load
-        self.liblist = [vector_algorithms()]
+        self.liblist = [spatial_componentsAlgorithms(), vector_algorithms()]
 
     def id(self):
         return 'fct'
