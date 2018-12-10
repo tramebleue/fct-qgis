@@ -1,6 +1,6 @@
-QGIS_USER_DIR=$(HOME)/.qgis2
+QGIS_USER_DIR=$(HOME)/.local/share/QGIS/QGIS3/profiles/default
 PLUGIN_DIR=$(QGIS_USER_DIR)/python/plugins
-TARGET=$(PLUGIN_DIR)/FluvialToolbox
+TARGET=$(PLUGIN_DIR)/fct
 PY_FILES=$(wildcard *.py)
 MODULES=core utils 
 MODULES_PY_FILES=$(foreach module, $(MODULES), $(wildcard $(module)/*.py))
@@ -9,7 +9,7 @@ ICONS=$(wildcard *.png)
 default: install
 
 resources.py: resources.qrc
-	pyrcc4 -o resources.py resources.qrc
+	pyrcc5 -o resources.py resources.qrc
 
 install: resources.py
 	@echo -n Install to $(TARGET) ...
