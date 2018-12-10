@@ -1,43 +1,32 @@
 # -*- coding: utf-8 -*-
 
-"""
-***************************************************************************
-    RandomPoints.py
-    ---------------------
-    Date                 : February 2018
-    Copyright            : (C) 2016 by Christophe Rousson
-***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************
-"""
+from qgis.PyQt.QtCore import (
+    QCoreApplication,
+    QVariant
+)
 
-__author__ = 'Christophe Rousson'
-__date__ = 'February 2018'
-__copyright__ = '(C) 2018, Christophe Rousson'
-
-# This will get replaced with a git SHA1 when you do a git archive
-
-__revision__ = '$Format:%H$'
-
-from qgis.core import QGis, QgsFeature, QgsGeometry, QgsPoint, QgsSpatialIndex, QgsFields, QgsField, QgsWKBTypes
-from qgis.core import QgsVectorLayer
-from qgis.core import QgsFeatureRequest, QgsExpression
-from PyQt4.QtCore import QVariant
-import processing
-from processing.core.GeoAlgorithm import GeoAlgorithm
-from processing.core.parameters import ParameterVector
-from processing.core.parameters import ParameterNumber
-from processing.core.parameters import ParameterTableField
-from processing.core.outputs import OutputVector
-from processing.tools import dataobjects, vector
-from processing.core.ProcessingLog import ProcessingLog
-
-from ...core import vector as vector_helper
+from qgis.core import (
+    QgsApplication,
+    QgsGeometry,
+    QgsFeatureSink,
+    QgsFeatureRequest,
+    QgsFeature,
+    QgsField,
+    QgsFields,
+    QgsPointXY,
+    QgsProcessing,
+    QgsProcessingFeatureBasedAlgorithm,
+    QgsProcessingException,
+    QgsProcessingParameterDistance,
+    QgsProcessingParameterFeatureSink,
+    QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterNumber,
+    QgsProcessingParameterString,
+    QgsProcessingParameterField,
+    QgsProcessingParameterVectorLayer,
+    QgsSpatialIndex,
+    QgsWkbTypes
+)
 
 import numpy as np
 import math
@@ -68,16 +57,16 @@ class PoissonDiscSampler(object):
         Parameters
         ----------
 
-        extent : QgsRectangle
+        extent: QgsRectangle
             Rectangle to draw sample from
 
-        radius : float
+        radius: float
             Minimum distance between two samples
 
-        k : integer
+        k: integer
             Maximum number of samples to generate before rejection (see Bridson, 2007)
 
-        existing_samples: list-of-QgsPoint
+        existing_samples: list-of-QgsPointXY
             Initialize samples from this list of points
         """
         
@@ -95,19 +84,19 @@ class PoissonDiscSampler(object):
                 self.sample(s)
 
     def sample(self, point):
-        """ Emit a new sample, and return the corresponding QgsPoint
+        """ Emit a new sample, and return the corresponding QgsPointXY
 
         Parameters
         ----------
 
-        point: QgsPoint
+        point: QgsPointXY
             location of the sample to emit
         """
 
         i = len(self.samples)
         feature = QgsFeature()
-        feature.setFeatureId(i)
-        feature.setGeometry(QgsGeometry.fromPoint(point))
+        feature.setId(i)
+        feature.setGeometry(QgsGeometry.fromPointXY(point))
         self.index.insertFeature(feature)
 
         self.samples.append(point)
@@ -115,19 +104,19 @@ class PoissonDiscSampler(object):
         
         return point
 
-    def sq_nearest_distance(self, point):
+    def nearest_distance(self, point):
         """ Square distance to nearest emitted sample
 
         Parameters
         ----------
 
-        point: QgsPoint
+        point: QgsPointXY
         """
 
         for i in self.index.nearestNeighbor(point, 1):
 
             p = self.samples[i]
-            return point.sqrDist(p)
+            return point.distance(p)
 
         return float('inf')
 
@@ -139,13 +128,13 @@ class PoissonDiscSampler(object):
         Parameters
         ----------
 
-        point: QgsPoint,
+        point: QgsPointXY,
             candidate location
         """
 
-        return self.extent.contains(point) and self.sq_nearest_distance(point) > self.R2
+        return self.extent.contains(point) and self.nearest_distance(point) > self.radius
 
-    def next(self):
+    def __next__(self):
         """ Emit a new random sample,
             or return None if no new sample could be generated.
         """
@@ -158,7 +147,7 @@ class PoissonDiscSampler(object):
 
                 x = self.extent.xMinimum() + np.random.uniform() * self.extent.width()
                 y = self.extent.yMinimum() + np.random.uniform() * self.extent.height()
-                p = QgsPoint(x, y)
+                p = QgsPointXY(x, y)
                 
                 if self.accept(p):
 
@@ -176,7 +165,7 @@ class PoissonDiscSampler(object):
                 x = active_sample.x() + r * math.cos(a)
                 y = active_sample.y() + r * math.sin(a)
 
-                p = QgsPoint(x, y)
+                p = QgsPointXY(x, y)
 
                 if self.accept(p):
                     
@@ -189,144 +178,196 @@ class PoissonDiscSampler(object):
             else:
                 self.active_list.pop()
 
-        return None
+        raise StopIteration
 
     def __iter__(self):
         """ Emits a valid serie of random samples.
         """
 
-        while True:
-
-            next_sample = next(self)
-            if next_sample is None:
-                break
-
-            yield next_sample
+        return self
 
 
-class RandomPoissonDiscSampling(GeoAlgorithm):
+class RandomPoissonDiscSampling(QgsProcessingFeatureBasedAlgorithm):
 
-    INPUT = 'INPUT'
     PK_FIELD = 'PK_FIELD'
     EXISTING_SAMPLES = 'EXISTING_SAMPLES'
     DISTANCE = 'DISTANCE'
     REJECTION_LIMIT = 'REJECTION_LIMIT'
-    OUTPUT = 'OUTPUT'
 
-    def defineCharacteristics(self):
+    def tags(self):
+        return self.tr('random,sampling,dither').split(',')
 
-        self.name, self.i18n_name = self.trAlgorithm('Random Poisson Disc Sampling')
-        self.group, self.i18n_group = self.trAlgorithm('Tools for Vectors')
+    def group(self):
+        return self.tr('Tools for Vectors')
 
-        self.addParameter(ParameterVector(self.INPUT,
-                                          self.tr('Input Polygons'), [ParameterVector.VECTOR_TYPE_POLYGON]))
+    def groupId(self):
+        return 'fctvectortools'
+
+    def name(self):
+        return 'randompoissondiscsampling'
+
+    def displayName(self):
+        return self.tr('Random Poisson Disc Sampling')
+
+    def inputLayerTypes(self):
+        return [ QgsProcessing.TypeVectorPolygon ]
+
+    def outputName(self):
+        return self.tr('Poisson Disc Samples')
+
+    def outputLayerType(self):
+        return QgsProcessing.TypeVectorPoint
+
+    def outputWkbType(self, inputWkbType):
+        return QgsWkbTypes.Point
+
+    # def icon(self):
+    #     return QgsApplication.getThemeIcon("/algorithms/mAlgorithmSumPoints.svg")
+
+    # def svgIconPath(self):
+    #     return QgsApplication.iconPath("/algorithms/mAlgorithmSumPoints.svg")
+
+    def tr(self, string, context=''):
         
-        self.addParameter(ParameterTableField(self.PK_FIELD,
-                                          self.tr('Primary Key Field'),
-                                          parent=self.INPUT,
-                                          datatype=ParameterTableField.DATA_TYPE_NUMBER))
+        if context == '':
+            context = 'FluvialCorridorToolbox'
 
-        self.addParameter(ParameterVector(self.EXISTING_SAMPLES,
-                                          self.tr('Existing Samples'), [ParameterVector.VECTOR_TYPE_POINT],
-                                          optional=True))
+        return QCoreApplication.translate(context, string)
 
-        self.addParameter(ParameterNumber(self.DISTANCE,
-                                          self.tr('Minimum Distance between Samples'),
-                                          minValue=0.0, default=50.0))
+    def __init__(self):
 
-        self.addParameter(ParameterNumber(self.REJECTION_LIMIT,
-                                          self.tr('Rejection Limit'),
-                                          minValue=1, default=30))
+        super().__init__()
+        
+        self.pk_field = None
+        self.distance = 50.0
+        self.k = 30
+        self.fid = 0
 
-        self.addOutput(OutputVector(self.OUTPUT, self.tr('Poisson Disc Samples')))
+        self.R2 = np.square(self.distance)
+        self.global_index = None
+        self.global_samples = None
+        self.sample_index = None
 
+    def initParameters(self, config=None):
 
-    def processAlgorithm(self, progress):
+        self.addParameter(QgsProcessingParameterVectorLayer(self.EXISTING_SAMPLES,
+                                                            self.tr('Existing Samples'),
+                                                            [ QgsProcessing.TypeVectorPoint ],
+                                                            optional=True))
 
-        layer = processing.getObject(self.getParameterValue(self.INPUT))
-        samples = processing.getObject(self.getParameterValue(self.EXISTING_SAMPLES))
-        pk_field = self.getParameterValue(self.PK_FIELD)
-        distance = self.getParameterValue(self.DISTANCE)
-        k = self.getParameterValue(self.REJECTION_LIMIT)
+        self.addParameter(QgsProcessingParameterField(self.PK_FIELD,
+                                                      self.tr('Primary Key Field'),
+                                                      parentLayerParameterName='INPUT',
+                                                      type=QgsProcessingParameterField.Numeric))
 
-        writer = self.getOutputFromName(self.OUTPUT).getVectorWriter(
-            [
-                QgsField('PID', QVariant.Int, len=10),
-                QgsField('X', QVariant.Double, len=10, prec=2),
-                QgsField('Y', QVariant.Double, len=10, prec=2),
-                vector_helper.resolveField(layer, pk_field)
-            ],
-            QGis.WKBPoint,
-            layer.crs())
+        self.addParameter(QgsProcessingParameterDistance(self.DISTANCE,
+                                                         self.tr('Minimum Distance between Samples'),
+                                                         defaultValue=50.0))
+
+        self.addParameter(QgsProcessingParameterNumber(self.REJECTION_LIMIT,
+                                                       self.tr('Rejection Limit'),
+                                                       type=QgsProcessingParameterNumber.Integer,
+                                                       minValue=1,
+                                                       defaultValue=30))
+
+    def prepareAlgorithm(self, parameters, context, feedback):
+
+        self.distance = self.parameterAsDouble(parameters, self.DISTANCE, context)
+        self.R2 = np.square(self.distance)
+        self.global_index = QgsSpatialIndex()
+        self.global_samples = list()
+        self.k = self.parameterAsInt(parameters, self.REJECTION_LIMIT, context)
+        self.pk_field = self.parameterAsString(parameters, self.PK_FIELD, context)
+        self.fid = 0
+
+        samples = self.parameterAsVectorLayer(parameters, self.EXISTING_SAMPLES, context)
 
         if samples is None:
 
-            def samples_by_polygon(polygon):
-                
-                return list()
+            self.sample_index = None
 
         else:
 
-            sample_index = QgsSpatialIndex(samples.getFeatures())
+            self.samples = samples
+            self.sample_index = QgsSpatialIndex(samples.getFeatures())
 
-            def samples_by_polygon(polygon):
+        return True
 
-                selection = list()
+    def outputFields(self, inputFields):
 
-                for sample_id in sample_index.intersects(polygon.boundingBox()):
+        fields = QgsFields()
+        
+        for field in [
+                QgsField('PID', QVariant.Int, len=10),
+                QgsField('X', QVariant.Double, len=10, prec=2),
+                QgsField('Y', QVariant.Double, len=10, prec=2)
+            ]:
 
-                    sample = samples.getFeatures(QgsFeatureRequest(sample_id)).next()
+            fields.append(field)
 
-                    if polygon.contains(sample.geometry()):
-                        selection.append(sample.geometry().asPoint())
+        pkidx = inputFields.lookupField(self.pk_field)
+        fields.append(inputFields.at(pkidx))
 
-                return selection
+        return fields      
 
-        features = vector.features(layer)
-        total = 100.0 / len(features)
-        fid = 0
+    def samples_by_polygon(self, polygon):
 
-        # Maintain a global list of generated samples
-        # in order to avoid boundary effects between input polygons
-        R2 = np.square(distance)
-        global_index = QgsSpatialIndex()
-        global_samples = list()
+        selection = list()
 
-        def sq_nearest_distance(sample):
+        if self.sample_index is None:
 
-            for neighid in global_index.nearestNeighbor(sample, 1):
-                neigh = global_samples[neighid]
-                return sample.sqrDist(neigh)
+            return selection
+
+        for sample_id in sample_index.intersects(polygon.boundingBox()):
+
+            sample = samples.getFeatures(QgsFeatureRequest(sample_id)).next()
+
+            if polygon.contains(sample.geometry()):
+                selection.append(sample.geometry().asPoint())
+
+        return selection
+
+    def nearest_distance(self, sample):
+
+            for neighid in self.global_index.nearestNeighbor(sample, 1):
+                neigh = self.global_samples[neighid]
+                return sample.distance(neigh)
 
             return float('inf')
 
-        for current, feature in enumerate(features):
+    def processFeature(self, feature, context, feedback):
 
-            pk = feature.attribute(pk_field)
+        pk = feature.attribute(self.pk_field)
 
-            polygon = feature.geometry()
-            existing_samples = samples_by_polygon(polygon)
-            sampler = PoissonDiscSampler(polygon.boundingBox(), distance, k, existing_samples)
+        polygon = feature.geometry()
+        existing_samples = self.samples_by_polygon(polygon)
+        sampler = PoissonDiscSampler(polygon.boundingBox(), self.distance, self.k, existing_samples)
+        out_features = list()
 
-            for sample in chain(existing_samples, sampler):
+        for sample in chain(existing_samples, sampler):
 
-                if polygon.contains(sample) and sq_nearest_distance(sample) > R2:
+            if polygon.contains(sample) and self.nearest_distance(sample) > self.distance:
 
-                    out_feature = QgsFeature()
-                    out_feature.setAttributes([
-                            fid,
-                            sample.x(),
-                            sample.y(),
-                            pk
-                        ])
-                    out_feature.setGeometry(QgsGeometry.fromPoint(sample))
-                    writer.addFeature(out_feature)
+                out_feature = QgsFeature()
+                out_feature.setAttributes([
+                        self.fid,
+                        sample.x(),
+                        sample.y(),
+                        pk
+                    ])
+                out_feature.setGeometry(QgsGeometry.fromPointXY(sample))
+                out_feature.setId(self.fid)
+                
+                self.global_index.insertFeature(out_feature)
+                self.global_samples.append(sample)
+                self.fid = self.fid + 1
 
-                    out_feature.setFeatureId(fid)
-                    global_index.insertFeature(out_feature)
-                    global_samples.append(sample)
-                    fid = fid + 1
+                out_features.append(out_feature)
 
-            progress.setPercentage(int(current * total))
+        return out_features
+
+    def createInstance(self):
+
+        return type(self)()
 
 

@@ -9,7 +9,7 @@
 
 [general]
 name=Fluvial Toolbox
-qgisMinimumVersion=2.0
+qgisMinimumVersion=3.0
 description=Fluvial Toolbox
 version=1.0.0
 author=Geopeka
