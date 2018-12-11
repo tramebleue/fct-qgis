@@ -37,6 +37,8 @@ from qgis.core import (QgsProcessing,
 # from processing.core.Processing import Processing
 # from processing.core.ProcessingLog import ProcessingLog
 # from processing.gui.Postprocessing import handleAlgorithmResults
+import tempfile
+import os
 import processing
 import gdal
 
@@ -261,7 +263,11 @@ class ValleyBottom(QgsProcessingAlgorithm):
                             }, context=context)
 
         self.nextStep('Clip DEM ...',feedback)
-        ClippedDEM = processing.run('gdal:cliprasterbymasklayer', handleResult('Clipped DEM'),
+        tmpdir = tempfile.mkdtemp(prefix='fct_')
+        OUTPUT_FILE = os.path.join(tmpdir, 'OUTPUT.TIF')
+
+        # TODO: load this result in gqis interface if option checked only
+        ClippedDEM = processing.runAndLoadResults('gdal:cliprasterbymasklayer',
                             {
                               'INPUT': INPUT_DEM_LAYER,
                               'MASK': LargeBuffer['OUTPUT'],
@@ -270,11 +276,15 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True,
-                              'OUTPUT': 'memory:'
+                              'OUTPUT': OUTPUT_FILE
                             }, context=context)
 
         self.nextStep('Extract minimum DEM ...',feedback)
-        MinDEM = processing.run('gdal:cliprasterbymasklayer', handleResult('Minimum DEM'),
+        tmpdir = tempfile.mkdtemp(prefix='fct_')
+        OUTPUT_FILE = os.path.join(tmpdir, 'OUTPUT.TIF')
+
+        # TODO: load this result in gqis interface if option checked only
+        MinDEM = processing.runAndLoadResults('gdal:cliprasterbymasklayer',
                             {
                               'INPUT': ClippedDEM['OUTPUT'],
                               'MASK': SmallBuffer['OUTPUT'],
@@ -283,11 +293,12 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True,
-                              'OUTPUT': 'memory:'
+                              'OUTPUT': OUTPUT_FILE
                             }, context=context)
 
         self.nextStep('Compute reference elevation for every polygon ...',feedback)
-        ReferencePolygons = processing.run('qgis:zonalstatistics', handleResult('Reference polygons'),
+        # TODO: load this result in gqis interface if option checked only
+        ReferencePolygons = processing.runAndLoadResults('qgis:zonalstatistics',
                             {
                               'INPUT_RASTER': MinDEM['OUTPUT'],
                               'RASTER_BAND': 1,
@@ -377,7 +388,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
         # Polygonize Valley Bottom
 
         self.nextStep('Polygonize ...',feedback)
-        ValleyBottomPolygons = processing.run('gdal:polygonize', handleResult('Uncleaned Valley Bottom'),
+        # TODO: load this result in gqis interface if option checked only
+        ValleyBottomPolygons = processing.runAndLoadResults('gdal:polygonize',
                             {
                               'INPUT': CleanedValleyBottomRaster['OUTPUT'],
                               'FIELD': 'VALUE',
