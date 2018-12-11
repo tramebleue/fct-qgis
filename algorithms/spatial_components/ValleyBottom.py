@@ -177,8 +177,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                             {
                               'INPUT': INPUT_NETWORK_LAYER,
                               'OVERLAY': INPUT_ZOI_LAYER,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         self.nextStep('Simplify network',feedback)
         SimplifiedNetwork = processing.run('qgis:simplifygeometries',
@@ -186,30 +186,30 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'INPUT': ClippedNetwork['OUTPUT'],
                               'METHOD': 0,
                               'TOLERANCE': SIMPLIFY_TOLERANCE,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
         
         self.nextStep('Split network ...',feedback)
         NetworkPoints = processing.run('qgis:pointsalonglines',
                             {
                               'INPUT': SimplifiedNetwork['OUTPUT'],
                               'DISTANCE': SPLIT_MAX_LENGTH,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         # self.nextStep('Split network ...',feedback)
         # SplittedNetwork = processing.run('fluvialcorridortoolbox:splitlines',
         #                     {
         #                       'INPUT': SimplifiedNetwork['OUTPUT'],
         #                       'MAXLENGTH': SPLIT_MAX_LENGTH,
-        #                       'OUTPUT': 'memory'
+        #                       'OUTPUT': 'memory:'
         #                     })
 
         # self.nextStep('Extract points ...',feedback)
         # NetworkPoints = processing.run('qgis:extractnodes',
         #                     {
         #                       'INPUT': SplittedNetwork['OUTPUT'],
-        #                       'OUTPUT': 'memory'
+        #                       'OUTPUT': 'memory:'
         #                     })
         
         self.nextStep('Compute large buffer ...',feedback)
@@ -218,15 +218,15 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'INPUT': SimplifiedNetwork['OUTPUT'],
                               'DISTANCE': LARGE_BUFFER_DISTANCE,
                               'DISSOLVE': True,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         LargeBuffer = processing.run('qgis:clip', 
                             {
                               'INPUT': LargeBuffer0['OUTPUT'],
                               'OVERLAY': INPUT_ZOI_LAYER,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         # self.nextStep('Clip large buffer ...',feedback)
         # LargeBuffer = processing.run('qgis:clip', None,
@@ -241,24 +241,24 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'INPUT': SimplifiedNetwork['OUTPUT'],
                               'DISTANCE': SMALL_BUFFER_DISTANCE,
                               'DISSOLVE': True,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         self.nextStep('Compute thiessen polygons ...',feedback)
         ThiessenPolygons = processing.run('qgis:voronoipolygons',
                             {
                               'INPUT': NetworkPoints['OUTPUT'],
                               'BUFFER': 10.0,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         self.nextStep('Clip thiessen polygons ...',feedback)
         ClippedThiessenPolygons = processing.run('qgis:clip',
                             {
                               'INPUT': ThiessenPolygons['OUTPUT'],
                               'OVERLAY': LargeBuffer['OUTPUT'],
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         self.nextStep('Clip DEM ...',feedback)
         ClippedDEM = processing.run('gdalogr:cliprasterbymasklayer', handleResult('Clipped DEM'),
@@ -270,8 +270,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         self.nextStep('Extract minimum DEM ...',feedback)
         MinDEM = processing.run('gdalogr:cliprasterbymasklayer', handleResult('Minimum DEM'),
@@ -283,8 +283,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         self.nextStep('Compute reference elevation for every polygon ...',feedback)
         ReferencePolygons = processing.run('qgis:zonalstatistics', handleResult('Reference polygons'),
@@ -294,8 +294,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'INPUT_VECTOR': ClippedThiessenPolygons['OUTPUT'],
                               'COLUMN_PREFIX': '_',
                               'GLOBAL_EXTENT': False,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         layer = gdal.Open(ClippedDEM['OUTPUT'])
         geotransform = layer.GetGeoTransform()
@@ -314,8 +314,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'WIDTH': pixel_width,
                               'HEIGHT': pixel_height,
                               'EXTRA': '-tap',
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         ReferenceDEM = processing.run('gdalogr:cliprasterbymasklayer',
                             {
@@ -327,7 +327,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True,
                               'OUTPUT': self.getOutputValue(self.REFERENCE_DEM)
-                            })
+                            }, context=context)
 
         self.nextStep('Compute relative DEM and extract bottom ...',feedback)
         ValleyBottomRaster = processing.run('fluvialcorridortoolbox:differentialrasterthreshold',
@@ -336,8 +336,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'REFERENCE_DEM': ReferenceDEM['OUTPUT'],
                               'MIN_THRESHOLD': MIN_THRESHOLD,
                               'MAX_THRESHOLD': MAX_THRESHOLD,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         # self.nextStep('Clip Raster Bottom ...',feedback)
         # RawValleyBottomRaster = processing.run('gdalogr:cliprasterbymasklayer', None,
@@ -361,8 +361,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'INPUT': ValleyBottomRaster['OUTPUT'],
                               'DISTANCE': MIN_OBJECT_DISTANCE,
                               'ITERATIONS': 5,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
         else:
 
           self.nextStep('Sieve result ...',feedback)
@@ -371,8 +371,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'INPUT': ValleyBottomRaster['OUTPUT'],
                               'THRESHOLD': SIEVE_THRESHOLD,
                               'CONNECTIONS': FOUR_CONNECTIVITY,
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         # Polygonize Valley Bottom
 
@@ -381,8 +381,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                             {
                               'INPUT': CleanedValleyBottomRaster['OUTPUT'],
                               'FIELD': 'VALUE',
-                              'OUTPUT': 'memory'
-                            })
+                              'OUTPUT': 'memory:'
+                            }, context=context)
 
         # if MIN_OBJECT_DISTANCE > 0:
 
@@ -432,16 +432,16 @@ class ValleyBottom(QgsProcessingAlgorithm):
                                   'MIN_HOLE_AREA': CLEAN_MIN_HOLE_AREA,
                                   'FIELD': 'VALUE',
                                   'VALUE': 1,
-                                  'OUTPUT': 'memory'
-                                })
+                                  'OUTPUT': 'memory:'
+                                }, context=context)
 
             self.nextStep('Simplify result ...',feedback)
             SimplifiedValleyBottom = processing.run('qgis:simplifygeometries',
                                 {
                                   'INPUT': CleanedValleyBottomPolygons['OUTPUT'],
                                   'TOLERANCE': SIMPLIFY_TOLERANCE,
-                                  'OUTPUT': 'memory'
-                                })
+                                  'OUTPUT': 'memory:'
+                                }, context=context)
 
             self.nextStep('Smooth polygons ...',feedback)
             SmoothedValleyBottom = processing.run('qgis:smoothgeometry',
@@ -450,8 +450,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
                                   'OUTPUT_LAYER': self.getOutputValue(self.OUTPUT),
                                   'ITERATIONS': SMOOTH_ITERATIONS,
                                   'OFFSET': SMOOTH_OFFSET,
-                                  'OUTPUT': 'memory'
-                                })
+                                  'OUTPUT': 'memory:'
+                                }, context=context)
 
         else:
 
