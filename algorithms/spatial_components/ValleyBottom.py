@@ -160,13 +160,13 @@ class ValleyBottom(QgsProcessingAlgorithm):
         FOUR_CONNECTIVITY = 0
         LZW_COMPRESS = 3
 
-        # def handleResult(description):
-        #     def _handle(alg, *args, **kw):
-        #         if display_result:
-        #             for out in alg.outputs:
-        #                 out.description = description
-        #             handleAlgorithmResults(alg, *args, **kw)
-        #     return _handle
+        def handleResult(description):
+            def _handle(alg, *args, **kw):
+                if display_result:
+                    for out in alg.outputs:
+                        out.description = description
+                    handleAlgorithmResults(alg, *args, **kw)
+            return _handle
 
         self.current_step = 0
         
@@ -261,7 +261,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
                             }, context=context)
 
         self.nextStep('Clip DEM ...',feedback)
-        ClippedDEM = processing.run('gdalogr:cliprasterbymasklayer', handleResult('Clipped DEM'),
+        ClippedDEM = processing.run('gdal:cliprasterbymasklayer', handleResult('Clipped DEM'),
                             {
                               'INPUT': INPUT_DEM_LAYER,
                               'MASK': LargeBuffer['OUTPUT'],
@@ -274,7 +274,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
                             }, context=context)
 
         self.nextStep('Extract minimum DEM ...',feedback)
-        MinDEM = processing.run('gdalogr:cliprasterbymasklayer', handleResult('Minimum DEM'),
+        MinDEM = processing.run('gdal:cliprasterbymasklayer', handleResult('Minimum DEM'),
                             {
                               'INPUT': ClippedDEM['OUTPUT'],
                               'MASK': SmallBuffer['OUTPUT'],
@@ -304,7 +304,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
         del layer
 
         self.nextStep('Convert to reference DEM ...',feedback)
-        ReferenceDEM0 = processing.run('gdalogr:rasterize',
+        ReferenceDEM0 = processing.run('gdal:rasterize',
                             {
                               'INPUT': ReferencePolygons.getOutputValue('OUTPUT_LAYER'),
                               'FIELD': '_min',
@@ -317,7 +317,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'OUTPUT': 'memory:'
                             }, context=context)
 
-        ReferenceDEM = processing.run('gdalogr:cliprasterbymasklayer',
+        ReferenceDEM = processing.run('gdal:cliprasterbymasklayer',
                             {
                               'INPUT': ReferenceDEM0['OUTPUT'],
                               'MASK': LargeBuffer['OUTPUT'],
@@ -340,7 +340,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
                             }, context=context)
 
         # self.nextStep('Clip Raster Bottom ...',feedback)
-        # RawValleyBottomRaster = processing.run('gdalogr:cliprasterbymasklayer', None,
+        # RawValleyBottomRaster = processing.run('gdal:cliprasterbymasklayer', None,
         #                     {
         #                       'INPUT': ValleyBottomRasterToClip['OUTPUT'],
         #                       'MASK': LargeBuffer['OUTPUT'],
@@ -366,7 +366,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
         else:
 
           self.nextStep('Sieve result ...',feedback)
-          CleanedValleyBottomRaster = processing.run('gdalogr:sieve',
+          CleanedValleyBottomRaster = processing.run('gdal:sieve',
                             {
                               'INPUT': ValleyBottomRaster['OUTPUT'],
                               'THRESHOLD': SIEVE_THRESHOLD,
@@ -377,7 +377,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
         # Polygonize Valley Bottom
 
         self.nextStep('Polygonize ...',feedback)
-        ValleyBottomPolygons = processing.run('gdalogr:polygonize', handleResult('Uncleaned Valley Bottom'),
+        ValleyBottomPolygons = processing.run('gdal:polygonize', handleResult('Uncleaned Valley Bottom'),
                             {
                               'INPUT': CleanedValleyBottomRaster['OUTPUT'],
                               'FIELD': 'VALUE',
