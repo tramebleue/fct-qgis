@@ -31,8 +31,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterBoolean,
-                       QgsProcessingOutputVectorLayer,
-                       QgsProcessingOutputRasterLayer)
+                       QgsProcessingParameterVectorDestination,
+                       QgsProcessingParameterRasterDestination)
 
 # from processing.core.Processing import Processing
 # from processing.core.ProcessingLog import ProcessingLog
@@ -120,11 +120,11 @@ class ValleyBottom(QgsProcessingAlgorithm):
 
         # Output parameters
         
-        self.addOutput(QgsProcessingOutputVectorLayer(self.OUTPUT, self.tr('Valley Bottom')))
+        self.addParameter(QgsProcessingParameterVectorDestination(self.OUTPUT, self.tr('Valley Bottom')))
 
-        self.addOutput(QgsProcessingOutputRasterLayer(self.VALLEYBOTTOM_RASTER, self.tr('Valley Bottom Raster')))
+        self.addParameter(QgsProcessingParameterRasterDestination(self.VALLEYBOTTOM_RASTER, self.tr('Valley Bottom Raster')))
 
-        self.addOutput(QgsProcessingOutputRasterLayer(self.REFERENCE_DEM, self.tr('Reference DEM')))
+        self.addParameter(QgsProcessingParameterRasterDestination(self.REFERENCE_DEM, self.tr('Reference DEM')))
 
     def nextStep(self, description, feedback):
         feedback.pushInfo(description)
@@ -152,6 +152,8 @@ class ValleyBottom(QgsProcessingAlgorithm):
         INPUT_DEM_LAYER = self.parameterAsRasterLayer(parameters, self.INPUT_DEM, context)
         INPUT_ZOI_LAYER = self.parameterAsVectorLayer(parameters, self.INPUT_ZOI, context)
 
+        REFERENCE_DEM_LAYER = self.parameterAsOutputLayer(parameters, self.REFERENCE_DEM, context)
+
         # Hard coded parameters
         SIMPLIFY_TOLERANCE = 10
         SIEVE_THRESHOLD = 40
@@ -162,13 +164,16 @@ class ValleyBottom(QgsProcessingAlgorithm):
         FOUR_CONNECTIVITY = 0
         LZW_COMPRESS = 3
 
-        def handleResult(description):
-            def _handle(alg, *args, **kw):
-                if display_result:
-                    for out in alg.outputs:
-                        out.description = description
-                    handleAlgorithmResults(alg, *args, **kw)
-            return _handle
+        # Create temp dir for temp rasters
+        tmpdir = tempfile.mkdtemp(prefix='fct_')
+
+        # def handleResult(description):
+        #     def _handle(alg, *args, **kw):
+        #         if display_result:
+        #             for out in alg.outputs:
+        #                 out.description = description
+        #             handleAlgorithmResults(alg, *args, **kw)
+        #     return _handle
 
         self.current_step = 0
         
@@ -263,11 +268,9 @@ class ValleyBottom(QgsProcessingAlgorithm):
                             }, context=context)
 
         self.nextStep('Clip DEM ...',feedback)
-        tmpdir = tempfile.mkdtemp(prefix='fct_')
-        OUTPUT_FILE = os.path.join(tmpdir, 'OUTPUT.TIF')
-
+        CLIPPED_DEM = os.path.join(tmpdir, 'CLIPPED_DEM.TIF')
         # TODO: load this result in gqis interface if option checked only
-        ClippedDEM = processing.runAndLoadResults('gdal:cliprasterbymasklayer',
+        ClippedDEM = processing.run('gdal:cliprasterbymasklayer',
                             {
                               'INPUT': INPUT_DEM_LAYER,
                               'MASK': LargeBuffer['OUTPUT'],
@@ -276,74 +279,76 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True,
-                              'OUTPUT': OUTPUT_FILE
+                              'OUTPUT': CLIPPED_DEM
                             }, context=context)
 
         self.nextStep('Extract minimum DEM ...',feedback)
-        tmpdir = tempfile.mkdtemp(prefix='fct_')
-        OUTPUT_FILE = os.path.join(tmpdir, 'OUTPUT.TIF')
-
+        MIN_DEM = os.path.join(tmpdir, 'MIN_DEM.TIF')
         # TODO: load this result in gqis interface if option checked only
-        MinDEM = processing.runAndLoadResults('gdal:cliprasterbymasklayer',
+        MinDEM = processing.run('gdal:cliprasterbymasklayer',
                             {
-                              'INPUT': ClippedDEM['OUTPUT'],
+                              'INPUT': CLIPPED_DEM,
                               'MASK': SmallBuffer['OUTPUT'],
+                              'NODATA': 9999,
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': False,
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True,
-                              'OUTPUT': OUTPUT_FILE
+                              'OUTPUT': MIN_DEM
                             }, context=context)
 
         self.nextStep('Compute reference elevation for every polygon ...',feedback)
         # TODO: load this result in gqis interface if option checked only
-        ReferencePolygons = processing.runAndLoadResults('qgis:zonalstatistics',
+        ReferencePolygons = processing.run('qgis:zonalstatistics',
                             {
-                              'INPUT_RASTER': MinDEM['OUTPUT'],
+                              'INPUT_RASTER': MIN_DEM,
                               'RASTER_BAND': 1,
                               'INPUT_VECTOR': ClippedThiessenPolygons['OUTPUT'],
                               'COLUMN_PREFIX': '_',
-                              'GLOBAL_EXTENT': False,
-                              'OUTPUT': 'memory:'
+                              'STATS': 5
                             }, context=context)
+        
 
-        layer = gdal.Open(ClippedDEM['OUTPUT'])
+        layer = gdal.Open(CLIPPED_DEM)
         geotransform = layer.GetGeoTransform()
         pixel_width = geotransform[1]
         pixel_height = -geotransform[5]
         del layer
 
         self.nextStep('Convert to reference DEM ...',feedback)
+        REFERENCE_DEM0 = os.path.join(tmpdir, 'REFERENCE_DEM0.TIF')
         ReferenceDEM0 = processing.run('gdal:rasterize',
                             {
-                              'INPUT': ReferencePolygons.getOutputValue('OUTPUT_LAYER'),
+                              'INPUT': ReferencePolygons['INPUT_VECTOR'],
                               'FIELD': '_min',
                               'TILED': True,
                               'COMPRESS': LZW_COMPRESS,
-                              'DIMENSIONS': 1,
+                              'UNITS': 1,
                               'WIDTH': pixel_width,
                               'HEIGHT': pixel_height,
-                              'EXTRA': '-tap',
-                              'OUTPUT': 'memory:'
+                              'EXTENT': CLIPPED_DEM,
+                              'OPTIONS': '-tap',
+                              'OUTPUT': REFERENCE_DEM0
                             }, context=context)
 
         ReferenceDEM = processing.run('gdal:cliprasterbymasklayer',
                             {
-                              'INPUT': ReferenceDEM0['OUTPUT'],
+                              'INPUT': REFERENCE_DEM0,
                               'MASK': LargeBuffer['OUTPUT'],
+                              'NODATA': 9999,
                               'ALPHA_BAND': False,
                               'CROP_TO_CUTLINE': True,
                               'KEEP_RESOLUTION': True,
                               'COMPRESS': LZW_COMPRESS,
                               'TILED': True,
-                              'OUTPUT': self.getOutputValue(self.REFERENCE_DEM)
+                              'OUTPUT': REFERENCE_DEM_LAYER
                             }, context=context)
 
         self.nextStep('Compute relative DEM and extract bottom ...',feedback)
         ValleyBottomRaster = processing.run('fluvialcorridortoolbox:differentialrasterthreshold',
                             {
-                              'INPUT_DEM': ClippedDEM['OUTPUT'],
+                              'INPUT_DEM': CLIPPED_DEM,
                               'REFERENCE_DEM': ReferenceDEM['OUTPUT'],
                               'MIN_THRESHOLD': MIN_THRESHOLD,
                               'MAX_THRESHOLD': MAX_THRESHOLD,
@@ -389,7 +394,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
 
         self.nextStep('Polygonize ...',feedback)
         # TODO: load this result in gqis interface if option checked only
-        ValleyBottomPolygons = processing.runAndLoadResults('gdal:polygonize',
+        ValleyBottomPolygons = processing.run('gdal:polygonize',
                             {
                               'INPUT': CleanedValleyBottomRaster['OUTPUT'],
                               'FIELD': 'VALUE',
