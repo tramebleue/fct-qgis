@@ -25,14 +25,15 @@ __copyright__ = '(C) 2016, Christophe Rousson'
 __revision__ = '$Format:%H$'
 
 from PyQt5.QtCore import QCoreApplication
-from qgis.core import (QgsProcessingParameterRasterLayer,
+from qgis.core import (QgsProcessingAlgorithm,
+                       QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterRasterDestination)
 import gdal
 import numpy as np
 
 
-class DifferentialRasterThreshold(GeoAlgorithm):
+class DifferentialRasterThreshold(QgsProcessingAlgorithm):
 
     INPUT_DEM = 'INPUT_DEM'
     REFERENCE_DEM = 'REFERENCE_DEM'
@@ -69,10 +70,14 @@ class DifferentialRasterThreshold(GeoAlgorithm):
 
         self.addParameter(QgsProcessingParameterRasterDestination(self.RELATIVE_DEM, self.tr('Relative DEM')))
 
-    def processAlgorithm(self,  parameters, context, feedback):
+    def processAlgorithm(self, parameters, context, feedback):
 
-        input_dem_path = self.parameterAsRasterLayer(parameters, self.INPUT_DEM, context)
-        reference_dem_path = self.parameterAsRasterLayer(parameters, self.REFERENCE_DEM, context)
+        input_dem = self.parameterAsRasterLayer(parameters, self.INPUT_DEM, context)
+        input_dem_path = str(input_dem.dataProvider().dataSourceUri())
+
+        reference_dem = self.parameterAsRasterLayer(parameters, self.REFERENCE_DEM, context)
+        reference_dem_path = str(reference_dem.dataProvider().dataSourceUri())
+
         maxvalue = self.parameterAsDouble(parameters, self.MAX_THRESHOLD, context)
         minvalue = self.parameterAsDouble(parameters, self.MIN_THRESHOLD, context)
 
@@ -112,6 +117,8 @@ class DifferentialRasterThreshold(GeoAlgorithm):
         ds = None
         refds = None
         dst = None
+
+        return {self.RELATIVE_DEM: output_path}
 
 
     def tr(self, string):
