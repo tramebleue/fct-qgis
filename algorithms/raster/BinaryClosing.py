@@ -25,33 +25,23 @@ __copyright__ = '(C) 2013, Alexander Bruy'
 
 __revision__ = '$Format:%H$'
 
-import numpy
-
 try:
-    from scipy.stats.mstats import mode
+    from scipy.ndimage.morphology import binary_closing
     hasSciPy = True
-except:
+except ImportError:
     hasSciPy = False
 
-from osgeo import gdal, ogr, osr
-from qgis.core import QgsRectangle, QgsGeometry, QgsFeature, QgsFields, QgsField
-from PyQt4.QtCore import QVariant
+from PyQt5.QtCore import QCoreApplication
+from qgis.core import (QgsProcessingAlgorithm,
+                       QgsProcessingException,
+                       QgsProcessingParameterRasterLayer,
+                       QgsProcessingParameterNumber,
+                       QgsProcessingParameterRasterDestination)
 
-from processing.core.GeoAlgorithm import GeoAlgorithm
-from processing.core.GeoAlgorithmExecutionException import GeoAlgorithmExecutionException
-from processing.core.parameters import ParameterVector
-from processing.core.parameters import ParameterRaster
-from processing.core.parameters import ParameterString
-from processing.core.parameters import ParameterNumber
-from processing.core.parameters import ParameterBoolean
-from processing.core.parameters import ParameterSelection
-from processing.core.parameters import ParameterTableField
-from processing.core.outputs import OutputRaster
-from processing.tools.raster import mapToPixel
-from processing.tools import dataobjects, vector
-from processing.core.ProcessingLog import ProcessingLog
+import numpy as np
+import gdal
 
-class BinaryClosing(GeoAlgorithm):
+class BinaryClosing(QgsProcessingAlgorithm):
 
     INPUT = 'INPUT'
     BAND = 'BAND'
@@ -59,55 +49,87 @@ class BinaryClosing(GeoAlgorithm):
     DISTANCE = 'DISTANCE'
     ITERATIONS = 'ITERATIONS'
 
-    def defineCharacteristics(self):
+    def name(self):
+      return 'BinaryClosing'
 
-        self.name, self.i18n_name = self.trAlgorithm('Binary Closing')
-        self.group, self.i18n_group = self.trAlgorithm('Tools for Rasters')
+    def groupId(self):
+      return 'Tools for Rasters'
 
-        self.addParameter(ParameterRaster(self.INPUT,
+    def displayName(self):
+      return self.tr(self.name())
+
+    def group(self):
+      return self.tr(self.groupId())
+
+    def initAlgorithm(self, config=None):
+
+        self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT,
                                           self.tr('Raster layer')))
 
-        self.addParameter(ParameterNumber(self.BAND,
-                                          self.tr('Raster band'), 1, 999, 1))
+        self.addParameter(QgsProcessingParameterNumber(self.BAND,
+                                          self.tr('Raster band'), defaultValue=1))
 
-        self.addParameter(ParameterNumber(self.DISTANCE,
-                                          self.tr('Structuring Distance (Map unit)'), default=50.0, minValue=0.0))
+        self.addParameter(QgsProcessingParameterNumber(self.DISTANCE,
+                                          self.tr('Structuring Distance (Map unit)'), defaultValue=50.0, minValue=0.0))
 
-        self.addParameter(ParameterNumber(self.ITERATIONS,
-                                          self.tr('Iterations'), default=1, minValue=0))
+        self.addParameter(QgsProcessingParameterNumber(self.ITERATIONS,
+                                          self.tr('Iterations'), defaultValue=1, minValue=0))
 
-        self.addOutput(OutputRaster(self.OUTPUT, self.tr('Binary Closing Result')))
+        self.addParameter(QgsProcessingParameterRasterDestination(self.OUTPUT, self.tr('Binary Closing Result')))
 
-    def processAlgorithm(self, progress):
+    def disk(self, radius, dtype=np.uint8):
+        """
+        Generates a flat, disk-shaped structuring element.
+        A pixel is within the neighborhood if the euclidean distance between
+        it and the origin is no greater than radius.
+        Parameters
+        ----------
+        radius : int
+            The radius of the disk-shaped structuring element.
+        Other Parameters
+        ----------------
+        dtype : data-type
+            The data type of the structuring element.
+        Returns
+        -------
+        selem : ndarray
+            The structuring element where elements of the neighborhood
+            are 1 and 0 otherwise.
+        """
+        L = np.arange(-radius, radius + 1)
+        X, Y = np.meshgrid(L, L)
+        return np.array((X ** 2 + Y ** 2) <= radius ** 2, dtype=dtype)
 
-        rasterPath = unicode(self.getParameterValue(self.INPUT))
-        bandNumber = self.getParameterValue(self.BAND)
-        distance = self.getParameterValue(self.DISTANCE)
-        iterations = self.getParameterValue(self.ITERATIONS)
+    def processAlgorithm(self, parameters, context, feedback):
+        
+        if not hasSciPy:
+            raise QgsProcessingException(self.tr('SciPy morphology libraries not found.'))
+
+        raster = self.parameterAsRasterLayer(parameters, self.INPUT, context)
+        rasterPath = str(raster.dataProvider().dataSourceUri())
+
+        bandNumber = self.parameterAsInt(parameters, self.BAND, context)
+        distance = self.parameterAsDouble(parameters, self.DISTANCE, context)
+        iterations = self.parameterAsOutputLayer(parameters, self.ITERATIONS, context)
 
         datasource = gdal.Open(rasterPath, gdal.GA_ReadOnly)
         geotransform = datasource.GetGeoTransform()
         pixel_xsize = geotransform[1]
         pixel_ysize = -geotransform[5]
 
-        try:
-            from scipy.ndimage.morphology import binary_closing, generate_binary_structure, iterate_structure
-        except ImportError:
-            raise GeoAlgorithmExecutionException('SciPy ndimage.morphology module is not available.')
-
         size = int(round(distance / pixel_xsize))
-        structure = iterate_structure(generate_binary_structure(2, 1), (size - 3) / 2)
+        structure = self.disk(distance)
 
-        progress.setText('Read input ...')
+        feedback.pushInfo('Read input ...')
         mat = datasource.GetRasterBand(bandNumber).ReadAsArray()
         nodata = datasource.GetRasterBand(bandNumber).GetNoDataValue()
         mat[mat == nodata] = 0
 
-        progress.setText('SciPy Morphology Closing ...')
+        feedback.pushInfo('SciPy Morphology Closing ...')
         mat = binary_closing(mat, structure=structure, iterations=iterations)
 
         output = self.getOutputFromName(self.OUTPUT).getCompatibleFileName(self)
-        progress.setText('Write output to %s ...' % output)
+        feedback.pushInfo('Write output to %s ...' % output)
         driver = gdal.GetDriverByName('GTiff')
         # dst = gdal.Create(output, datasource.GetRasterXSize, datasource.GetRasterYSize, 1, strict=0, options=[ 'TILED=YES', 'COMPRESS=DEFLATE' ])
         dst = driver.CreateCopy(output, datasource, strict=0, options=[ 'TILED=YES', 'COMPRESS=DEFLATE' ])
@@ -116,3 +138,9 @@ class BinaryClosing(GeoAlgorithm):
         del mat
         del datasource
         del dst
+
+    def tr(self, string):
+        return QCoreApplication.translate('FluvialCorridorToolbox', string)
+
+    def createInstance(self):
+      return BinaryClosing()

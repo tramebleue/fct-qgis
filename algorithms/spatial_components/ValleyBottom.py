@@ -346,7 +346,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
                             }, context=context)
 
         self.nextStep('Compute relative DEM and extract bottom ...',feedback)
-        ValleyBottomRaster = processing.run('fluvialcorridortoolbox:differentialrasterthreshold',
+        ValleyBottomRaster = processing.run('fct:DifferentialRasterThreshold',
                             {
                               'INPUT_DEM': CLIPPED_DEM,
                               'REFERENCE_DEM': ReferenceDEM['OUTPUT'],
@@ -372,7 +372,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
         if MIN_OBJECT_DISTANCE > 0:
 
           self.nextStep('Merge close objects...',feedback)
-          CleanedValleyBottomRaster = processing.run('fluvialcorridortoolbox:binaryclosing', handleResult('Binary Closing'),
+          CleanedValleyBottomRaster = processing.run('fct:BinaryClosing',
                             {
                               'INPUT': ValleyBottomRaster['OUTPUT'],
                               'DISTANCE': MIN_OBJECT_DISTANCE,
