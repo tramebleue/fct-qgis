@@ -2,11 +2,10 @@
 
 """
 ***************************************************************************
-    ZonalStatistics.py
+    BinaryClosing.py
     ---------------------
-    Date                 : August 2013
-    Copyright            : (C) 2013 by Alexander Bruy
-    Email                : alexander dot bruy at gmail dot com
+    Date                 : November 2016
+    Copyright            : (C) 2016 by Christophe Rousson
 ***************************************************************************
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
@@ -17,9 +16,9 @@
 ***************************************************************************
 """
 
-__author__ = 'Alexander Bruy'
-__date__ = 'August 2013'
-__copyright__ = '(C) 2013, Alexander Bruy'
+__author__ = 'Christophe Rousson'
+__date__ = 'November 2016'
+__copyright__ = '(C) 2016, Christophe Rousson'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -110,7 +109,7 @@ class BinaryClosing(QgsProcessingAlgorithm):
 
         bandNumber = self.parameterAsInt(parameters, self.BAND, context)
         distance = self.parameterAsDouble(parameters, self.DISTANCE, context)
-        iterations = self.parameterAsOutputLayer(parameters, self.ITERATIONS, context)
+        iterations = self.parameterAsInt(parameters, self.ITERATIONS, context)
 
         datasource = gdal.Open(rasterPath, gdal.GA_ReadOnly)
         geotransform = datasource.GetGeoTransform()
@@ -128,7 +127,7 @@ class BinaryClosing(QgsProcessingAlgorithm):
         feedback.pushInfo('SciPy Morphology Closing ...')
         mat = binary_closing(mat, structure=structure, iterations=iterations)
 
-        output = self.getOutputFromName(self.OUTPUT).getCompatibleFileName(self)
+        output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
         feedback.pushInfo('Write output to %s ...' % output)
         driver = gdal.GetDriverByName('GTiff')
         # dst = gdal.Create(output, datasource.GetRasterXSize, datasource.GetRasterYSize, 1, strict=0, options=[ 'TILED=YES', 'COMPRESS=DEFLATE' ])
@@ -138,6 +137,8 @@ class BinaryClosing(QgsProcessingAlgorithm):
         del mat
         del datasource
         del dst
+
+        return {self.OUTPUT: output}
 
     def tr(self, string):
         return QCoreApplication.translate('FluvialCorridorToolbox', string)

@@ -324,6 +324,7 @@ class ValleyBottom(QgsProcessingAlgorithm):
                               'FIELD': '_min',
                               'TILED': True,
                               'COMPRESS': LZW_COMPRESS,
+                              'NODATA':9999,
                               'UNITS': 1,
                               'WIDTH': pixel_width,
                               'HEIGHT': pixel_height,
@@ -346,13 +347,14 @@ class ValleyBottom(QgsProcessingAlgorithm):
                             }, context=context)
 
         self.nextStep('Compute relative DEM and extract bottom ...',feedback)
+        VB_RASTER = os.path.join(tmpdir, 'VB_RASTER.TIF')
         ValleyBottomRaster = processing.run('fct:DifferentialRasterThreshold',
                             {
                               'INPUT_DEM': CLIPPED_DEM,
                               'REFERENCE_DEM': ReferenceDEM['OUTPUT'],
                               'MIN_THRESHOLD': MIN_THRESHOLD,
                               'MAX_THRESHOLD': MAX_THRESHOLD,
-                              'OUTPUT': 'memory:'
+                              'OUTPUT': VB_RASTER
                             }, context=context)
 
         # self.nextStep('Clip Raster Bottom ...',feedback)
@@ -367,38 +369,42 @@ class ValleyBottom(QgsProcessingAlgorithm):
         #                       'TILED': True
         #                     })
 
-        self.setOutputValue(self.VALLEYBOTTOM_RASTER, ValleyBottomRaster['OUTPUT'])
-
         if MIN_OBJECT_DISTANCE > 0:
-
+          
+          # TODO: deal with nodata before the binary closing
           self.nextStep('Merge close objects...',feedback)
+          CLEAN_VB = os.path.join(tmpdir, 'CLEAN_VB.TIF')
           CleanedValleyBottomRaster = processing.run('fct:BinaryClosing',
                             {
                               'INPUT': ValleyBottomRaster['OUTPUT'],
+                              'BAND': 1,
                               'DISTANCE': MIN_OBJECT_DISTANCE,
                               'ITERATIONS': 5,
-                              'OUTPUT': 'memory:'
+                              'OUTPUT': CLEAN_VB
                             }, context=context)
         else:
 
           self.nextStep('Sieve result ...',feedback)
+          CLEANED_VB = os.path.join(tmpdir, 'CLEANED_VB.TIF')
           CleanedValleyBottomRaster = processing.run('gdal:sieve',
                             {
                               'INPUT': ValleyBottomRaster['OUTPUT'],
                               'THRESHOLD': SIEVE_THRESHOLD,
                               'CONNECTIONS': FOUR_CONNECTIVITY,
-                              'OUTPUT': 'memory:'
+                              'OUTPUT': CLEANED_VB
                             }, context=context)
 
         # Polygonize Valley Bottom
 
         self.nextStep('Polygonize ...',feedback)
         # TODO: load this result in gqis interface if option checked only
+        VB_POLYGONS = os.path.join(tmpdir, 'VB_POLYGONS.SHP')
         ValleyBottomPolygons = processing.run('gdal:polygonize',
                             {
                               'INPUT': CleanedValleyBottomRaster['OUTPUT'],
+                              'BAND': 1,
                               'FIELD': 'VALUE',
-                              'OUTPUT': 'memory:'
+                              'OUTPUT': VB_POLYGONS
                             }, context=context)
 
         # if MIN_OBJECT_DISTANCE > 0:
@@ -439,17 +445,18 @@ class ValleyBottom(QgsProcessingAlgorithm):
 
         # Clean result
 
-        if self.getParameterValue(self.DO_CLEAN):
+        if self.parameterAsBool(parameters, self.DO_CLEAN, context):
 
             self.nextStep('Remove small objects and parts ...',feedback)
-            CleanedValleyBottomPolygons = processing.run('fluvialcorridortoolbox:removesmallpolygonalobjects', None,
+            CLEAN_VB_POLYGONS = os.path.join(tmpdir, 'CLEAN_VB_POLYGONS.TIF')
+            CleanedValleyBottomPolygons = processing.run('fct:RemoveSmallPolygonalObjects',
                                 {
                                   'INPUT': ValleyBottomPolygons['OUTPUT'],
                                   'MIN_AREA': CLEAN_MIN_AREA,
                                   'MIN_HOLE_AREA': CLEAN_MIN_HOLE_AREA,
                                   'FIELD': 'VALUE',
                                   'VALUE': 1,
-                                  'OUTPUT': 'memory:'
+                                  'OUTPUT': CLEAN_VB_POLYGONS
                                 }, context=context)
 
             self.nextStep('Simplify result ...',feedback)
@@ -469,12 +476,19 @@ class ValleyBottom(QgsProcessingAlgorithm):
                                   'OFFSET': SMOOTH_OFFSET,
                                   'OUTPUT': 'memory:'
                                 }, context=context)
+            
+            VALLEYBOTTOM_POLYGON = SmoothedValleyBottom['OUTPUT']
 
         else:
 
-            self.setOutputValue(self.OUTPUT, ValleyBottomPolygons['OUTPUT'])
+            VALLEYBOTTOM_POLYGON = ValleyBottomPolygons['OUTPUT']
 
         self.nextStep('Done !',feedback)
+
+
+        return {self.VALLEYBOTTOM_RASTER: ValleyBottomRaster['OUTPUT'],
+                self.REFERENCE_DEM: ReferenceDEM['OUTPUT'],
+                self.OUTPUT: VALLEYBOTTOM_POLYGON}
 
 
     def tr(self, string):
