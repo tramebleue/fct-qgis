@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-AggregateLineSegments - Merge continuous line segments into a single linestring
+AggregateLineSegmentsByCat - Merge continuous line segments into a single linestring
 
 ***************************************************************************
 *                                                                         *
@@ -18,8 +18,10 @@ from qgis.PyQt.QtCore import (
 )
 
 from qgis.core import (
+    QgsExpression,
     QgsGeometry,
     QgsFeature,
+    QgsFeatureRequest,
     QgsField,
     QgsFields,
     QgsProcessing,
@@ -38,6 +40,19 @@ def asPolyline(geometry):
     else:
         return geometry.asPolyline()
 
+class IdGenerator(object):
+
+    def __init__(self, start=0):
+        self.x = start
+
+    def __next__(self):
+        self.x = self.x + 1
+        return self.x
+
+    @property
+    def value(self):
+        return self.x
+
 class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Merge continuous line segments into a single linestring
     """
@@ -46,6 +61,7 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     INPUT = 'INPUT'
     OUTPUT = 'OUTPUT'
+    CATEGORY_FIELD = 'CATEGORY_FIELD'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
     MEASURE_FIELD = 'MEASURE_FIELD'
@@ -56,6 +72,13 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.INPUT,
             self.tr('Input linestrings'),
             [QgsProcessing.TypeVectorLine]))
+
+        self.addParameter(QgsProcessingParameterField(
+            self.CATEGORY_FIELD,
+            self.tr('Category Field'),
+            parentLayerParameterName=self.INPUT,
+            type=QgsProcessingParameterField.Any,
+            optional=True))
 
         self.addParameter(QgsProcessingParameterField(
             self.FROM_NODE_FIELD,
@@ -83,58 +106,22 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, feedback):
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
+        category_field = self.parameterAsString(parameters, self.CATEGORY_FIELD, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
         measure_field = self.parameterAsString(parameters, self.MEASURE_FIELD, context)
 
-        feedback.pushInfo(self.tr("Build node index ..."))
-
-        adjacency = dict()
-        feature_index = dict()
-
-        total = 100.0 / layer.featureCount() if layer.featureCount() else 0
-
-        for current, feature in enumerate(layer.getFeatures()):
-
-            if feedback.isCanceled():
-                break
-
-            from_node = feature.attribute(from_node_field)
-            to_node = feature.attribute(to_node_field)
-
-            if measure_field:
-                measure = feature.attribute(measure_field)
-            else:
-                measure = 0.0
-
-            if from_node in adjacency:
-                adjacency[from_node].append(to_node)
-                feature_index[from_node].append(feature.id())
-            else:
-                adjacency[from_node] = [to_node]
-                feature_index[from_node] = [feature.id()]
-
-            if to_node not in adjacency:
-                adjacency[to_node] = list()
-                feature_index[to_node] = list()
-
-            feedback.setProgress(int(current * total))
-
-        feedback.pushInfo(self.tr("Compute in-degree ..."))
-
-        in_degree = dict()
-        for node in adjacency:
-            if node not in in_degree:
-                in_degree[node] = 0
-            for to_node in adjacency[node]:
-                in_degree[to_node] = in_degree.get(to_node, 0) + 1
-
-        feedback.pushInfo(self.tr("Aggregate lines ..."))
+        if category_field:
+            category_field_idx = layer.fields().lookupField(category_field)
+            category_field_instance = layer.fields().at(category_field_idx)
+        else:
+            category_field_instance = QgsField('CATEGORY', QVariant.String, len=16)
 
         fields = QgsFields()
 
         for field in [
                 QgsField('GID', type=QVariant.Int, len=10),
+                category_field_instance,
                 QgsField(from_node_field, type=QVariant.Int, len=10),
                 QgsField(to_node_field, type=QVariant.Int, len=10),
                 QgsField(measure_field, type=QVariant.Double, len=10, prec=2)
@@ -145,69 +132,159 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
         (sink, dest_id) = self.parameterAsSink(parameters, self.OUTPUT, context,
                                                fields, layer.wkbType(), layer.sourceCrs())
 
-        total = 100.0 / layer.featureCount() if layer.featureCount() else 0
+        fid = IdGenerator()
+        categories = dict()
 
-        # Find source nodes
-        process_stack = [
-            node for node in adjacency
-            if len(adjacency[node]) >= 1 and in_degree[node] == 0
-        ]
+        def countCategories():
 
-        current = 0
-        fid = 0
-        seen_nodes = set()
-        srclayer = context.getMapLayer(layer.sourceName())
+            total = 100.0 / layer.featureCount() if layer.featureCount() else 0
 
-        while process_stack:
+            for current, feature in enumerate(layer.getFeatures()):
 
-            if feedback.isCanceled():
-                break
+                if feedback.isCanceled():
+                    break
 
-            from_node = process_stack.pop()
-            if from_node in seen_nodes:
-                continue
-            seen_nodes.add(from_node)
+                category = feature.attribute(category_field)
+                if category in categories:
+                    categories[category] = categories[category] + 1
+                else:
+                    categories[category] = 1
 
-            # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Processing node %d" % from_node)
-
-            for branch in range(0, len(adjacency[from_node])):
-
-                next_node = adjacency[from_node][branch]
-                next_segment_id = feature_index[from_node][branch]
-                segment = srclayer.getFeature(next_segment_id)
-                measure = segment.attribute(measure_field)
-                vertices = asPolyline(segment.geometry())
-
-                current = current + 1
                 feedback.setProgress(int(current * total))
 
-                while len(adjacency[next_node]) == 1 and in_degree[next_node] == 1:
+        def processCategory(category=None):
 
-                    next_segment_id = feature_index[next_node][0]
+            if feedback.isCanceled():
+                return
+
+            feedback.pushInfo(self.tr("Build node index ..."))
+
+            adjacency = dict()
+            feature_index = dict()
+
+            if category is None:
+
+                total = 100.0 / layer.featureCount() if layer.featureCount() else 0
+                iterator = layer.getFeatures()
+
+            else:
+
+                total = 100.0 / categories[category]
+
+                expression = QgsExpression('%s = %s' % (category_field, category))
+                query = QgsFeatureRequest(expression)
+                iterator = layer.getFeatures(query)
+
+            for current, feature in enumerate(iterator):
+
+                if feedback.isCanceled():
+                    break
+
+                from_node = feature.attribute(from_node_field)
+                to_node = feature.attribute(to_node_field)
+
+                if measure_field:
+                    measure = feature.attribute(measure_field)
+                else:
+                    measure = 0.0
+
+                if from_node in adjacency:
+                    adjacency[from_node].append(to_node)
+                    feature_index[from_node].append(feature.id())
+                else:
+                    adjacency[from_node] = [to_node]
+                    feature_index[from_node] = [feature.id()]
+
+                if to_node not in adjacency:
+                    adjacency[to_node] = list()
+                    feature_index[to_node] = list()
+
+                feedback.setProgress(int(current * total))
+
+            feedback.pushInfo(self.tr("Compute in-degree ..."))
+
+            in_degree = dict()
+            for node in adjacency:
+                if node not in in_degree:
+                    in_degree[node] = 0
+                for to_node in adjacency[node]:
+                    in_degree[to_node] = in_degree.get(to_node, 0) + 1
+
+            feedback.pushInfo(self.tr("Aggregate lines ..."))
+
+
+            # Find source nodes
+            process_stack = [
+                node for node in adjacency
+                if len(adjacency[node]) >= 1 and in_degree[node] == 0
+            ]
+
+            current = 0
+            seen_nodes = set()
+            srclayer = context.getMapLayer(layer.sourceName())
+
+            while process_stack:
+
+                if feedback.isCanceled():
+                    break
+
+                from_node = process_stack.pop()
+                if from_node in seen_nodes:
+                    continue
+                seen_nodes.add(from_node)
+
+                # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Processing node %d" % from_node)
+
+                for branch in range(0, len(adjacency[from_node])):
+
+                    next_node = adjacency[from_node][branch]
+                    next_segment_id = feature_index[from_node][branch]
                     segment = srclayer.getFeature(next_segment_id)
-                    vertices = vertices[:-1] + asPolyline(segment.geometry())
+                    measure = segment.attribute(measure_field)
+                    vertices = asPolyline(segment.geometry())
 
                     current = current + 1
                     feedback.setProgress(int(current * total))
 
-                    next_node = adjacency[next_node][0]
+                    while len(adjacency[next_node]) == 1 and in_degree[next_node] == 1:
 
-                feature = QgsFeature()
-                feature.setGeometry(QgsGeometry.fromPolylineXY(vertices))
-                feature.setAttributes([
-                    fid,
-                    from_node,
-                    next_node,
-                    measure
-                ])
-                sink.addFeature(feature)
-                fid = fid + 1
+                        next_segment_id = feature_index[next_node][0]
+                        segment = srclayer.getFeature(next_segment_id)
+                        vertices = vertices[:-1] + asPolyline(segment.geometry())
 
-                # dont't process twice or more after confluences
-                # if branch == 0:
-                # if not next_node in seen_nodes:
-                process_stack.append(next_node)
+                        current = current + 1
+                        feedback.setProgress(int(current * total))
 
-        feedback.pushConsoleInfo("Created %d line features" % fid)
+                        next_node = adjacency[next_node][0]
+
+                    feature = QgsFeature()
+                    feature.setGeometry(QgsGeometry.fromPolylineXY(vertices))
+                    feature.setAttributes([
+                        next(fid),
+                        category,
+                        from_node,
+                        next_node,
+                        measure
+                    ])
+                    sink.addFeature(feature)
+
+                    # dont't process twice or more after confluences
+                    # if branch == 0:
+                    # if not next_node in seen_nodes:
+                    process_stack.append(next_node)
+
+
+        if category_field:
+
+            countCategories()
+
+            for category in categories:
+                processCategory(category)
+
+        else:
+
+            processCategory()
+
+        feedback.pushConsoleInfo("Created %d line features" % fid.value)
 
         return {self.OUTPUT: dest_id}
