@@ -4,6 +4,7 @@ from qgis.core import (QgsApplication,
                        QgsProcessingProvider)
 
 from .algorithms.spatial_components import spatial_componentsAlgorithms
+from .algorithms.hydrography import hydrography_algorithms
 from .algorithms.vector import vector_algorithms
 from .algorithms.raster import rasterAlgorithms
 
@@ -38,12 +39,6 @@ class FluvialCorridorToolboxPlugin:
 
 
 class FluvialCorridorToolboxProvider(QgsProcessingProvider):
-	
-    def __init__(self):
-        QgsProcessingProvider.__init__(self)
-
-        # Libraries to load
-        self.liblist = [spatial_componentsAlgorithms(), vector_algorithms(), rasterAlgorithms()]
 
     def id(self):
         return 'fct'
@@ -55,7 +50,11 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
         return 'Fluvial Corridor Toolbox'
 
     def loadAlgorithms(self):
-        for alglist in self.liblist:
-            for alg in alglist:
-                self.addAlgorithm(alg)
-            
+
+        algs = hydrography_algorithms() + \
+               spatial_componentsAlgorithms() + \
+               vector_algorithms() + \
+               rasterAlgorithms()
+
+        for alg in algs:
+            self.addAlgorithm(alg)
