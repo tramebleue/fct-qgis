@@ -18,7 +18,6 @@ et la remplacer par le template suivante, en éliminant les imports inutiles :
 
 ```
 from qgis.PyQt.QtCore import (
-    QCoreApplication,
     QVariant
 )
 
@@ -45,6 +44,8 @@ from qgis.core import (
     QgsSpatialIndex,
     QgsWkbTypes
 )
+
+from ..metadata import AlgorithmMetadata
 ```
 
 ## Choix de la classe d'algorithme à hériter
@@ -171,10 +172,13 @@ QGis 2.14                       | QGis 3.4
 `ParameterXxx`                  | `QgsProcessingParameterXxx`
 `QgsFeature.setFeatureId()`     | `QgsFeature.setId()`
 `QgsGeometry.fromPoint()`       | `QgsGeometry.fromPointXY()`
+`QgsGeometry.fromPolyline()`    | `QgsGeometry.fromPolylineXY()`
+`QgsGeometry.fromPolygon()`     | `QgsGeometry.fromPolygonXY()`
 `ProcessingLog.addToLog()`      | `QgsProcessingFeedback.pushInfo()` or `QgsProcessingFeedback.pushConsoleInfo()` or `QgsProcessingFeedback.pushDebugInfo()`
 `progress.setText()`            | `feedback.pushInfo()`
 `progress.setPercentage()`      | `feedback.setProgress()`
 `self.getParameterValue(name)`  | `self.parameterAsType(parameters, name, context)`
+`v.getFeatures(...).next()`     | `s = context.getMapLayer(v.sourceName())` puis `s.getFeature(fid)`
 
 
 ## Ajouter des tests unitaires
