@@ -10,11 +10,12 @@
 ## Documentation utile
 
 * [Nouvelle API Processing](https://qgis.org/pyqgis/3.4/core/Processing)
+* [Migration de Python 2 vers Python 3](https://portingguide.readthedocs.io/en/latest/index.html)
 
 ## Mise à jour de la section `import`
 
 Supprimer toute la section `import`
-et la remplacer par le template suivante, en éliminant les imports inutiles :
+et la remplacer par le template suivant, en éliminant les imports inutiles :
 
 ```
 from qgis.PyQt.QtCore import (
@@ -23,6 +24,7 @@ from qgis.PyQt.QtCore import (
 
 from qgis.core import (
     QgsApplication,
+    QgsExpression,
     QgsGeometry,
     QgsFeatureSink,
     QgsFeatureRequest,
@@ -110,13 +112,13 @@ Lorsqu'on hérite de `QgsProcessingAlgorithm`, les paramètres d'entrée et sort
         # self.addOutput(...)
 ```
 
-QGis 2.14                            | QGis 3.4
--------------------------------------|-------------------------------
-ParameterVector.VECTOR_TYPE_POINT    | QgsProcessing.TypeVectorPoint
-ParameterVector.VECTOR_TYPE_LINE     | QgsProcessing.TypeVectorLine
-ParameterVector.VECTOR_TYPE_POLYGON  | QgsProcessing.TypeVectorPolygon
-ParameterVector.VECTOR_TYPE_ANY      | QgsProcessing.TypeVectorAnyGeometry
-ParameterTableField.DATA_TYPE_NUMBER | QgsProcessingParameterField.Numeric
+QGis 2.14                              | QGis 3.4
+---------------------------------------|-------------------------------
+`ParameterVector.VECTOR_TYPE_POINT`    | `QgsProcessing.TypeVectorPoint`
+`ParameterVector.VECTOR_TYPE_LINE`     | `QgsProcessing.TypeVectorLine`
+`ParameterVector.VECTOR_TYPE_POLYGON`  | `QgsProcessing.TypeVectorPolygon`
+`ParameterVector.VECTOR_TYPE_ANY`      | `QgsProcessing.TypeVectorAnyGeometry`
+`ParameterTableField.DATA_TYPE_NUMBER` | `QgsProcessingParameterField.Numeric`
 
 Lorsqu'on hérite de `QgsProcessingFeatureBasedAlgorithm`,
 on peut aussi utiliser les méthodes suivantes pour définir les entrées et les sorties :
@@ -174,8 +176,8 @@ QGis 2.14                       | QGis 3.4
 `QgsGeometry.fromPoint()`       | `QgsGeometry.fromPointXY()`
 `QgsGeometry.fromPolyline()`    | `QgsGeometry.fromPolylineXY()`
 `QgsGeometry.fromPolygon()`     | `QgsGeometry.fromPolygonXY()`
-`ProcessingLog.addToLog()`      | `QgsProcessingFeedback.pushInfo()` or `QgsProcessingFeedback.pushConsoleInfo()` or `QgsProcessingFeedback.pushDebugInfo()`
-`progress.setText()`            | `feedback.pushInfo()`
+`ProcessingLog.addToLog()`      | `feedback.pushInfo()` or `feedback.pushConsoleInfo()` or `feedback.pushDebugInfo()`
+`progress.setText()`            | `feedback.setProgressText()`
 `progress.setPercentage()`      | `feedback.setProgress()`
 `self.getParameterValue(name)`  | `self.parameterAsType(parameters, name, context)`
 `v.getFeatures(...).next()`     | `s = context.getMapLayer(v.sourceName())` puis `s.getFeature(fid)`

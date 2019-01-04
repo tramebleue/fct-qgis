@@ -1,0 +1,11 @@
+name: aggregatelinesegmentsbycat
+displayName: Aggregate Line Segments By Category
+groupId: hydrography
+group: Hydrography
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - hydrography
+  - graph
+  - aggregate
