@@ -17,7 +17,7 @@ class AlgorithmMetadata(object):
         return QCoreApplication.translate(context, string)
 
     def name(self):
-        return self.METADATA['name']
+        return type(self).__name__.lower()
 
     def displayName(self):
         dn = self.METADATA.get('displayName')

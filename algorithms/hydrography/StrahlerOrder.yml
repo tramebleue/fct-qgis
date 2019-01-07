@@ -1,0 +1,13 @@
+name: strahlerorder
+displayName: Horton-Strahler Stream Order
+groupId: hydrography
+group: Hydrography
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - hydrography
+  - graph
+  - stream order
+  - Horton
+  - Strahler
