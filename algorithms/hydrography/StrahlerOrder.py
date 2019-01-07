@@ -161,5 +161,6 @@ class StrahlerOrder(GeoAlgorithm):
             confluences = { node: indegree for node, indegree in confluences.items() if indegree > 1 }
             order = order + 1
 
-            if not confluences and not queue:
+            # if not confluences and not queue:
+            if not queue:
                 break
