@@ -45,9 +45,6 @@ class PointsInPolygon(QgsProcessingAlgorithm):
     def groupId(self):
         return 'fctvectortools'
 
-    def __init__(self):
-        super().__init__()
-
     def initAlgorithm(self, config=None):
 
         self.addParameter(QgsProcessingParameterFeatureSource(self.POLYGONS,

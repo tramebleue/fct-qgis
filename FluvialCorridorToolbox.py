@@ -1,13 +1,12 @@
 from PyQt5.QtCore import QCoreApplication
 
-from qgis.core import (
-    QgsApplication,
-    QgsProcessingProvider
-)
+from qgis.core import (QgsApplication,
+                       QgsProcessingProvider)
 
-from processing.core.Processing import Processing
-
+from .algorithms.spatial_components import spatial_componentsAlgorithms
+from .algorithms.hydrography import hydrography_algorithms
 from .algorithms.vector import vector_algorithms
+from .algorithms.raster import rasterAlgorithms
 
 class FluvialCorridorToolboxPlugin:
 
@@ -40,19 +39,22 @@ class FluvialCorridorToolboxPlugin:
 
 
 class FluvialCorridorToolboxProvider(QgsProcessingProvider):
-	
+
     def id(self):
         return 'fct'
 
     def name(self):
         return 'Fluvial Corridor Toolbox'
-
-    def getAlgs(self):
-
-        return vector_algorithms()
+    
+    def longName(self):
+        return 'Fluvial Corridor Toolbox'
 
     def loadAlgorithms(self):
 
-        for cls in self.getAlgs():
+        algs = hydrography_algorithms() + \
+               spatial_componentsAlgorithms() + \
+               vector_algorithms() + \
+               rasterAlgorithms()
 
-            self.addAlgorithm(cls())
+        for alg in algs:
+            self.addAlgorithm(alg)
