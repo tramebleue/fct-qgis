@@ -40,7 +40,14 @@ def asPolyline(geometry):
     else:
         return geometry.asPolyline()
 
-class IdGenerator(object):
+def asQgsFields(*fields):
+
+    out = QgsFields()
+    for field in fields:
+        out.append(field)
+    return out
+
+class FidGenerator(object):
 
     def __init__(self, start=0):
         self.x = start
@@ -117,22 +124,18 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
         else:
             category_field_instance = QgsField('CATEGORY', QVariant.String, len=16)
 
-        fields = QgsFields()
-
-        for field in [
-                QgsField('GID', type=QVariant.Int, len=10),
-                category_field_instance,
-                QgsField(from_node_field, type=QVariant.Int, len=10),
-                QgsField(to_node_field, type=QVariant.Int, len=10),
-                QgsField(measure_field, type=QVariant.Double, len=10, prec=2)
-            ]:
-
-            fields.append(field)
+        fields = asQgsFields(
+            QgsField('GID', type=QVariant.Int, len=10),
+            category_field_instance,
+            QgsField(from_node_field, type=QVariant.Int, len=10),
+            QgsField(to_node_field, type=QVariant.Int, len=10),
+            QgsField(measure_field, type=QVariant.Double, len=10, prec=2)
+        )
 
         (sink, dest_id) = self.parameterAsSink(parameters, self.OUTPUT, context,
                                                fields, layer.wkbType(), layer.sourceCrs())
 
-        fid = IdGenerator()
+        fid = FidGenerator()
         categories = dict()
 
         def countCategories():
