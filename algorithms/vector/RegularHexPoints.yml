@@ -1,0 +1,10 @@
+displayName: Regular Hex Points
+groupId: fctvectortools
+group: Tools for Vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - vector
+  - regular grid
+  - feature generator
