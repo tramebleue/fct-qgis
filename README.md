@@ -7,9 +7,7 @@ please go to [Fluvial Corridor Toolbox for ArcGIS](https://github.com/EVS-GIS/Fl
 
 ## Supported versions of QGis
 
-The current develpement version of the toolbox has been tested for [QGis 2.14](http://download.osgeo.org/qgis/).
-
-Support for newer versions of QGis is not yet planned.
+This branch is under development and is an open effort to support QGis 3 (currently QGis 3.4).
 
 ## Acknowledgements
 

@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+from .FluvialCorridorToolbox import FluvialCorridorToolboxPlugin
+
 def classFactory(iface):
-	from FluvialToolbox import FluvialToolbox
-	return FluvialToolbox(iface)
+
+    return FluvialCorridorToolboxPlugin(iface)
