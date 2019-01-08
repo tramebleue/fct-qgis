@@ -116,6 +116,7 @@ class BinaryClosing(QgsProcessingAlgorithm):
         pixel_xsize = geotransform[1]
         pixel_ysize = -geotransform[5]
 
+        distance = distance / float(2)
         size = int(round(distance / pixel_xsize))
         structure = self.disk(distance)
 

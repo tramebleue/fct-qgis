@@ -28,10 +28,13 @@ from PyQt5.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterVectorLayer,
-                       QgsProcessingParameterVectorDestination,
+                       QgsProcessingParameterFeatureSink,
                        QgsProcessingParameterField,
-                       QgsProcessingParameterNumber)
+                       QgsProcessingParameterNumber,
+                       QgsProcessingOutputLayerDefinition)
 
+import tempfile
+import os
 import processing
 
 
@@ -46,10 +49,10 @@ class RemoveSmallPolygonalObjects(QgsProcessingAlgorithm):
 
     def initAlgorithm(self, config):
 
-        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, 
-                                        self.tr('Input vector layer')))
-        self.addParameter(QgsProcessingParameterVectorDestination(self.OUTPUT, 
-                                        self.tr('Output vector layer')))
+        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT,
+                                        self.tr('Input vector layer'), [QgsProcessing.TypeVectorPolygon]))
+        self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT,
+                                        self.tr('Output vector layer'), QgsProcessing.TypeVectorPolygon))
         self.addParameter(QgsProcessingParameterField(self.FIELD, 
                                         self.tr('Selection field'), parentLayerParameterName=self.INPUT))
         self.addParameter(QgsProcessingParameterNumber(self.VALUE, 
@@ -61,26 +64,30 @@ class RemoveSmallPolygonalObjects(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         INPUT = self.parameterAsVectorLayer(parameters, self.INPUT, context)
-        OUTPUT = self.parameterAsVectorDestination(parameters, self.OUTPUT, context)
-        FIELD = self.parameterAsField(parameters, self.FIELD, context)
+        OUTPUT = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+        FIELD = self.parameterAsString(parameters, self.FIELD, context)
         VALUE = self.parameterAsInt(parameters, self.VALUE, context)
         MIN_AREA = self.parameterAsDouble(parameters, self.MIN_AREA, context)
         MIN_HOLE_AREA = self.parameterAsDouble(parameters, self.MIN_HOLE_AREA, context)
 
+        tmpdir = tempfile.mkdtemp(prefix='fct_')
+
         feedback.pushInfo('Removing unselected objects...')
+        SELECTED = os.path.join(tmpdir, 'SELECTED.shp')
         SelectedObjects = processing.run('native:extractbyexpression',
                         {
                             'INPUT': INPUT,
-                            'EXPRESSION': '%s = %f' % (FIELD, VALUE),
-                            'OUTPUT': 'memory:'
+                            'EXPRESSION': '\"%s\" = %f' % (FIELD, VALUE),
+                            'OUTPUT': SELECTED
                         })
         
         feedback.pushInfo('Removing small objects...')
+        REMOVEDSMALL = os.path.join(tmpdir, 'REMOVEDSMALL.shp')
         RemovedSmallObjects = processing.run('native:extractbyexpression',
                         {
                             'INPUT': SelectedObjects['OUTPUT'],
                             'EXPRESSION': '$area >= %f' % (MIN_AREA),
-                            'OUTPUT': 'memory:'
+                            'OUTPUT': REMOVEDSMALL
                         })
 
         feedback.pushInfo('Removing small holes...')
@@ -88,7 +95,7 @@ class RemoveSmallPolygonalObjects(QgsProcessingAlgorithm):
                         {
                             'INPUT': RemovedSmallObjects['OUTPUT'],
                             'MIN_AREA': MIN_HOLE_AREA,
-                            'OUTPUT': 'memory:'
+                            'OUTPUT': OUTPUT
                         })
 
         return {self.OUTPUT: RemovedHoles['OUTPUT']}
@@ -100,7 +107,7 @@ class RemoveSmallPolygonalObjects(QgsProcessingAlgorithm):
       return 'fctvectortools'
 
     def displayName(self):
-      return self.tr(self.name())
+      return self.tr('Remove Small Polygonal Objects')
 
     def group(self):
       return self.tr('Tools for Vectors')
