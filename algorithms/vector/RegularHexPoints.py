@@ -15,16 +15,17 @@ RegularHexPoints - Generate a regular hexagon grid of points
 
 from math import sqrt, floor
 
-from qgis.PyQt.QtCore import (
+from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
     QVariant
 )
 
-from qgis.core import (
+from qgis.core import ( # pylint:disable=no-name-in-module
     QgsGeometry,
     QgsFeature,
     QgsField,
     QgsFields,
     QgsPointXY,
+    QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingParameterDistance,
     QgsProcessingParameterFeatureSink,
@@ -59,7 +60,7 @@ class RegularHexPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
     DISTANCE = 'DISTANCE'
     OUTPUT = 'OUTPUT'
 
-    def initAlgorithm(self, configuration):
+    def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
         self.addParameter(QgsProcessingParameterFeatureSource(
             self.INPUT,
@@ -82,7 +83,7 @@ class RegularHexPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Regular Hex Points'),
             QgsProcessing.TypeVectorPoint))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         pk_field = self.parameterAsString(parameters, self.PK_FIELD, context)
@@ -151,11 +152,11 @@ class RegularHexPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
                         fid = fid + 1
                         out_feature = QgsFeature()
                         out_feature.setAttributes([
-                                fid,
-                                x,
-                                y,
-                                pk
-                            ])
+                            fid,
+                            x,
+                            y,
+                            pk
+                        ])
                         out_feature.setGeometry(geom)
                         sink.addFeature(out_feature)
 

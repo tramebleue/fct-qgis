@@ -13,11 +13,11 @@ AggregateLineSegmentsByCat - Merge continuous line segments into a single linest
 ***************************************************************************
 """
 
-from qgis.PyQt.QtCore import (
+from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
     QVariant
 )
 
-from qgis.core import (
+from qgis.core import ( # pylint:disable=no-name-in-module
     QgsExpression,
     QgsGeometry,
     QgsFeature,
@@ -48,6 +48,8 @@ def asQgsFields(*fields):
     return out
 
 class FidGenerator(object):
+    """ Generate a sequence of integers to be used as identifier
+    """
 
     def __init__(self, start=0):
         self.x = start
@@ -58,6 +60,8 @@ class FidGenerator(object):
 
     @property
     def value(self):
+        """ Current value of generator
+        """
         return self.x
 
 class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
@@ -73,7 +77,7 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
     TO_NODE_FIELD = 'TO_NODE_FIELD'
     MEASURE_FIELD = 'MEASURE_FIELD'
 
-    def initAlgorithm(self, configuration):
+    def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
         self.addParameter(QgsProcessingParameterFeatureSource(
             self.INPUT,
@@ -108,9 +112,10 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
-            self.tr('Aggregated Lines'), QgsProcessing.TypeVectorLine))
+            self.tr('Aggregated Lines'),
+            QgsProcessing.TypeVectorLine))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         category_field = self.parameterAsString(parameters, self.CATEGORY_FIELD, context)
@@ -139,6 +144,9 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
         categories = dict()
 
         def countCategories():
+            """ List unique values in field `category_field`
+                and count features by category
+            """
 
             total = 100.0 / layer.featureCount() if layer.featureCount() else 0
 
@@ -156,6 +164,9 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                 feedback.setProgress(int(current * total))
 
         def processCategory(category=None):
+            """ Aggregate segments of given category,
+                or all segments if `category` is None
+            """
 
             if feedback.isCanceled():
                 return
@@ -235,8 +246,6 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                 if from_node in seen_nodes:
                     continue
                 seen_nodes.add(from_node)
-
-                # ProcessingLog.addToLog(ProcessingLog.LOG_INFO, "Processing node %d" % from_node)
 
                 for branch in range(0, len(adjacency[from_node])):
 

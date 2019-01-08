@@ -15,17 +15,16 @@ LengthOrder - Length-wise stream order of each link in a stream network
 
 from heapq import heappush, heappop
 from functools import total_ordering
-from functools import partial
 from functools import partial, reduce
 from collections import defaultdict
-from math import sqrt
 
-from qgis.PyQt.QtCore import (
+from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
     QVariant
 )
 
-from qgis.core import (
+from qgis.core import ( # pylint:disable=no-name-in-module
     QgsFeature,
+    QgsFeatureRequest,
     QgsField,
     QgsFields,
     QgsProcessing,
@@ -81,7 +80,7 @@ class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
 
-    def initAlgorithm(self, configuration):
+    def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
         self.addParameter(QgsProcessingParameterFeatureSource(
             self.INPUT,
@@ -111,7 +110,7 @@ class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Length Order'),
             QgsProcessing.TypeVectorLine))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
@@ -133,11 +132,11 @@ class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             a = edge.attribute(from_node_field)
             b = edge.attribute(to_node_field)
             adjacency.append((a, b, edge.id(), edge.attribute(distance_field)))
-            
+
             feedback.setProgress(int(current * total))
 
-        anodes = set([ a for a,b,e,d in adjacency ])
-        bnodes = set([ b for a,b,e,d in adjacency ])
+        anodes = set([a for a, b, e, d in adjacency])
+        bnodes = set([b for a, b, e, d in adjacency])
         # No edge points to a source,
         # then sources are not in bnodes
         sources = anodes - bnodes
@@ -146,7 +145,7 @@ class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         aindex = reduce(partial(index_by, 0), adjacency, defaultdict(list))
 
         # Step 2 - Sort sources by descending distance
-        
+
         queue = list()
         for source in sources:
             for a, b, edge_id, distance in aindex[source]:
@@ -158,7 +157,7 @@ class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         #          until no edge remains
 
         feedback.setProgressText(self.tr("Sort subgraphs by descending source distance"))
-        
+
         seen_edges = dict()
         current = 0
         total = 100.0 / len(sources) if sources else 0
@@ -196,28 +195,28 @@ class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
                 to_node = edge.attribute(to_node_field)
 
                 if to_node in aindex:
-                    
-                    edges = [ e for a,b,e,d in aindex[to_node] ]
-                    q = QgsFeatureRequest().setFilterFids(edges)
-                    
-                    for next_edge in layer.getFeatures(q):
-                    
+
+                    edges = [e for a, b, e, d in aindex[to_node]]
+                    query = QgsFeatureRequest().setFilterFids(edges)
+
+                    for next_edge in layer.getFeatures(query):
+
                         next_id = next_edge.id()
                         if next_id in seen_edges:
                             rank = seen_edges[next_id] + 1
-                        elif not next_id in selection:
+                        elif next_id not in selection:
                             process_stack.append(next_edge)
 
-            q = QgsFeatureRequest().setFilterFids(list(selection))
-            for feature in layer.getFeatures(q):
+            query = QgsFeatureRequest().setFilterFids(list(selection))
+            for feature in layer.getFeatures(query):
 
                 outfeature = QgsFeature()
                 outfeature.setGeometry(feature.geometry())
                 outfeature.setAttributes(feature.attributes() + [
-                        current,
-                        rank,
-                        length
-                    ])
+                    current,
+                    rank,
+                    length
+                ])
                 sink.addFeature(outfeature)
                 seen_edges[feature.id()] = rank
 

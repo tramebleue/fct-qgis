@@ -16,11 +16,11 @@ StrahlerOrder - Horton-Strahler stream order of each link in a stream network
 from functools import partial, reduce
 from collections import defaultdict
 
-from qgis.PyQt.QtCore import (
+from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
     QVariant
 )
 
-from qgis.core import (
+from qgis.core import ( # pylint:disable=no-name-in-module
     QgsFeature,
     QgsField,
     QgsFields,
@@ -33,7 +33,7 @@ from qgis.core import (
 
 from ..metadata import AlgorithmMetadata
 
-def index_by(i, d, x):
+def index_by(i, accumulator, x):
     """
     Parameters
     ----------
@@ -43,10 +43,10 @@ def index_by(i, d, x):
     x: data tuple
     """
 
-    d[x[i]].append(x)
-    return d
+    accumulator[x[i]].append(x)
+    return accumulator
 
-def count_by(i, d, x):
+def count_by(i, accumulator, x):
     """
     Parameters
     ----------
@@ -56,8 +56,8 @@ def count_by(i, d, x):
     x: data tuple
     """
 
-    d[x[i]] = d[x[i]] + 1
-    return d
+    accumulator[x[i]] = accumulator[x[i]] + 1
+    return accumulator
 
 def asQgsFields(*fields):
     """ Turn list-of-fields into QgsFields object
@@ -79,7 +79,7 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
     TO_NODE_FIELD = 'TO_NODE_FIELD'
     OUTPUT = 'OUTPUT'
 
-    def initAlgorithm(self, configuration):
+    def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
         self.addParameter(QgsProcessingParameterFeatureSource(
             self.INPUT,
@@ -100,9 +100,10 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
-            self.tr('Strahler Order'), QgsProcessing.TypeVectorLine))
+            self.tr('Strahler Order'),
+            QgsProcessing.TypeVectorLine))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)

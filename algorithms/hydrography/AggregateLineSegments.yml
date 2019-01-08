@@ -1,5 +1,4 @@
-name: aggregatelinesegments
-displayName: Aggregate Line Segments
+displayName: Aggregate Stream Segments
 groupId: hydrography
 group: Hydrography
 shortHelpString: NULL

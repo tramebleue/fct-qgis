@@ -1,4 +1,4 @@
-displayName: Regular Hex Points
+displayName: Random Poisson Disc Samples
 groupId: fctvectortools
 group: Tools for Vector
 shortHelpString: NULL
@@ -6,6 +6,7 @@ helpString: NULL
 helpUrl: NULL
 tags:
   - vector
-  - regular grid
-  - generator
+  - random
   - sampling
+  - dither
+  - generator

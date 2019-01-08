@@ -13,11 +13,11 @@ NetworkNodes - Extract and categorize nodes from hydrogaphy network
 ***************************************************************************
 """
 
-from qgis.PyQt.QtCore import (
+from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
     QVariant
 )
 
-from qgis.core import (
+from qgis.core import ( # pylint:disable=no-name-in-module
     QgsFeature,
     QgsField,
     QgsFields,
@@ -40,6 +40,8 @@ def asPolyline(geometry):
         return geometry.asPolyline()
 
 def node_type(in_degree, out_degree):
+    """ Classify node based on in- and out-degree
+    """
 
     if in_degree == 0:
         if out_degree == 0:
@@ -77,7 +79,7 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
     TO_NODE_FIELD = 'TO_NODE_FIELD'
     MEAS_FIELD = 'MEAS_FIELD'
 
-    def initAlgorithm(self, configuration):
+    def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
         self.addParameter(QgsProcessingParameterFeatureSource(
             self.INPUT,
@@ -105,9 +107,10 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
-            self.tr('Nodes'), QgsProcessing.TypeVectorPoint))
+            self.tr('Nodes'),
+            QgsProcessing.TypeVectorPoint))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
