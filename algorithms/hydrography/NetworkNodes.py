@@ -169,7 +169,7 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         in_degree = dict()
 
-        for node in adjacency.keys():
+        for node in adjacency:
             if node not in in_degree:
                 in_degree[node] = 0
             for to_node in adjacency[node]:
@@ -177,7 +177,7 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         feedback.pushInfo(self.tr("Output endpoints ..."))
 
-        total = 100.0 / len(nodes) if len(nodes) else 0
+        total = 100.0 / len(nodes) if nodes else 0
 
         for current, gid in enumerate(nodes.keys()):
 
