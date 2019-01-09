@@ -32,6 +32,8 @@ class RasterResolution(AlgorithmMetadata, QgsProcessingAlgorithm):
     INPUT = 'INPUT'
     XRES = 'XRES'
     YRES = 'YRES'
+    XSIZE = 'XSIZE'
+    YSIZE = 'YSIZE'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
@@ -43,6 +45,10 @@ class RasterResolution(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addOutput(QgsProcessingOutputNumber(self.YRES, self.tr('Vertical Resolution')))
 
+        self.addOutput(QgsProcessingOutputNumber(self.XSIZE, self.tr('Width (Pixels)')))
+
+        self.addOutput(QgsProcessingOutputNumber(self.YSIZE, self.tr('Height (Pixels)')))
+
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         dem = self.parameterAsRasterLayer(parameters, self.INPUT, context)
@@ -52,8 +58,13 @@ class RasterResolution(AlgorithmMetadata, QgsProcessingAlgorithm):
         geotransform = raster.GetGeoTransform()
         xres = geotransform[1]
         yres = -geotransform[5]
+        xsize = raster.RasterXSize
+        ysize = raster.RasterYSize
+
 
         return {
             self.XRES: xres,
-            self.YRES: yres
+            self.YRES: yres,
+            self.XSIZE: xsize,
+            self.YSIZE: ysize
         }

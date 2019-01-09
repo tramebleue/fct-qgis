@@ -14,6 +14,7 @@ FocalMean - Computes mean value of raster data in a fixed window
 ***************************************************************************
 """
 
+import warnings
 import numpy as np
 
 from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
@@ -105,24 +106,28 @@ class FocalMean(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         with RasterDataAccess(uri, int(code1), int(code2)) as rdata:
 
-            for current, feature in enumerate(points.getFeatures()):
+            with warnings.catch_warnings():
+                
+                warnings.simplefilter("ignore", category=RuntimeWarning)
 
-                if feedback.isCanceled():
-                    break
+                for current, feature in enumerate(points.getFeatures()):
 
-                data = rdata.window(feature.geometry().asPoint(), width, height)
-                if data is not None:
-                    data[data == rdata.nodata] = np.nan
-                    value = np.nanmean(data)
-                else:
-                    value = None
+                    if feedback.isCanceled():
+                        break
 
-                outfeature = QgsFeature()
-                outfeature.setGeometry(feature.geometry())
-                outfeature.setAttributes(feature.attributes() + [float(value)])
-                sink.addFeature(outfeature)
+                    data = rdata.window(feature.geometry().asPoint(), width, height)
+                    if data is not None:
+                        data[data == rdata.nodata] = np.nan
+                        value = np.nanmean(data)
+                    else:
+                        value = None
 
-                feedback.setProgress(int(current * total))
+                    outfeature = QgsFeature()
+                    outfeature.setGeometry(feature.geometry())
+                    outfeature.setAttributes(feature.attributes() + [float(value)])
+                    sink.addFeature(outfeature)
+
+                    feedback.setProgress(int(current * total))
 
 
         return {self.OUTPUT: dest_id}

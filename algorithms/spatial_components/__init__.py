@@ -1,9 +1,13 @@
+from .DetrendDEM import DetrendDEM
 from .ValleyBottom import ValleyBottom
 
 def spatial_componentsAlgorithms():
 
-    return [ValleyBottom()]
-    
+    return [
+    	DetrendDEM(),
+    	ValleyBottom()
+    ]
+
     # return [
     #     DisaggregatePolygon(),
     #     LeftRightDGO(),

@@ -1,0 +1,9 @@
+displayName: Detrend Digital Elevation Model
+groupId: terrain
+group: Terrain Analysis
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - dem
+  - elevation

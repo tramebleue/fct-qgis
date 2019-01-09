@@ -16,7 +16,7 @@ Hydrography Algorithms
 from .AggregateLineSegments import AggregateLineSegments
 from .LengthOrder import LengthOrder
 from .NetworkNodes import NetworkNodes
-from .SelectUpstreamComponents import SelectUpstreamComponents
+from .SelectConnectedComponents import SelectConnectedComponents
 from .StrahlerOrder import StrahlerOrder
 
 def hydrography_algorithms():
@@ -25,6 +25,6 @@ def hydrography_algorithms():
         AggregateLineSegments(),
         LengthOrder(),
         NetworkNodes(),
-        SelectUpstreamComponents(),
+        SelectConnectedComponents(),
         StrahlerOrder()
     ]

@@ -54,13 +54,13 @@
         * [x] NetworkNodes
         * [ ] ProjectPointsAlongLine
         * [ ] ~~ReverseFlowDirection~~ (replaced by native:reverselinedirection ?)
-        * [ ] SelectConnectedComponents
-        * [ ] SelectDownstreamComponents
+        * [x] SelectConnectedComponents
+        * [x] SelectDownstreamComponents (merged with SelectConnectedComponents)
         * [ ] SelectFullLengthPaths
         * [ ] SelectGraphCycle
         * [ ] SelectMainDrain
         * [ ] SelectShortTributaries
-        * [x] SelectUpstreamComponents
+        * [x] SelectUpstreamComponents (merged with SelectConnectedComponents)
         * [ ] Sequencing
         * [x] StrahlerOrder
 
@@ -99,6 +99,6 @@
         * [ ] LeftRightBox
         * [ ] MatchPolygonWithMostImportantLine
         * [ ] MatchPolygonWithNearestCentroid
-        * [ ] SimplifyVisvalingam
+        * [ ] ~~SimplifyVisvalingam~~
         * [ ] SplitLineAtNearestPoint
 
