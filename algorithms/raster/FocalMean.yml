@@ -1,0 +1,10 @@
+displayName: Focal Mean
+groupId: raster
+group: Tools for Rasters
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - raster
+  - statistics
+  - gdal

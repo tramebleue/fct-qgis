@@ -1,11 +1,15 @@
 from .BinaryClosing import BinaryClosing
 from .DifferentialRasterThreshold import DifferentialRasterThreshold
+from .FocalMean import FocalMean
+from .RasterResolution import RasterResolution
 
 def rasterAlgorithms():
 
     return [
         BinaryClosing(),
-        DifferentialRasterThreshold()
+        DifferentialRasterThreshold(),
+        FocalMean(),
         # ExtractRasterValueAtPoints(),
         # SimpleRasterStatistics()
+        RasterResolution()
     ]

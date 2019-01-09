@@ -26,7 +26,7 @@ from qgis.core import (
 # pylint: disable=invalid-name
 
 class RasterDataAccess(object):
-    """ Read raster values
+    """ Read raster values through GDAL API
     """
 
     def __init__(self, datasource, datasource_srid, input_srid=None, band=1):
@@ -80,13 +80,40 @@ class RasterDataAccess(object):
         """
 
         t = self.input_transform.TransformPoint(point.x(), point.y())
-        px, py = self.worldtopixel(*t)
+        px, py = self.worldtopixel(t[0], t[1])
 
         if not self.in_range(px, py):
             return self.nodata
 
         elev = self.data.ReadAsArray(px, py, 1, 1).ravel()
         return elev[0]
+
+    def window(self, point, width, height):
+        """ Returns point value (z) according to DEM
+
+        Parameters
+        ----------
+        point: QgsPointXY, real world coordinate of window center
+        width: float, real world width of window
+        height: float, real world height of window
+
+        Returns
+        -------
+
+        NumPy array of data (2-dimensional)
+        """
+
+        t = self.input_transform.TransformPoint(point.x(), point.y())
+        px, py = self.worldtopixel(t[0], t[1])
+        dem_tranform = self.dem.GetGeoTransform()
+        dx = round(width / dem_tranform[1])
+        dy = round(height / -dem_tranform[5])
+
+        if not (self.in_range(px - dx//2, py - dy//2) and
+                self.in_range(px - dx//2 + dx, py - dy//2 + dy)):
+            return None
+
+        return self.data.ReadAsArray(px - dx//2, py - dy//2, dx, dy)
 
     def sample_linestring(self, linestring, step):
         """ Returns projected linestring
@@ -104,6 +131,7 @@ class RasterDataAccess(object):
             measure z every `step` along line,
             given in map units
         """
+
         length = linestring.length()
         for measure in np.arange(0, length+step, step):
             point = linestring.interpolate(measure).asPointXY()
