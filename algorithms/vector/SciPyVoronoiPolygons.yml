@@ -1,0 +1,8 @@
+displayName: Voronoi Polygons
+groupId: fctvectortools
+group: Tools for Vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - spatial analysis
