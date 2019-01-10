@@ -21,7 +21,7 @@ from qgis.core import ( # pylint:disable=no-name-in-module
     QgsProcessingParameterRasterLayer
 )
 
-from .flow_accumulation import flow_accumulation
+from ...lib.flow_accumulation import flow_accumulation
 from ..metadata import AlgorithmMetadata
 
 class FlowAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):

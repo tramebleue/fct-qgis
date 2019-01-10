@@ -19,7 +19,6 @@ cj = [ 0,  1,  1,  1,  0, -1, -1, -1]
 #      if its flow direction is 2^4 (southward)
 
 upward = np.power(2, np.array([4,  5,  6,  7,  0,  1,  2,  3], dtype=np.uint8))
-upward[5] = 0
 
 def ingrid(data, i, j):
     """ Tests if cell (i, j) is within the range of data
@@ -70,10 +69,10 @@ def topo_stream_burn(elevations, streams, nodata, rx, ry, out=None, minslope=1e-
         No-data value in elevations
 
     rx: float
-        Cell resolution in x direction
+        Cell resolution in x direction of elevations
 
     ry: float
-        Cell resolution in y direction
+        Cell resolution in y direction of elevations
 
     out: array-like
         Same shape and dtype as elevations, initialized to nodata

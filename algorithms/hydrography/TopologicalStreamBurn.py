@@ -21,7 +21,7 @@ from qgis.core import ( # pylint:disable=no-name-in-module
     QgsProcessingParameterRasterLayer
 )
 
-from .topo_stream_burn import topo_stream_burn
+from ...lib.topo_stream_burn import topo_stream_burn
 from ..metadata import AlgorithmMetadata
 
 class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):

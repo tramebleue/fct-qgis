@@ -24,8 +24,7 @@ cj = [ 0,  1,  1,  1,  0, -1, -1, -1]
 # e.g. cell north (search index 0) of cell x is connected to cell x
 #      if its flow direction is 2^4 (southward)
 
-upward = np.power(2, np.array([3, 4,  5,  6,  7,  0,  1,  2], dtype=np.uint8))
-upward[5] = 0
+upward = np.power(2, np.array([4,  5,  6,  7,  0,  1,  2, 3], dtype=np.uint8))
 
 def ingrid(data, i, j):
     """ Tests if cell (i, j) is within the range of data
@@ -48,9 +47,7 @@ def ingrid(data, i, j):
     True if coordinates (i, j) fall within data, False otherwise.
     """
 
-    height = data.shape[0]
-    width = data.shape[1]
-
+    height, width = data.shape
     return (i >= 0) and (i < height) and (j >= 0) and (j < width)
 
 def reverse_direction(x):
@@ -78,8 +75,7 @@ def flow_accumulation(flow, out=None, feedback=None):
     Flow accumulation raster
     """
 
-    height = flow.shape[0]
-    width = flow.shape[1]
+    height, width = flow.shape
     nodata = -1
 
     if out is None:
@@ -151,7 +147,7 @@ def flow_accumulation(flow, out=None, feedback=None):
         ix = i + ci[x]
         jx = j + cj[x]
 
-        while ingrid(flow, ix, jx) and inflow[ix, jx] >= 0:
+        while ingrid(flow, ix, jx) and inflow[ix, jx] > 0:
 
             out[ix, jx] = out[ix, jx] + out[i, j]
             inflow[ix, jx] = inflow[ix, jx] - 1
@@ -180,3 +176,28 @@ def flow_accumulation(flow, out=None, feedback=None):
         feedback.setProgress(int(current*total))
 
     return out
+
+def test():
+
+    class Feedback(object):
+
+        #pylint:disable=missing-docstring,no-self-use
+
+        def setProgressText(self, msg):
+            print(msg)
+
+        def setProgress(self, progress):
+            pass
+
+        def isCanceled(self):
+            return False
+
+        def pushInfo(self, msg):
+            print(msg)
+
+    flow = np.power(2, np.array(
+        [[4, 3, 4, 4],
+         [3, 2, 3, 4],
+         [2, 2, 2, 3]]))
+
+    return flow_accumulation(flow, feedback=Feedback())

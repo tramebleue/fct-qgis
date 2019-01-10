@@ -12,22 +12,21 @@ resources.py: resources.qrc
 	pyrcc5 -o resources.py resources.qrc
 
 install: resources.py
-	@echo Install to $(TARGET) ...
 	mkdir -p $(TARGET)
-	@cp $(PY_FILES) $(TARGET)
-	@for m in $(MODULES); do mkdir -p $(TARGET)/$$m; done
-	@for f in $(MODULES_PY_FILES); do cp $$f $(TARGET)/$$f; done
+	cp $(PY_FILES) $(TARGET)
+	for m in $(MODULES); do mkdir -p $(TARGET)/$$m; done
+	for f in $(MODULES_PY_FILES); do cp $$f $(TARGET)/$$f; done
 	cp -R algorithms $(TARGET)
-	# @cp -R maptools $(TARGET)
-	@cp $(ICONS) $(TARGET)
-	@cp *.qrc $(TARGET)
-	@cp metadata.txt $(TARGET)
-	@echo Ok
+	cp -R lib $(TARGET)
+	# cp -R maptools $(TARGET)
+	cp $(ICONS) $(TARGET)
+	cp *.qrc $(TARGET)
+	cp metadata.txt $(TARGET)
+	echo Installed to $(TARGET)
 
 uninstall:
-	@echo -n Remove directory $(TARGET) ...
-	@rm -rf $(TARGET)
-	@echo Ok
+	echo Remove directory $(TARGET) ...
+	rm -rf $(TARGET)
 
 clean:
 	rm -f *.c
