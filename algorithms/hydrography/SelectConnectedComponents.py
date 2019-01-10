@@ -75,7 +75,7 @@ class SelectConnectedComponents(AlgorithmMetadata, QgsProcessingAlgorithm):
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
         direction = self.parameterAsInt(parameters, self.DIRECTION, context)
-        print(direction)
+
         selection = set()
 
         def selectConnectedLinksUndirected():
