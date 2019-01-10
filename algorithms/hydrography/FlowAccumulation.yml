@@ -1,0 +1,10 @@
+displayName: Flow Accumulation
+groupId: hydrography
+group: Hydrography
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - hydrography
+  - graph
+  - selection

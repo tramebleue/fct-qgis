@@ -14,17 +14,21 @@ Hydrography Algorithms
 """
 
 from .AggregateLineSegments import AggregateLineSegments
+from .FlowAccumulation import FlowAccumulation
 from .LengthOrder import LengthOrder
 from .NetworkNodes import NetworkNodes
 from .SelectConnectedComponents import SelectConnectedComponents
 from .StrahlerOrder import StrahlerOrder
+from .TopologicalStreamBurn import TopologicalStreamBurn
 
 def hydrography_algorithms():
 
     return [
         AggregateLineSegments(),
+        FlowAccumulation(),
         LengthOrder(),
         NetworkNodes(),
         SelectConnectedComponents(),
-        StrahlerOrder()
+        StrahlerOrder(),
+        TopologicalStreamBurn()
     ]
