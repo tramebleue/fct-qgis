@@ -1,18 +1,18 @@
 <!DOCTYPE model>
 <Option type="Map">
   <Option type="Map" name="children">
-    <Option type="Map" name="fct:RasterDifference_1">
+    <Option type="Map" name="fct:rasterdifference">
       <Option type="bool" value="true" name="active"/>
       <Option name="alg_config"/>
-      <Option type="QString" value="fct:RasterDifference" name="alg_id"/>
+      <Option type="QString" value="fct:rasterdifference" name="alg_id"/>
       <Option type="QString" value="RasterDifference" name="component_description"/>
       <Option type="double" value="845" name="component_pos_x"/>
       <Option type="double" value="613" name="component_pos_y"/>
       <Option name="dependencies"/>
-      <Option type="QString" value="fct:RasterDifference_1" name="id"/>
+      <Option type="QString" value="fct:rasterdifference" name="id"/>
       <Option type="Map" name="outputs">
         <Option type="Map" name="Detrended">
-          <Option type="QString" value="fct:RasterDifference_1" name="child_id"/>
+          <Option type="QString" value="fct:rasterdifference" name="child_id"/>
           <Option type="QString" value="Detrended" name="component_description"/>
           <Option type="double" value="845" name="component_pos_x"/>
           <Option type="double" value="681" name="component_pos_y"/>
@@ -318,13 +318,13 @@
       <Option type="QString" value="distance" name="parameter_type"/>
       <Option type="QString" value="" name="parent"/>
     </Option>
-    <Option type="Map" name="fct:RasterDifference_1:Detrended">
+    <Option type="Map" name="fct:rasterdifference:Detrended">
       <Option type="bool" value="true" name="create_by_default"/>
       <Option type="invalid" name="default"/>
       <Option type="QString" value="Detrended" name="description"/>
       <Option type="int" value="0" name="flags"/>
       <Option name="metadata"/>
-      <Option type="QString" value="fct:RasterDifference_1:Detrended" name="name"/>
+      <Option type="QString" value="fct:rasterdifference:Detrended" name="name"/>
       <Option type="QString" value="rasterDestination" name="parameter_type"/>
       <Option type="bool" value="true" name="supports_non_file_outputs"/>
     </Option>

@@ -30,25 +30,16 @@ from qgis.analysis import ( # pylint:disable=no-name-in-module
 )
 
 from processing.algs.gdal.GdalUtils import GdalUtils # pylint:disable=import-error
+from ..metadata import AlgorithmMetadata
 
-class RasterDifference(QgsProcessingAlgorithm):
+class RasterDifference(AlgorithmMetadata, QgsProcessingAlgorithm):
+
+    METADATA = AlgorithmMetadata.read(__file__, 'RasterDifference')
 
     RASTER1 = 'RASTER1'
     RASTER2 = 'RASTER2'
     OUTPUT = 'OUTPUT'
 
-    def name(self):
-      return 'RasterDifference'
-
-    def groupId(self):
-      return 'Tools for Rasters'
-
-    def displayName(self):
-      return self.tr(self.name())
-
-    def group(self):
-      return self.tr(self.groupId())
-      
     def initAlgorithm(self, config=None):
 
         self.addParameter(QgsProcessingParameterRasterLayer(

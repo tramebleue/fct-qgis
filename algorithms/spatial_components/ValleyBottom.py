@@ -42,8 +42,11 @@ import os
 import processing
 import gdal
 
+from ..metadata import AlgorithmMetadata
 
-class ValleyBottom(QgsProcessingAlgorithm):
+class ValleyBottom(AlgorithmMetadata, QgsProcessingAlgorithm):
+
+    METADATA = AlgorithmMetadata.read(__file__, 'ValleyBottom')
 
     INPUT_DEM = 'INPUT_DEM'
     INPUT_NETWORK = 'INPUT_NETWORK'
@@ -64,18 +67,6 @@ class ValleyBottom(QgsProcessingAlgorithm):
     CLEAN_MIN_HOLE_AREA_PARAM = 'CLEAN_MIN_HOLE_AREA'
 
     STEPS = 24
-
-    def name(self):
-      return 'ValleyBottom'
-
-    def groupId(self):
-      return 'Spatial Components'
-
-    def displayName(self):
-      return self.tr(self.name())
-
-    def group(self):
-      return self.tr(self.groupId())
 
     def initAlgorithm(self, config=None):
         # Main parameters

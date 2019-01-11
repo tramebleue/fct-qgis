@@ -40,25 +40,17 @@ from qgis.core import (QgsProcessingAlgorithm,
 import numpy as np
 import gdal
 
-class BinaryClosing(QgsProcessingAlgorithm):
+from ..metadata import AlgorithmMetadata
+
+class BinaryClosing(AlgorithmMetadata, QgsProcessingAlgorithm):
+
+    METADATA = AlgorithmMetadata.read(__file__, 'BinaryClosing')
 
     INPUT = 'INPUT'
     BAND = 'BAND'
     OUTPUT = 'OUTPUT'
     DISTANCE = 'DISTANCE'
     ITERATIONS = 'ITERATIONS'
-
-    def name(self):
-      return 'BinaryClosing'
-
-    def groupId(self):
-      return 'Tools for Rasters'
-
-    def displayName(self):
-      return self.tr(self.name())
-
-    def group(self):
-      return self.tr(self.groupId())
 
     def initAlgorithm(self, config=None):
 
