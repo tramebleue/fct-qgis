@@ -15,7 +15,7 @@
         * [ ] DeduplicateLines
         * [ ] InterpolateLine
         * [ ] JoinByNearest
-        * [ ] LineMidpoints
+        * [x] LineMidpoints
         * [ ] MeasureDistanceToPointLayer
         * [ ] MergeGeometries
         * [ ] ~~PointOnSurface~~ (replaced by native:pointonsurface)
