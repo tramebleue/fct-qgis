@@ -15,6 +15,7 @@ Hydrography Algorithms
 
 from .AggregateLineSegments import AggregateLineSegments
 from .FlowAccumulation import FlowAccumulation
+from .IdentifyNetworkNodes import IdentifyNetworkNodes
 from .LengthOrder import LengthOrder
 from .NetworkNodes import NetworkNodes
 from .SelectConnectedComponents import SelectConnectedComponents
@@ -26,6 +27,7 @@ def hydrography_algorithms():
     return [
         AggregateLineSegments(),
         FlowAccumulation(),
+        IdentifyNetworkNodes(),
         LengthOrder(),
         NetworkNodes(),
         SelectConnectedComponents(),

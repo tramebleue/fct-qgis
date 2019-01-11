@@ -1,21 +1,23 @@
-* [ ] Test Framework for automated tests
+* [ ] Dev Strategy
+    * [ ] Test Framework for automated tests : split tests YAML into small chunks, one per algorithm
+    * [ ] I18n Framework
+    * [ ] Write python installer
+    * [ ] Dependencies not available in QGIS3 default installation 
+        * [ ] SciPy for BinaryClosing
 
-* [ ] Dependencies not available in QGIS3 default installation 
-    * [ ] SciPy for BinaryClosing
+* [ ] Migration of QGis 2.14 Algorithms to QGis 3.4
 
-* [ ] Algorithms update for QGIS 3.4
-
-    * Tools for Rasters (raster)
+    * [x] Tools for Rasters (raster)
         * [x] BinaryClosing
         * [x] DifferentialRasterThreshold (may be replaced by qgis:rastercalculator)
         * [ ] ~~ExtractRasterValueAtPoints~~ (replaced by qgis:rastersampling)
-        * [ ] SimpleRasterStatistics
+        * [ ] ~~SimpleRasterStatistics~~
 
-    * Tools for Vectors (vector)
+    * [ ] Tools for Vectors (vector)
         * [ ] DeduplicateLines
         * [ ] InterpolateLine
         * [ ] JoinByNearest
-        * [ ] LineMidpoints
+        * [x] LineMidpoints
         * [ ] MeasureDistanceToPointLayer
         * [ ] MergeGeometries
         * [ ] ~~PointOnSurface~~ (replaced by native:pointonsurface)
@@ -34,11 +36,11 @@
         * [ ] UpdateFieldByExpression
         * [ ] UpdateFieldByExpressionInPlace
 
-    * Hydrography (hydrography)
+    * [ ] Hydrography (hydrography)
         * [x] AggregateLineSegments
         * [x] AggregateLineSegmentsByCat (merged with AggregateLineSegments)
         * [ ] DensifyNetworkNodes
-        * [ ] IdentifyNetworkNodes
+        * [x] IdentifyNetworkNodes
         * [ ] InverseLongitudinalTransform
         * [x] LengthOrder
         * [ ] LocatePolygonAlongLine
@@ -61,11 +63,11 @@
         * [ ] SelectMainDrain
         * [ ] SelectShortTributaries
         * [x] SelectUpstreamComponents (merged with SelectConnectedComponents)
-        * [ ] Sequencing
+        * [ ] ~~Sequencing~~ (replaced by BuildDirectedStreamNetwork)
         * [x] StrahlerOrder
 
-    * Metrics (metrics)
-        * [ ] DetrendDEM
+    * [ ] Metrics (metrics)
+        * [x] DetrendDEM
         * [ ] FilterByMinRank
         * [ ] LocalFeatureSize
         * [ ] ~~OrthogonalTransects~~ (replaced by native:transect)
@@ -77,7 +79,7 @@
         * [ ] Sum
         * [ ] WeightedMean
 
-    * Lateral (lateral)
+    * [ ] Lateral (lateral)
         * [ ] FastDeleteExteriorPolygons
         * [ ] EdgeWeighting
         * [ ] ShortestDistanceToTargets
@@ -87,18 +89,26 @@
         * [ ] NodesFromEdges
         * [ ] DirectedGraphFromUndirected
 
-    * Spatial Components (spatial_components)
+    * [ ] Spatial Components (spatial_components)
         * [ ] DisaggregatePolygon
         * [ ] LeftRightDGO
         * [ ] MedialAxis
         * [ ] PolygonSkeleton
         * [ ] ValleyBottom
 
-    * Unstable (unstable, must be fixed)
+    * [ ] Unstable (unstable, must be fixed)
         * [ ] CenterLine
-        * [ ] LeftRightBox
+        * [ ] ~~LeftRightBox~~
         * [ ] MatchPolygonWithMostImportantLine
         * [ ] MatchPolygonWithNearestCentroid
         * [ ] ~~SimplifyVisvalingam~~
-        * [ ] SplitLineAtNearestPoint
+        * [ ] ~~SplitLineAtNearestPoint~~
 
+* New algorithms
+    * [x] TopologicalStreamBurn
+    * [x] FlowAccumulation
+    * [x] FocalMean/FocalAnalysis (TODO add more aggregation/filter options such as std, median, sum, min, max)
+    * [x] SciPyVoronoiPolygons
+    * [x] RasterInfo
+    * [ ] FixLinkOrientation
+    * [ ] BuildDirectedStreamNetwork
