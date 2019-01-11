@@ -32,8 +32,11 @@ from qgis.core import (QgsProcessingAlgorithm,
 import gdal
 import numpy as np
 
+from ..metadata import AlgorithmMetadata
 
-class DifferentialRasterThreshold(QgsProcessingAlgorithm):
+class DifferentialRasterThreshold(AlgorithmMetadata, QgsProcessingAlgorithm):
+
+    METADATA = AlgorithmMetadata.read(__file__, 'DifferentialRasterThreshold')
 
     INPUT_DEM = 'INPUT_DEM'
     REFERENCE_DEM = 'REFERENCE_DEM'
@@ -42,18 +45,6 @@ class DifferentialRasterThreshold(QgsProcessingAlgorithm):
     RELATIVE_DEM = 'OUTPUT'
     # NO_DATA = 'NO_DATA'
 
-    def name(self):
-      return 'DifferentialRasterThreshold'
-
-    def groupId(self):
-      return 'Tools for Rasters'
-
-    def displayName(self):
-      return self.tr(self.name())
-
-    def group(self):
-      return self.tr(self.groupId())
-      
     def initAlgorithm(self, config=None):
 
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT_DEM,

@@ -24,6 +24,25 @@ __copyright__ = '(C) 2016, Christophe Rousson'
 
 __revision__ = '$Format:%H$'
 
+import os
+
+from qgis.core import ( # pylint:disable=no-name-in-module
+    QgsProcessingModelAlgorithm
+)
+
+from ..metadata import AlgorithmMetadata
+
+class ValleyBottom(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.METADATA = AlgorithmMetadata.read(__file__, type(self).__name__)
+        self.fromFile(os.path.join(os.path.dirname(__file__), type(self).__name__ + '.model3'))
+
+
+# OLD VERSION OF VALLEYBOTTOM BELOW
+'''
 from PyQt5.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
@@ -42,8 +61,11 @@ import os
 import processing
 import gdal
 
+from ..metadata import AlgorithmMetadata
 
-class ValleyBottom(QgsProcessingAlgorithm):
+class ValleyBottom(AlgorithmMetadata, QgsProcessingAlgorithm):
+
+    METADATA = AlgorithmMetadata.read(__file__, 'ValleyBottom')
 
     INPUT_DEM = 'INPUT_DEM'
     INPUT_NETWORK = 'INPUT_NETWORK'
@@ -64,18 +86,6 @@ class ValleyBottom(QgsProcessingAlgorithm):
     CLEAN_MIN_HOLE_AREA_PARAM = 'CLEAN_MIN_HOLE_AREA'
 
     STEPS = 24
-
-    def name(self):
-      return 'ValleyBottom'
-
-    def groupId(self):
-      return 'Spatial Components'
-
-    def displayName(self):
-      return self.tr(self.name())
-
-    def group(self):
-      return self.tr(self.groupId())
 
     def initAlgorithm(self, config=None):
         # Main parameters
@@ -497,3 +507,4 @@ class ValleyBottom(QgsProcessingAlgorithm):
 
     def createInstance(self):
       return ValleyBottom()
+'''

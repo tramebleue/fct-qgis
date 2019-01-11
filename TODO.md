@@ -89,8 +89,8 @@
         * [ ] NodesFromEdges
         * [ ] DirectedGraphFromUndirected
 
-    * [ ] Spatial Components (spatial_components)
-        * [ ] DisaggregatePolygon
+    * Spatial Components (spatial_components)
+        * [x] DisaggregatePolygon
         * [ ] LeftRightDGO
         * [ ] MedialAxis
         * [ ] PolygonSkeleton
