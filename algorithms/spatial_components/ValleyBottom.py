@@ -24,6 +24,25 @@ __copyright__ = '(C) 2016, Christophe Rousson'
 
 __revision__ = '$Format:%H$'
 
+import os
+
+from qgis.core import ( # pylint:disable=no-name-in-module
+    QgsProcessingModelAlgorithm
+)
+
+from ..metadata import AlgorithmMetadata
+
+class ValleyBottom(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.METADATA = AlgorithmMetadata.read(__file__, type(self).__name__)
+        self.fromFile(os.path.join(os.path.dirname(__file__), type(self).__name__ + '.model3'))
+
+
+# OLD VERSION OF VALLEYBOTTOM BELOW
+'''
 from PyQt5.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
@@ -488,3 +507,4 @@ class ValleyBottom(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def createInstance(self):
       return ValleyBottom()
+'''
