@@ -17,10 +17,12 @@ from .AggregateLineSegments import AggregateLineSegments
 from .FlowAccumulation import FlowAccumulation
 from .IdentifyNetworkNodes import IdentifyNetworkNodes
 from .LengthOrder import LengthOrder
+from .MeasureNetworkFromOutlet import MeasureNetworkFromOutlet
 from .NetworkNodes import NetworkNodes
 from .SelectConnectedComponents import SelectConnectedComponents
 from .StrahlerOrder import StrahlerOrder
 from .TopologicalStreamBurn import TopologicalStreamBurn
+from .UpstreamChannelLength import UpstreamChannelLength
 
 def hydrography_algorithms():
 
@@ -29,8 +31,10 @@ def hydrography_algorithms():
         FlowAccumulation(),
         IdentifyNetworkNodes(),
         LengthOrder(),
+        MeasureNetworkFromOutlet(),
         NetworkNodes(),
         SelectConnectedComponents(),
         StrahlerOrder(),
-        TopologicalStreamBurn()
+        TopologicalStreamBurn(),
+        UpstreamChannelLength()
     ]

@@ -35,19 +35,11 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
+from ..util import asQgsFields
 
 def index_by(i, d, x):
     d[x[i]].append(x)
     return d
-
-def asQgsFields(*fields):
-    """ Turn list-of-fields into QgsFields object
-    """
-
-    out = QgsFields()
-    for field in fields:
-        out.append(field)
-    return out
 
 @total_ordering
 class SourceEntry(object):

@@ -1,0 +1,10 @@
+displayName: Upstream Channel Length
+groupId: hydrography
+group: Hydrography
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - hydrography
+  - graph
+  - metric

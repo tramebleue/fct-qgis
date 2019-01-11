@@ -51,7 +51,7 @@
         * [ ] MatchNearestLineUpdate
         * [ ] MatchNetworkNodes
         * [ ] MatchNetworkSegments
-        * [ ] MeasureLinesFromOutlet
+        * [x] MeasureLinesFromOutlet (renamed to MeasureNetworkFromOutlet)
         * [ ] MeasurePointsAlongLine
         * [x] NetworkNodes
         * [ ] ProjectPointsAlongLine
@@ -112,3 +112,6 @@
     * [x] RasterInfo
     * [ ] FixLinkOrientation
     * [ ] BuildDirectedStreamNetwork
+    * [ ] MeanderingEnvelope
+    * [ ] ValleyBottom based on dem+flow direction
+    * [x] UpstreamChannelLength

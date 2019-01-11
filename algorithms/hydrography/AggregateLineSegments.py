@@ -23,7 +23,6 @@ from qgis.core import ( # pylint:disable=no-name-in-module
     QgsFeature,
     QgsFeatureRequest,
     QgsField,
-    QgsFields,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingParameterFeatureSink,
@@ -32,6 +31,7 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
+from ..util import asQgsFields
 
 def asPolyline(geometry):
 
@@ -39,13 +39,6 @@ def asPolyline(geometry):
         return geometry.asMultiPolyline()[0]
     else:
         return geometry.asPolyline()
-
-def asQgsFields(*fields):
-
-    out = QgsFields()
-    for field in fields:
-        out.append(field)
-    return out
 
 class FidGenerator(object):
     """ Generate a sequence of integers to be used as identifier
