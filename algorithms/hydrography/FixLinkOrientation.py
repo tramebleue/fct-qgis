@@ -121,15 +121,16 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         selected_outlets = self.parameterAsBool(parameters, self.SELECTED_OUTLETS, context)
 
         if not QgsWkbTypes.hasZ(nodes.wkbType()):
+            feedback.pushInfo(self.tr('Input nodes must have Z coordinate'))
             return False
 
         self.parameters = Parameters(
             layer, nodes, from_node_field, to_node_field,
             pk_field, dryrun, selected_outlets)
 
-        return self.processNetwork(context, feedback)
+        return True
 
-    def processNetwork(self, context, feedback):
+    def processNetwork(self, parameters, context, feedback):
         """
         1. index links for undirected graph traversal
         2. sort nodes by z ascending
@@ -233,6 +234,9 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
         feedback.pushInfo('Start from z = %f with node %d' % queue[0])
 
+        # Pick lowest-z node among remaining nodes,
+        # and traverse graph until the next junction
+
         while queue:
 
             if feedback.isCanceled():
@@ -252,6 +256,10 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                 heappush(queue, (z+max(0.05, 0.5*(next_z - z)), sink))
                 heappush(queue, (z, node))
                 continue
+
+            # Depth-first, undirected graph traversal
+            # starting from node, using a stack (last-in, first-out),
+            # until the next junction
 
             stack = [node]
 
@@ -279,26 +287,31 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                         marked.add(fid)
 
                     if degree[next_node] > 2:
+                        # We reached a junction, but we don't know the type of if
+                        # (ie. if other links connected by this node come to it or leave from it)
+                        # We'll continue from node when it is the lowest-z remaining node
                         degree[next_node] -= 1
                     else:
+                        # Simple junction between two segments,
+                        # we can traverse further
                         stack.append(next_node)
 
                     current += 1
                     feedback.setProgress(int(current * total))
 
         feedback.pushInfo('%d features need to be reversed' % len(marked))
-
-        if self.parameters.dryrun:
-            srclayer.selectByIds(list(marked), QgsVectorLayer.SetSelection)
-
         self.marked = marked
-        return True
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        self.processNetwork(parameters, context, feedback)
+
         if self.parameters.dryrun:
+            srclayer = context.getMapLayer(self.parameters.layer.sourceName())
+            srclayer.selectByIds(list(self.marked), QgsVectorLayer.SetSelection)
             return {}
 
+        # processFeature() for each feature in layer
         return super().processAlgorithm(parameters, context, feedback)
 
     def processFeature(self, feature, context, feedback): #pylint: disable=unused-argument,missing-docstring
