@@ -159,7 +159,8 @@ class SciPyVoronoiPolygons(AlgorithmMetadata, QgsProcessingAlgorithm):
             if feedback.isCanceled():
                 break
 
-            points.append((feature.id(), feature.geometry().asPoint()))
+            if feature.geometry():
+                points.append((feature.id(), feature.geometry().asPoint()))
 
             feedback.setProgress(int(current * total))
 
@@ -174,12 +175,18 @@ class SciPyVoronoiPolygons(AlgorithmMetadata, QgsProcessingAlgorithm):
             if feedback.isCanceled():
                 break
 
-            point = layer.getFeature(points[index][0])
+            if polygon.isGeosValid():
 
-            feature = QgsFeature()
-            feature.setGeometry(polygon)
-            feature.setAttributes(point.attributes())
-            sink.addFeature(feature)
+                point = layer.getFeature(points[index][0])
+
+                feature = QgsFeature()
+                feature.setGeometry(polygon)
+                feature.setAttributes(point.attributes())
+                sink.addFeature(feature)
+
+            else:
+
+                print(polygon.asWkt())
 
             feedback.setProgress(int(current * total))
 

@@ -29,8 +29,8 @@
         * [ ] SegmentEndpoints
         * [ ] SelectByDistance
         * [ ] SelectNearestFeature
-        * [ ] SplitLine
-        * [ ] SplitLineIntoSegments
+        * [ ] ~~SplitLine~~ (replaced by native:explodelines)
+        * [ ] ~~SplitLineIntoSegments~~ (replaced by native:explodelines)
         * [ ] UniquePoints
         * [ ] UniqueValuesTable
         * [ ] UpdateFieldByExpression

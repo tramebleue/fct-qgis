@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-***************************************************************************
-    ValleyBottom.py
-    ---------------------
-    Date                 : November 2016
-    Copyright            : (C) 2016 by Christophe Rousson
+ValleyBottom
+
 ***************************************************************************
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
@@ -16,14 +13,6 @@
 ***************************************************************************
 """
 
-__author__ = 'Christophe Rousson'
-__date__ = 'November 2016'
-__copyright__ = '(C) 2016, Christophe Rousson'
-
-# This will get replaced with a git SHA1 when you do a git archive
-
-__revision__ = '$Format:%H$'
-
 import os
 
 from qgis.core import ( # pylint:disable=no-name-in-module
@@ -33,6 +22,8 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 from ..metadata import AlgorithmMetadata
 
 class ValleyBottom(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+    """ Extract Valley Bottom from DEM
+    """
 
     def __init__(self, *args, **kwargs):
 

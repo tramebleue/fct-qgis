@@ -1,4 +1,5 @@
 from .LineMidpoints import LineMidpoints
+from .PointsAlongPolygon import PointsAlongPolygon
 from .PointsInPolygon import PointsInPolygon
 from .RandomPoissonDiscSampling import RandomPoissonDiscSampling
 from .RegularHexPoints import RegularHexPoints
@@ -9,6 +10,7 @@ def vector_algorithms():
 
     return [
         LineMidpoints(),
+        PointsAlongPolygon(),
         PointsInPolygon(),
         RandomPoissonDiscSampling(),
         RegularHexPoints(),
