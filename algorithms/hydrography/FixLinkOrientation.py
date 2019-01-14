@@ -22,6 +22,7 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessing,
     QgsProcessingFeatureBasedAlgorithm,
     QgsProcessingParameterBoolean,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField,
     QgsVectorLayer,
@@ -37,7 +38,7 @@ Parameters = namedtuple('Parameters', [
     'to_node_field',
     'pk_field',
     'dryrun',
-    'selected_outlets'
+    'outlets_def'
 ])
 
 class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
@@ -57,8 +58,12 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
     TO_NODE_FIELD = 'TO_NODE_FIELD'
     NODE_PK_FIELD = 'NODE_PK_FIELD'
     DRYRUN = 'DRYRUN'
-    SELECTED_OUTLETS = 'SELECTED_OUTLETS'
+    OUTLETS_DEFINITION = 'OUTLETS_DEFINITION'
     OUTPUT = 'OUTPUT'
+
+    OUTLETS_DEF_MINZ = 0
+    OUTLETS_DEF_SELECTION = 1
+    OUTLETS_DEF_EXTREMAL = 2
 
     def initParameters(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
@@ -86,10 +91,11 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             self.tr('Nodes with Z coordinate'),
             [QgsProcessing.TypeVectorPoint]))
 
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.SELECTED_OUTLETS,
-            self.tr('Define Selected Nodes as Outlets'),
-            defaultValue=False))
+        self.addParameter(QgsProcessingParameterEnum(
+            self.OUTLETS_DEFINITION,
+            self.tr('How To Define Outlets'),
+            options=[self.tr(option) for option in ['Minimum-Z Node', 'Selected Nodes', 'Extremal Nodes']],
+            defaultValue=0))
 
         self.addParameter(QgsProcessingParameterField(
             self.NODE_PK_FIELD,
@@ -118,7 +124,7 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
         pk_field = self.parameterAsString(parameters, self.NODE_PK_FIELD, context)
         dryrun = self.parameterAsBool(parameters, self.DRYRUN, context)
-        selected_outlets = self.parameterAsBool(parameters, self.SELECTED_OUTLETS, context)
+        outlets_def = self.parameterAsInt(parameters, self.OUTLETS_DEFINITION, context)
 
         if not QgsWkbTypes.hasZ(nodes.wkbType()):
             feedback.pushInfo(self.tr('Input nodes must have Z coordinate'))
@@ -126,7 +132,7 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
         self.parameters = Parameters(
             layer, nodes, from_node_field, to_node_field,
-            pk_field, dryrun, selected_outlets)
+            pk_field, dryrun, outlets_def)
 
         return True
 
@@ -195,8 +201,12 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         #    and mark links not properly oriented
 
         junctions = set(node for node in node_index if degree[node] != 2)
-        if not self.parameters.selected_outlets:
+        
+        if self.parameters.outlets_def == self.OUTLETS_DEF_EXTREMAL:
             outlets = set(node for node in junctions if degree[node] == 1)
+        elif self.parameters.outlets_def == self.OUTLETS_DEF_MINZ:
+            outlets = {queue[0][1]}
+
         marked = set()
         seen_nodes = set()
         seen_links = set()
@@ -240,6 +250,8 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         while queue:
 
             if feedback.isCanceled():
+                z, node = heappop(queue)
+                print(z, node)
                 break
 
             z, node = heappop(queue)

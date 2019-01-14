@@ -18,6 +18,7 @@ from .FixLinkOrientation import FixLinkOrientation
 from .FlowAccumulation import FlowAccumulation
 from .IdentifyNetworkNodes import IdentifyNetworkNodes
 from .LengthOrder import LengthOrder
+from .LongestPathInDirectedGraph import LongestPathInDirectedGraph
 from .MeasureNetworkFromOutlet import MeasureNetworkFromOutlet
 from .NetworkNodes import NetworkNodes
 from .SelectConnectedComponents import SelectConnectedComponents
@@ -33,6 +34,7 @@ def hydrography_algorithms():
         FlowAccumulation(),
         IdentifyNetworkNodes(),
         LengthOrder(),
+        LongestPathInDirectedGraph(),
         MeasureNetworkFromOutlet(),
         NetworkNodes(),
         SelectConnectedComponents(),

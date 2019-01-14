@@ -245,7 +245,7 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                     next_node = adjacency[from_node][branch]
                     next_segment_id = feature_index[from_node][branch]
                     segment = srclayer.getFeature(next_segment_id)
-                    measure = segment.attribute(measure_field)
+                    measure = segment.attribute(measure_field) if measure_field else 0
                     vertices = asPolyline(segment.geometry())
 
                     current = current + 1

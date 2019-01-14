@@ -30,22 +30,11 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessingParameterField
 )
 
+from .graph import create_link_index
 from ..metadata import AlgorithmMetadata
 from ..util import asQgsFields
 
 Link = namedtuple('Link', ('a', 'b', 'edge_id', 'length'))
-
-def create_link_index(adjacency, key):
-    """ Index: key -> list of link corresponding to key
-    """
-
-    index = defaultdict(list)
-
-    for link in adjacency:
-        k = key(link)
-        index[k].append(link)
-
-    return index
 
 class UpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Compute a new `UCL` attribute
