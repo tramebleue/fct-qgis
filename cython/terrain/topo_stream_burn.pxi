@@ -30,8 +30,8 @@ def topo_stream_burn(
     float nodata,
     float rx, float ry,
     float minslope=1e-3,
-    feedback=None,
-    short[:,:] out=None):
+    short[:,:] out=None,
+    feedback=None):
     """ Flow accumulation algorithm
         based on Lindsay (2016) `Topological Stream Burn algorithm,
         which is a variant of Wang and Liu (2006) `Fill Sinks` algorithm.
@@ -66,16 +66,16 @@ def topo_stream_burn(
         Minimum slope to preserve between cells
         when filling up sinks.
 
+    out: array-like
+        Same shape as elevations, dtype=np.int16, initialized to -1
+
     feedback: QgsProcessingFeedback-like object
         or None to disable feedback
-
-    out: array-like
-        Same shape as elevations, dtype=np.int8, initialized to -1
 
     Returns
     -------
 
-    D8 Flow Direction raster, dtype:np.int8, nodata=-1
+    D8 Flow Direction raster, dtype:np.int16, nodata=-1
 
     Notes
     -----
@@ -121,7 +121,7 @@ def topo_stream_burn(
     mindiff = np.float32(minslope*np.sqrt(np.sum(w*w, axis=1)))
 
     if out is None:
-        out = np.full((height, width), -1, dtype=np.int8)
+        out = np.full((height, width), -1, dtype=np.int16)
 
     # progress = TermProgressBar(2*width*height)
     feedback.setProgressText('Input is %d x %d' % (width, height))

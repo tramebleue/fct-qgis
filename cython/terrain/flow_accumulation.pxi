@@ -15,7 +15,7 @@ Flow Accumulation - Cython implementation
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def flow_accumulation(short[:,:] flow, int[:,:] out=None, feedback=None):
+def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, feedback=None):
     """ Flow accumulation from D8 flow direction.
 
     Parameters
@@ -26,6 +26,9 @@ def flow_accumulation(short[:,:] flow, int[:,:] out=None, feedback=None):
 
     out: array-like
         Same shape as flow, dtype=np.uint32, initialized to 0
+
+    feedback: QgsProcessingFeedback-like object
+        or None to disable feedback
 
     Returns
     -------
@@ -151,12 +154,13 @@ def flow_accumulation(short[:,:] flow, int[:,:] out=None, feedback=None):
 
             # progress.update(1)
             count += 1
-            progress1 = int(count*total)
-            if progress1 > progress0:
-                feedback.setProgress(progress1)
-                progress0 = progress1
-                if feedback.isCanceled():
-                    break
+
+        progress1 = int(count*total)
+        if progress1 > progress0:
+            feedback.setProgress(progress1)
+            progress0 = progress1
+            if feedback.isCanceled():
+                break
 
         count += 1
 

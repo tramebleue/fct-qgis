@@ -90,6 +90,9 @@ class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):
             minslope=1e-3,
             feedback=feedback)
 
+        feedback.setProgress(100)
+        feedback.pushInfo(self.tr('Write output ...'))
+
         driver = gdal.GetDriverByName('GTiff')
         # dst = driver.CreateCopy(output, flow_ds, strict=0, options=['TILED=YES', 'COMPRESS=DEFLATE'])
         dst = driver.Create(

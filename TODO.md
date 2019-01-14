@@ -110,7 +110,7 @@
     * [x] FocalMean/FocalAnalysis (TODO add more aggregation/filter options such as std, median, sum, min, max)
     * [x] SciPyVoronoiPolygons
     * [x] RasterInfo
-    * [ ] FixLinkOrientation
+    * [x] FixLinkOrientation
     * [ ] BuildDirectedStreamNetwork
     * [ ] MeanderingEnvelope
     * [ ] ValleyBottom based on dem+flow direction
