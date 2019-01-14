@@ -79,7 +79,7 @@ def flow_accumulation(flow, out=None, feedback=None):
     nodata = -1
 
     if out is None:
-        out = np.full(flow.shape, -1, dtype=np.float32)
+        out = np.full(flow.shape, -1, dtype=np.int8)
 
     inflow = np.full(flow.shape, -1, dtype=np.int8)
 

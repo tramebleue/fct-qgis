@@ -82,14 +82,14 @@ class FlowAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
             xsize=flow_ds.RasterXSize,
             ysize=flow_ds.RasterYSize,
             bands=1,
-            eType=gdal.GDT_Int32,
+            eType=gdal.GDT_UInt32,
             options=['TILED=YES', 'COMPRESS=DEFLATE'])
         dst.SetGeoTransform(flow_ds.GetGeoTransform())
         # dst.SetProjection(srs.exportToWkt())
         dst.SetProjection(flow_lyr.crs().toWkt())
 
         dst.GetRasterBand(1).WriteArray(np.asarray(out))
-        dst.GetRasterBand(1).SetNoDataValue(-1)
+        dst.GetRasterBand(1).SetNoDataValue(0)
 
         # Properly close GDAL resources
         flow_ds = None

@@ -14,6 +14,7 @@ TopologicalStreamBurn
 """
 
 import gdal
+import numpy as np
 
 from qgis.core import ( # pylint:disable=no-name-in-module
     QgsProcessingAlgorithm,
@@ -21,8 +22,14 @@ from qgis.core import ( # pylint:disable=no-name-in-module
     QgsProcessingParameterRasterLayer
 )
 
-from ...lib.topo_stream_burn import topo_stream_burn
 from ..metadata import AlgorithmMetadata
+
+try:
+    from ...lib.terrain_analysis import topo_stream_burn
+    CYTHON = True
+except ImportError:
+    from ...lib.topo_stream_burn import topo_stream_burn
+    CYTHON = False
 
 class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Compute flow direction raster,
@@ -54,6 +61,11 @@ class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        if CYTHON:
+            feedback.pushInfo("Using Cython topo_stream_burn() ...")
+        else:
+            feedback.pushInfo("Pure python topo_stream_burn() - this may take a while ...")
+
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.ELEVATIONS, context)
         streams_lyr = self.parameterAsRasterLayer(parameters, self.STREAMS, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
@@ -79,8 +91,19 @@ class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):
             feedback=feedback)
 
         driver = gdal.GetDriverByName('GTiff')
-        dst = driver.CreateCopy(output, elevations_ds, strict=0, options=['TILED=YES', 'COMPRESS=DEFLATE'])
-        dst.GetRasterBand(1).WriteArray(out)
+        # dst = driver.CreateCopy(output, flow_ds, strict=0, options=['TILED=YES', 'COMPRESS=DEFLATE'])
+        dst = driver.Create(
+            output,
+            xsize=elevations_ds.RasterXSize,
+            ysize=elevations_ds.RasterYSize,
+            bands=1,
+            eType=gdal.GDT_Int16,
+            options=['TILED=YES', 'COMPRESS=DEFLATE'])
+        dst.SetGeoTransform(elevations_ds.GetGeoTransform())
+        # dst.SetProjection(srs.exportToWkt())
+        dst.SetProjection(elevations_lyr.crs().toWkt())
+
+        dst.GetRasterBand(1).WriteArray(np.asarray(out))
         dst.GetRasterBand(1).SetNoDataValue(-1)
 
         # Properly close GDAL resources
