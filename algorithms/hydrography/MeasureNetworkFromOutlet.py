@@ -14,7 +14,7 @@ MeasureNetworkFromOutlet - Compute a new `measure` attribute
 ***************************************************************************
 """
 
-from collections import defaultdict, deque, namedtuple
+from collections import Counter, defaultdict, namedtuple
 
 from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QVariant
@@ -120,6 +120,7 @@ class MeasureNetworkFromOutlet(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
         adjacency = list()
+        outdegree = Counter()
 
         for current, edge in enumerate(layer.getFeatures()):
 
@@ -129,10 +130,9 @@ class MeasureNetworkFromOutlet(AlgorithmMetadata, QgsProcessingAlgorithm):
             a = edge.attribute(from_node_field)
             b = edge.attribute(to_node_field)
             adjacency.append(Link(a, b, edge.id(), edge.geometry().length()))
+            outdegree[a] += 1
 
             feedback.setProgress(int(current * total))
-
-        outlets = set([link.b for link in adjacency]) - set([link.a for link in adjacency])
 
         def key(link):
             """ Index by b node """
@@ -141,33 +141,46 @@ class MeasureNetworkFromOutlet(AlgorithmMetadata, QgsProcessingAlgorithm):
         # Index: b -> list of links connected to b
         edge_index = create_link_index(adjacency, key)
 
+        # outlets = set([link.b for link in adjacency]) - set([link.a for link in adjacency])
+        outlets = set(link.b for link in adjacency if outdegree[link.b] == 0)
+
         measures = {node: 0.0 for node in outlets}
-        stack = deque(outlets)
+        stack = list(outlets)
 
         feedback.setProgressText(self.tr("Find maximum distance from outlet ..."))
 
         current = 0
         seen_nodes = set(outlets)
-        total = 100.0 / layer.featureCount()
+        total = 100.0 / layer.featureCount() if layer.featureCount() else 0
 
         while stack:
 
             if feedback.isCanceled():
                 break
 
-            # breadth first
-            node = stack.popleft()
+            node = stack.pop()
+            if node in seen_nodes:
+                continue
+
+            seen_nodes.add(node)
             measure = measures[node]
 
+            # traverse graph until next diffluence
+
             for link in edge_index[node]:
-                # node === b
+
                 measure_a = measures.get(link.a, 0.0)
+
                 if measure_a < measure + link.length:
                     measures[link.a] = measure + link.length
 
-                if not link.a in seen_nodes:
-                    seen_nodes.add(link.a)
-                    stack.append(link.a)
+                # check if link.a is a diffluence
+                if outdegree[link.a] > 1:
+                    outdegree[link.a] -= 1
+                    continue
+
+                # otherwise process upward
+                stack.append(link.a)
 
             current = current + 1
             feedback.setProgress(int(current * total))

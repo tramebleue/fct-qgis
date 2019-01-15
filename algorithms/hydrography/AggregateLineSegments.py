@@ -13,6 +13,8 @@ AggregateLineSegmentsByCat - Merge continuous line segments into a single linest
 ***************************************************************************
 """
 
+from collections import Counter, namedtuple
+
 from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
     QVariant
 )
@@ -20,6 +22,7 @@ from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
 from qgis.core import ( # pylint:disable=no-name-in-module
     QgsExpression,
     QgsGeometry,
+    QgsLineString,
     QgsFeature,
     QgsFeatureRequest,
     QgsField,
@@ -30,32 +33,11 @@ from qgis.core import ( # pylint:disable=no-name-in-module
     QgsProcessingParameterField
 )
 
+from .graph import create_link_index
 from ..metadata import AlgorithmMetadata
-from ..util import asQgsFields
+from ..util import asQgsFields, FidGenerator
 
-def asPolyline(geometry):
-
-    if geometry.isMultipart():
-        return geometry.asMultiPolyline()[0]
-    else:
-        return geometry.asPolyline()
-
-class FidGenerator(object):
-    """ Generate a sequence of integers to be used as identifier
-    """
-
-    def __init__(self, start=0):
-        self.x = start
-
-    def __next__(self):
-        self.x = self.x + 1
-        return self.x
-
-    @property
-    def value(self):
-        """ Current value of generator
-        """
-        return self.x
+Link = namedtuple('Link', ['a', 'b', 'feature_id'])
 
 class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Merge continuous line segments into a single linestring
@@ -88,13 +70,15 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.FROM_NODE_FIELD,
             self.tr('From Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEA'))
 
         self.addParameter(QgsProcessingParameterField(
             self.TO_NODE_FIELD,
             self.tr('To Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEB'))
 
         self.addParameter(QgsProcessingParameterField(
             self.MEASURE_FIELD,
@@ -134,7 +118,7 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                                                fields, layer.wkbType(), layer.sourceCrs())
 
         fid = FidGenerator()
-        categories = dict()
+        categories = Counter()
 
         def countCategories():
             """ List unique values in field `category_field`
@@ -149,10 +133,7 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                     break
 
                 category = feature.attribute(category_field)
-                if category in categories:
-                    categories[category] = categories[category] + 1
-                else:
-                    categories[category] = 1
+                categories[category] += 1
 
                 feedback.setProgress(int(current * total))
 
@@ -166,8 +147,8 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             feedback.pushInfo(self.tr("Build node index ..."))
 
-            adjacency = dict()
-            feature_index = dict()
+            adjacency = list()
+            degree = Counter()
 
             if category is None:
 
@@ -189,42 +170,25 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                 from_node = feature.attribute(from_node_field)
                 to_node = feature.attribute(to_node_field)
+                adjacency.append(Link(from_node, to_node, feature.id()))
+                degree[from_node] += 1
+                degree[to_node] += 1
 
-                if measure_field:
-                    measure = feature.attribute(measure_field)
-                else:
-                    measure = 0.0
-
-                if from_node in adjacency:
-                    adjacency[from_node].append(to_node)
-                    feature_index[from_node].append(feature.id())
-                else:
-                    adjacency[from_node] = [to_node]
-                    feature_index[from_node] = [feature.id()]
-
-                if to_node not in adjacency:
-                    adjacency[to_node] = list()
-                    feature_index[to_node] = list()
+                # if measure_field:
+                #     measure = feature.attribute(measure_field)
+                # else:
+                #     measure = 0.0
 
                 feedback.setProgress(int(current * total))
 
-            feedback.pushInfo(self.tr("Compute in-degree ..."))
-
-            in_degree = dict()
-            for node in adjacency:
-                if node not in in_degree:
-                    in_degree[node] = 0
-                for to_node in adjacency[node]:
-                    in_degree[to_node] = in_degree.get(to_node, 0) + 1
-
             feedback.pushInfo(self.tr("Aggregate lines ..."))
+
+            # Index links by upstream node
+            downward_index = create_link_index(adjacency, lambda link: link.a)
 
 
             # Find source nodes
-            process_stack = [
-                node for node in adjacency
-                if len(adjacency[node]) >= 1 and in_degree[node] == 0
-            ]
+            process_stack = [link.a for link in adjacency if degree[link.a] == 1]
 
             current = 0
             seen_nodes = set()
@@ -238,45 +202,41 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                 from_node = process_stack.pop()
                 if from_node in seen_nodes:
                     continue
+
                 seen_nodes.add(from_node)
 
-                for branch in range(0, len(adjacency[from_node])):
+                for link in downward_index[from_node]:
 
-                    next_node = adjacency[from_node][branch]
-                    next_segment_id = feature_index[from_node][branch]
-                    segment = srclayer.getFeature(next_segment_id)
+                    segment = srclayer.getFeature(link.feature_id)
                     measure = segment.attribute(measure_field) if measure_field else 0
-                    vertices = asPolyline(segment.geometry())
+                    vertices = [v for v in segment.geometry().vertices()]
 
                     current = current + 1
                     feedback.setProgress(int(current * total))
 
-                    while len(adjacency[next_node]) == 1 and in_degree[next_node] == 1:
+                    while link.b in downward_index and degree[link.b] == 2:
 
-                        next_segment_id = feature_index[next_node][0]
-                        segment = srclayer.getFeature(next_segment_id)
-                        vertices = vertices[:-1] + asPolyline(segment.geometry())
+                        next_link = downward_index[link.b][0]
+                        segment = srclayer.getFeature(next_link.feature_id)
+                        vertices = vertices[:-1] + [v for v in segment.geometry().vertices()]
 
                         current = current + 1
                         feedback.setProgress(int(current * total))
 
-                        next_node = adjacency[next_node][0]
+                        link = next_link
 
                     feature = QgsFeature()
-                    feature.setGeometry(QgsGeometry.fromPolylineXY(vertices))
+                    feature.setGeometry(QgsGeometry(QgsLineString(vertices)))
                     feature.setAttributes([
                         next(fid),
                         category,
                         from_node,
-                        next_node,
+                        next_link.b,
                         measure
                     ])
                     sink.addFeature(feature)
 
-                    # dont't process twice or more after confluences
-                    # if branch == 0:
-                    # if not next_node in seen_nodes:
-                    process_stack.append(next_node)
+                    process_stack.append(next_link.b)
 
 
         if category_field:
@@ -290,6 +250,6 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             processCategory()
 
-        feedback.pushConsoleInfo("Created %d line features" % fid.value)
+        feedback.pushInfo("Created %d line features" % fid.value)
 
         return {self.OUTPUT: dest_id}

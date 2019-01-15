@@ -44,8 +44,8 @@
         * [ ] InverseLongitudinalTransform
         * [x] LengthOrder
         * [ ] LocatePolygonAlongLine
-        * [ ] LongestPathInDirectedAcyclicGraph
-        * [ ] LongestPathInDirectedAcyclicGraphMultiFlow
+        * [x] LongestPathInDirectedAcyclicGraph (renamed to LongestPathInDirectedGraph)
+        * [x] LongestPathInDirectedAcyclicGraphMultiFlow (merged with LongestPathInDirectedGraph)
         * [ ] LongitudinalTransform
         * [ ] MatchNearestLine
         * [ ] MatchNearestLineUpdate
@@ -55,7 +55,7 @@
         * [ ] MeasurePointsAlongLine
         * [x] NetworkNodes
         * [ ] ProjectPointsAlongLine
-        * [ ] ~~ReverseFlowDirection~~ (replaced by native:reverselinedirection ?)
+        * [x] ReverseFlowDirection (~~replaced by native:reverselinedirection~~)
         * [x] SelectConnectedComponents
         * [x] SelectDownstreamComponents (merged with SelectConnectedComponents)
         * [ ] SelectFullLengthPaths

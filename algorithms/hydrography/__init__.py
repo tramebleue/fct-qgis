@@ -21,6 +21,7 @@ from .LengthOrder import LengthOrder
 from .LongestPathInDirectedGraph import LongestPathInDirectedGraph
 from .MeasureNetworkFromOutlet import MeasureNetworkFromOutlet
 from .NetworkNodes import NetworkNodes
+from .ReverseFlowDirection import ReverseFlowDirection
 from .SelectConnectedComponents import SelectConnectedComponents
 from .StrahlerOrder import StrahlerOrder
 from .TopologicalStreamBurn import TopologicalStreamBurn
@@ -37,6 +38,7 @@ def hydrography_algorithms():
         LongestPathInDirectedGraph(),
         MeasureNetworkFromOutlet(),
         NetworkNodes(),
+        ReverseFlowDirection(),
         SelectConnectedComponents(),
         StrahlerOrder(),
         TopologicalStreamBurn(),

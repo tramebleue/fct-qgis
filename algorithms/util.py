@@ -25,3 +25,20 @@ def asQgsFields(*fields):
     for field in fields:
         out.append(field)
     return out
+
+class FidGenerator(object):
+    """ Generate a sequence of integers to be used as identifier
+    """
+
+    def __init__(self, start=0):
+        self.x = start
+
+    def __next__(self):
+        self.x = self.x + 1
+        return self.x
+
+    @property
+    def value(self):
+        """ Current value of generator
+        """
+        return self.x

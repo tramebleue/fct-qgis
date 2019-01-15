@@ -13,22 +13,12 @@ LongestPathInDirectedGraph - Find the longest path in a directed graph
 ***************************************************************************
 """
 
-from heapq import heappush, heappop
-from functools import total_ordering
-from functools import partial, reduce
-from collections import defaultdict, namedtuple
-
-from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
-    QVariant
-)
+from collections import Counter, namedtuple
 
 from qgis.core import ( # pylint:disable=no-name-in-module
-    QgsFeature,
-    QgsFeatureRequest,
-    QgsField,
-    QgsFields,
     QgsProcessing,
     QgsProcessingAlgorithm,
+    QgsProcessingParameterBoolean,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField
@@ -36,54 +26,8 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 
 from .graph import create_link_index
 from ..metadata import AlgorithmMetadata
-from ..util import asQgsFields
 
 Link = namedtuple('Link', ('a', 'b', 'edge_id', 'length'))
-
-class PathInfo(object):
-
-    def __init__(self, start_node):
-
-        self.start_node = start_node
-        self.end_node = None
-        self.length = 0
-        self.edges = list()
-        self.diverging = False
-
-    def add(self, node, edge, new_length):
-
-        self.end_node = node
-        self.edges.append(edge)
-        self.length = new_length
-        return self
-
-class NodeInfo(object):
-
-    def __init__(self, node, length=0.0, path=None):
-
-        self.node = node
-        self.length = length
-        self.out_degree = 0
-        if path is None:
-            path = PathInfo(self)
-        self.path = path
-        self.index = -1
-
-    def add(self, node, edge, new_length):
-        
-        path = self.path
-        self.index = len(path.edges) - 1
-
-        successor = NodeInfo(node, new_length, path)
-        self.out_degree = self.out_degree + 1
-        path.add(successor, edge, new_length)
-
-        return successor
-
-    def divergesTo(self, b):
-
-        return self.path.start_node.node == b.path.start_node.node
-
 
 class LongestPathInDirectedGraph(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Find the longest path in a directed graph
@@ -94,6 +38,7 @@ class LongestPathInDirectedGraph(AlgorithmMetadata, QgsProcessingAlgorithm):
     INPUT = 'INPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
+    MULTIFLOW = 'MULTIFLOW'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
@@ -107,13 +52,20 @@ class LongestPathInDirectedGraph(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.FROM_NODE_FIELD,
             self.tr('From Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEA'))
 
         self.addParameter(QgsProcessingParameterField(
             self.TO_NODE_FIELD,
             self.tr('To Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEB'))
+
+        self.addParameter(QgsProcessingParameterBoolean(
+            self.MULTIFLOW,
+            self.tr('Extract multi-path'),
+            defaultValue=True))
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
@@ -125,6 +77,7 @@ class LongestPathInDirectedGraph(AlgorithmMetadata, QgsProcessingAlgorithm):
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
+        mutliflow = self.parameterAsBool(parameters, self.MULTIFLOW, context)
 
         (sink, dest_id) = self.parameterAsSink(
             parameters,
@@ -140,103 +93,124 @@ class LongestPathInDirectedGraph(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
         adjacency = list()
+        outdegree = Counter()
 
         for current, edge in enumerate(layer.getFeatures()):
 
             a = edge.attribute(from_node_field)
             b = edge.attribute(to_node_field)
             adjacency.append(Link(a, b, edge.id(), edge.geometry().length()))
+
+            outdegree[a] += 1
+
             feedback.setProgress(int(current * total))
 
-        sources = set([link.a for link in adjacency]) - set([link.b for link in adjacency])
+        # sources = set([link.a for link in adjacency]) - set([link.b for link in adjacency])
+        outlets = set(link.b for link in adjacency if outdegree[link.b] == 0)
 
         def key(link):
-            """ Index by node a """
-            return link.a
+            """ Index by node b """
+            return link.b
 
-        aindex = create_link_index(adjacency, key)
+        upward_index = create_link_index(adjacency, key)
 
         # Step 2
 
         feedback.setProgressText(self.tr("Search for longest path ..."))
 
-        seen_nodes = dict()
-        max_length = 0
-        max_path = None
-        stack = list(sources)
+        distances = {node: 0.0 for node in outlets}
+        max_distance = 0.0
+        max_node = None
+        stack = list(outlets)
+        backtracks = dict()
 
-        for source in sources:
-            seen_nodes[source] = NodeInfo(source)
+        current = 0
+        seen_nodes = set()
+        total = 100.0 / layer.featureCount() if layer.featureCount() else 0
 
         while stack:
 
-            node = stack.pop()
+            if feedback.isCanceled():
+                break
 
-            if node not in aindex:
+            node = stack.pop()
+            if node in seen_nodes:
                 continue
 
-            for link in aindex[node]:
+            seen_nodes.add(node)
 
-                current_length = seen_nodes[link.a].length + link.length
+            distance = distances[node]
+            if distance > max_distance:
+                max_distance = distance
+                max_node = node
 
-                if link.b in seen_nodes:
+            # traverse graph until next diffluence
 
-                    if seen_nodes[link.a].divergesTo(seen_nodes[link.b]):
+            for link in upward_index[node]:
 
-                        feedback.pushInfo("Closing diverticule")
-                        junction = seen_nodes[link.a].add(link.b, link.edge_id, current_length)
-                        if seen_nodes[link.b].length < current_length:
-                            seen_nodes[link.b] = junction
-                            continue
+                dist_a = distances.get(link.a, 0.0)
 
-                    if seen_nodes[link.b].length >= current_length:
-                        continue
+                if dist_a < distance + link.length:
 
-                seen_nodes[link.b] = seen_nodes[link.a].add(link.b, link.edge_id, current_length)
-                stack.append(link.b)
+                    dist_a = distances[link.a] = distance + link.length
+                    backtracks[link.a] = link
 
-                if current_length > max_length:
-                    max_length = current_length
-                    max_path = seen_nodes[link.b].path
+                # check if link.a is a diffluence
+                if outdegree[link.a] > 1:
+                    outdegree[link.a] -= 1
+                    continue
 
-        # while stack:
+                # otherwise process upward
+                stack.append(link.a)
 
-        #     node = stack.pop()
-
-        #     if node not in aindex:
-        #         continue
-
-        #     for link in aindex[node]:
-
-        #         current_length = seen_nodes[link.a].length + link.length
-
-        #         if link.b in seen_nodes and seen_nodes[link.b].length >= current_length:
-        #             continue
-
-        #         seen_nodes[link.b] = seen_nodes[link.a].add(link.b, link.edge_id, current_length)
-        #         stack.append(link.b)
-
-        #         if current_length > max_length:
-        #             max_length = current_length
-        #             max_path = seen_nodes[link.b].paths[-1]
+            current = current + 1
+            feedback.setProgress(int(current * total))
 
         # Step 3
 
         feedback.setProgressText(self.tr("Output longest path ..."))
         srclayer = context.getMapLayer(layer.sourceName())
 
-        assert(max_path is not None)
+        node = max_node
+        count = 0
+
+        if mutliflow:
+
+            downward_index = create_link_index(adjacency, lambda link: link.a)
+            stack = [max_node]
+            seen_nodes = set()
+
+            while stack:
+
+                node = stack.pop()
+                if node in seen_nodes:
+                    continue
+
+                seen_nodes.add(node)
+
+                for link in downward_index[node]:
+
+                    feature = srclayer.getFeature(link.edge_id)
+                    sink.addFeature(feature)
+                    count += 1
+
+                    if link.b in downward_index:
+                        stack.append(link.b)
+
+        else:
+
+            while node in backtracks:
+
+                link = backtracks[node]
+                feature = srclayer.getFeature(link.edge_id)
+                sink.addFeature(feature)
+                count += 1
+
+                node = link.b
 
         feedback.pushInfo(
-            "Longest path is %.2f long with %d edges" % (max_length, len(max_path.edges)))
-
-        total = 100.0 / len(max_path.edges) if max_path.edges else 0
-
-        for current, edge_id in enumerate(max_path.edges):
-
-            edge = srclayer.getFeature(edge_id)
-            sink.addFeature(edge)
-            feedback.setProgress(int(current * total))
+            self.tr('Longest path is %d segments long, for a total length of %f') \
+            % (count, max_distance))
 
         return {
             self.OUTPUT: dest_id
