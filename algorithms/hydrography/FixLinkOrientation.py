@@ -20,6 +20,7 @@ from heapq import heappop, heappush
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsGeometry,
     QgsProcessing,
+    QgsProcessingException,
     QgsProcessingFeatureBasedAlgorithm,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterEnum,
@@ -63,7 +64,7 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
     OUTLETS_DEF_MINZ = 0
     OUTLETS_DEF_SELECTION = 1
-    OUTLETS_DEF_EXTREMAL = 2
+    OUTLETS_DEF_DANGLING = 2
 
     def initParameters(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
@@ -94,7 +95,7 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         self.addParameter(QgsProcessingParameterEnum(
             self.OUTLETS_DEFINITION,
             self.tr('How To Define Outlets'),
-            options=[self.tr(option) for option in ['Minimum-Z Node', 'Selected Nodes', 'Extremal Nodes']],
+            options=[self.tr(option) for option in ['Minimum-Z Node', 'Selected Nodes', 'Dangling Nodes']],
             defaultValue=0))
 
         self.addParameter(QgsProcessingParameterField(
@@ -135,6 +136,55 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             pk_field, dryrun, outlets_def)
 
         return True
+
+    def findOutlets(self, feedback, node_index, queue):
+        """ Find node with minimum Z in each connected component
+        """
+
+        total = len(queue)
+
+        outlets = set()
+        seen_nodes = set()
+        components = 0
+        current = 0
+
+        while queue:
+
+            if feedback.isCanceled():
+                break
+
+            minz, node = heappop(queue)
+
+            if node in seen_nodes:
+                continue
+
+            outlets.add(node)
+            stack = [node]
+
+            while stack:
+
+                if feedback.isCanceled():
+                    break
+
+                node = stack.pop()
+
+                if node in seen_nodes:
+                    continue
+
+                seen_nodes.add(node)
+
+                for fid, next_node in node_index[node]:
+
+                    stack.append(next_node)
+
+                    current += 1
+                    feedback.setProgress(int(current * total))
+
+            components += 1
+
+        feedback.pushInfo(self.tr('Found %d connected components') % components)
+
+        return outlets
 
     def processNetwork(self, parameters, context, feedback):
         """
@@ -201,11 +251,14 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         #    and mark links not properly oriented
 
         junctions = set(node for node in node_index if degree[node] != 2)
-        
-        if self.parameters.outlets_def == self.OUTLETS_DEF_EXTREMAL:
+
+        if self.parameters.outlets_def == self.OUTLETS_DEF_DANGLING:
+
             outlets = set(node for node in junctions if degree[node] == 1)
+
         elif self.parameters.outlets_def == self.OUTLETS_DEF_MINZ:
-            outlets = {queue[0][1]}
+
+            outlets = self.findOutlets(feedback, node_index, list(queue))
 
         marked = set()
         seen_nodes = set()
@@ -245,7 +298,7 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         feedback.pushInfo('Start from z = %f with node %d' % queue[0])
 
         # Pick lowest-z node among remaining nodes,
-        # and traverse graph until the next junction
+        # and traverse graph until next junction
 
         while queue:
 
@@ -259,14 +312,18 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                 continue
 
             if issink(node):
+
+                sink = node
+
                 # Shift node up in the queue
                 # ie. set Z to higher a value than Z of next node,
                 # and reinject into the queue
-                sink = node
+
                 z, node = heappop(queue)
                 next_z, next_node = queue[0]
                 heappush(queue, (z+max(0.05, 0.5*(next_z - z)), sink))
                 heappush(queue, (z, node))
+
                 continue
 
             # Depth-first, undirected graph traversal
