@@ -26,13 +26,13 @@
         * [x] RegularHexPoints
         * [x] RemoveSmallPolygonalObjects
         * [ ] SafePolygonIntersection
-        * [ ] SegmentEndpoints
+        * [ ] ~~SegmentEndpoints~~ (replaced by qgis:extractspecificvertices)
         * [ ] SelectByDistance
         * [ ] SelectNearestFeature
         * [ ] ~~SplitLine~~ (replaced by native:explodelines)
         * [ ] ~~SplitLineIntoSegments~~ (replaced by native:explodelines)
         * [x] UniquePoints
-        * [ ] UniqueValuesTable
+        * [ ] ~~UniqueValuesTable~~ (not used)
         * [ ] UpdateFieldByExpression
         * [ ] UpdateFieldByExpressionInPlace
 
@@ -92,8 +92,8 @@
     * Spatial Components (spatial_components)
         * [x] DisaggregatePolygon
         * [ ] LeftRightDGO
-        * [ ] MedialAxis
-        * [ ] PolygonSkeleton
+        * [x] MedialAxis (replaced by ValleyCenterLine)
+        * [x] PolygonSkeleton
         * [ ] ValleyBottom
 
     * [ ] Unstable (unstable, must be fixed)

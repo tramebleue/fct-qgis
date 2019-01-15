@@ -86,15 +86,15 @@
         </Option>
       </Option>
     </Option>
-    <Option type="Map" name="fct:rasterresolution_1">
+    <Option type="Map" name="fct:rasterinfo_1">
       <Option type="bool" value="true" name="active"/>
       <Option name="alg_config"/>
-      <Option type="QString" value="fct:rasterresolution" name="alg_id"/>
-      <Option type="QString" value="Raster Resolution" name="component_description"/>
+      <Option type="QString" value="fct:rasterinfo" name="alg_id"/>
+      <Option type="QString" value="Raster Info" name="component_description"/>
       <Option type="double" value="803" name="component_pos_x"/>
       <Option type="double" value="360" name="component_pos_y"/>
       <Option name="dependencies"/>
-      <Option type="QString" value="fct:rasterresolution_1" name="id"/>
+      <Option type="QString" value="fct:rasterinfo_1" name="id"/>
       <Option name="outputs"/>
       <Option type="bool" value="true" name="outputs_collapsed"/>
       <Option type="bool" value="true" name="parameters_collapsed"/>
@@ -168,7 +168,7 @@
         </Option>
         <Option type="List" name="HEIGHT">
           <Option type="Map">
-            <Option type="QString" value="fct:rasterresolution_1" name="child_id"/>
+            <Option type="QString" value="fct:rasterinfo_1" name="child_id"/>
             <Option type="QString" value="YSIZE" name="output_name"/>
             <Option type="int" value="1" name="source"/>
           </Option>
@@ -212,7 +212,7 @@
         </Option>
         <Option type="List" name="WIDTH">
           <Option type="Map">
-            <Option type="QString" value="fct:rasterresolution_1" name="child_id"/>
+            <Option type="QString" value="fct:rasterinfo_1" name="child_id"/>
             <Option type="QString" value="XSIZE" name="output_name"/>
             <Option type="int" value="1" name="source"/>
           </Option>

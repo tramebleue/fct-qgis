@@ -23,11 +23,11 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 
 from ..metadata import AlgorithmMetadata
 
-class RasterResolution(AlgorithmMetadata, QgsProcessingAlgorithm):
+class RasterInfo(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Return horizontal and vertical resolution of input raster
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'RasterResolution')
+    METADATA = AlgorithmMetadata.read(__file__, 'RasterInfo')
 
     INPUT = 'INPUT'
     XRES = 'XRES'
