@@ -17,12 +17,14 @@ from .DetrendDEM import DetrendDEM
 from .DisaggregatePolygon import DisaggregatePolygon
 from .PolygonSkeleton import PolygonSkeleton
 from .ValleyBottom import ValleyBottom
+from .ValleyCenterLine import ValleyCenterLine
 
 def spatial_componentsAlgorithms():
 
     return [
         DetrendDEM(),
-        ValleyBottom(),
         DisaggregatePolygon(),
-        PolygonSkeleton()
+        PolygonSkeleton(),
+        ValleyBottom(),
+        ValleyCenterLine()
     ]

@@ -13,6 +13,7 @@ Hydrography Algorithms
 ***************************************************************************
 """
 
+from .AggregateLines import AggregateLines
 from .AggregateLineSegments import AggregateLineSegments
 from .FixLinkOrientation import FixLinkOrientation
 from .FlowAccumulation import FlowAccumulation
@@ -30,6 +31,7 @@ from .UpstreamChannelLength import UpstreamChannelLength
 def hydrography_algorithms():
 
     return [
+        AggregateLines(),
         AggregateLineSegments(),
         FixLinkOrientation(),
         FlowAccumulation(),

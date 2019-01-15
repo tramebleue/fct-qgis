@@ -20,7 +20,7 @@ from heapq import heappop, heappush
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsGeometry,
     QgsProcessing,
-    QgsProcessingException,
+    # QgsProcessingException,
     QgsProcessingFeatureBasedAlgorithm,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterEnum,
@@ -95,7 +95,10 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         self.addParameter(QgsProcessingParameterEnum(
             self.OUTLETS_DEFINITION,
             self.tr('How To Define Outlets'),
-            options=[self.tr(option) for option in ['Minimum-Z Node', 'Selected Nodes', 'Dangling Nodes']],
+            options=[self.tr(option) for option in [
+                'Minimum-Z Node',
+                'Selected Nodes',
+                'Dangling Nodes']],
             defaultValue=0))
 
         self.addParameter(QgsProcessingParameterField(
@@ -186,7 +189,7 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
         return outlets
 
-    def processNetwork(self, parameters, context, feedback):
+    def processNetwork(self, parameters, context, feedback): #pylint: disable=unused-argument
         """
         1. index links for undirected graph traversal
         2. sort nodes by z ascending

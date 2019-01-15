@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-PolygonSkeleton
+ValleyCenterLine
 
 ***************************************************************************
 *                                                                         *
@@ -21,10 +21,8 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 
 from ..metadata import AlgorithmMetadata
 
-class PolygonSkeleton(AlgorithmMetadata, QgsProcessingModelAlgorithm):
-    """ Compute the skeleton of input polygons,
-        ie. the set of inner points,
-        at equal distance from the polygon boundary (including holes)
+class ValleyCenterLine(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+    """ Center-line (ie. medial axis) of the input polygons.
     """
 
     def __init__(self, *args, **kwargs):
