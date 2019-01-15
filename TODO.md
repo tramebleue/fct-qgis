@@ -29,7 +29,7 @@
         * [ ] SelectNearestFeature
         * [ ] SplitLine
         * [ ] SplitLineIntoSegments
-        * [ ] UniquePoints
+        * [x] UniquePoints
         * [ ] UniqueValuesTable
         * [ ] UpdateFieldByExpression
         * [ ] UpdateFieldByExpressionInPlace

@@ -4,6 +4,7 @@ from .RandomPoissonDiscSampling import RandomPoissonDiscSampling
 from .RegularHexPoints import RegularHexPoints
 from .RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from .SciPyVoronoiPolygons import SciPyVoronoiPolygons
+from .UniquePoints import UniquePoints
 
 def vector_algorithms():
 
@@ -13,5 +14,6 @@ def vector_algorithms():
         RandomPoissonDiscSampling(),
         RegularHexPoints(),
         RemoveSmallPolygonalObjects(),
-        SciPyVoronoiPolygons()
+        SciPyVoronoiPolygons(),
+        UniquePoints()
     ]
