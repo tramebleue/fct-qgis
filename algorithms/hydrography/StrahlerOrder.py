@@ -16,14 +16,13 @@ StrahlerOrder - Horton-Strahler stream order of each link in a stream network
 from functools import partial, reduce
 from collections import defaultdict
 
-from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
+from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QVariant
 )
 
-from qgis.core import ( # pylint:disable=no-name-in-module
+from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsFeature,
     QgsField,
-    QgsFields,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingParameterFeatureSink,
@@ -32,6 +31,7 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
+from ..util import asQgsFields
 
 def index_by(i, accumulator, x):
     """
@@ -58,15 +58,6 @@ def count_by(i, accumulator, x):
 
     accumulator[x[i]] = accumulator[x[i]] + 1
     return accumulator
-
-def asQgsFields(*fields):
-    """ Turn list-of-fields into QgsFields object
-    """
-
-    out = QgsFields()
-    for field in fields:
-        out.append(field)
-    return out
 
 class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Horton-Strahler stream order of each link in a stream network

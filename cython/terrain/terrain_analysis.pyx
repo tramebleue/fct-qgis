@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
+# cython: c_string_type=str, c_string_encoding=ascii
 
 """
-Spatial Components Algorithms
+Terrain Analysis - Cython implementation of some terrain analysis algorithms
 
 ***************************************************************************
 *                                                                         *
@@ -13,18 +14,22 @@ Spatial Components Algorithms
 ***************************************************************************
 """
 
-from .DetrendDEM import DetrendDEM
-from .DisaggregatePolygon import DisaggregatePolygon
-from .PolygonSkeleton import PolygonSkeleton
-from .ValleyBottom import ValleyBottom
-from .ValleyCenterLine import ValleyCenterLine
+import numpy as np
+import cython
 
-def spatial_componentsAlgorithms():
+cimport numpy as np
+cimport cython
 
-    return [
-        DetrendDEM(),
-        DisaggregatePolygon(),
-        PolygonSkeleton(),
-        ValleyBottom(),
-        ValleyCenterLine()
-    ]
+# from ta.CppTermProgress cimport CppTermProgress
+
+include "common.pxi"
+include "typedef.pxi"
+# include "cfillsinks.pxi"
+# include "cflowdir.pxi"
+# include "cwatershed.pxi"
+# include "cstrahler.pxi"
+# include "cchannels.pxi"
+# include "slope.pxi"
+# include "hillshade.pxi"
+include "topo_stream_burn.pxi"
+include "flow_accumulation.pxi"

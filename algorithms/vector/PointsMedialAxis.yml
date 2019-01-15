@@ -1,0 +1,10 @@
+displayName: Points Medial Axis
+groupId: fctvectortools
+group: Tools for Vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - vector
+  - generator
+  - voronoi

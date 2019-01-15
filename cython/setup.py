@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Spatial Components Algorithms
+Build cython modules
 
 ***************************************************************************
 *                                                                         *
@@ -13,18 +13,24 @@ Spatial Components Algorithms
 ***************************************************************************
 """
 
-from .DetrendDEM import DetrendDEM
-from .DisaggregatePolygon import DisaggregatePolygon
-from .PolygonSkeleton import PolygonSkeleton
-from .ValleyBottom import ValleyBottom
-from .ValleyCenterLine import ValleyCenterLine
+from distutils.core import setup
+from distutils.extension import Extension
+import numpy
+from Cython.Build import cythonize
 
-def spatial_componentsAlgorithms():
 
-    return [
-        DetrendDEM(),
-        DisaggregatePolygon(),
-        PolygonSkeleton(),
-        ValleyBottom(),
-        ValleyCenterLine()
-    ]
+extensions = [
+
+    Extension(
+        'terrain_analysis',
+        ['terrain/terrain_analysis.pyx'],
+        language='c++',
+        include_dirs=[numpy.get_include()]
+    )
+
+]
+
+setup(
+    name="terrain_analysis",
+    ext_modules=cythonize(extensions)
+)

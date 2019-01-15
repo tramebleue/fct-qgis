@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Spatial Components Algorithms
+Helper functions for processing algorithms
 
 ***************************************************************************
 *                                                                         *
@@ -13,18 +13,32 @@ Spatial Components Algorithms
 ***************************************************************************
 """
 
-from .DetrendDEM import DetrendDEM
-from .DisaggregatePolygon import DisaggregatePolygon
-from .PolygonSkeleton import PolygonSkeleton
-from .ValleyBottom import ValleyBottom
-from .ValleyCenterLine import ValleyCenterLine
+from qgis.core import ( # pylint:disable=no-name-in-module
+    QgsFields
+)
 
-def spatial_componentsAlgorithms():
+def asQgsFields(*fields):
+    """ Turn list-of-fields into QgsFields object
+    """
 
-    return [
-        DetrendDEM(),
-        DisaggregatePolygon(),
-        PolygonSkeleton(),
-        ValleyBottom(),
-        ValleyCenterLine()
-    ]
+    out = QgsFields()
+    for field in fields:
+        out.append(field)
+    return out
+
+class FidGenerator(object):
+    """ Generate a sequence of integers to be used as identifier
+    """
+
+    def __init__(self, start=0):
+        self.x = start
+
+    def __next__(self):
+        self.x = self.x + 1
+        return self.x
+
+    @property
+    def value(self):
+        """ Current value of generator
+        """
+        return self.x

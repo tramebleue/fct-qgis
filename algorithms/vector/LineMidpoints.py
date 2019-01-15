@@ -12,6 +12,7 @@ LineMidPoints - Generate a point at the middle of each segment
 *                                                                         *
 ***************************************************************************
 """
+
 from qgis.PyQt.QtCore import (
     QVariant
 )

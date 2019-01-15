@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Spatial Components Algorithms
+ValleyCenterLine
 
 ***************************************************************************
 *                                                                         *
@@ -13,18 +13,20 @@ Spatial Components Algorithms
 ***************************************************************************
 """
 
-from .DetrendDEM import DetrendDEM
-from .DisaggregatePolygon import DisaggregatePolygon
-from .PolygonSkeleton import PolygonSkeleton
-from .ValleyBottom import ValleyBottom
-from .ValleyCenterLine import ValleyCenterLine
+import os
 
-def spatial_componentsAlgorithms():
+from qgis.core import ( # pylint:disable=no-name-in-module
+    QgsProcessingModelAlgorithm
+)
 
-    return [
-        DetrendDEM(),
-        DisaggregatePolygon(),
-        PolygonSkeleton(),
-        ValleyBottom(),
-        ValleyCenterLine()
-    ]
+from ..metadata import AlgorithmMetadata
+
+class ValleyCenterLine(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+    """ Center-line (ie. medial axis) of the input polygons.
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.METADATA = AlgorithmMetadata.read(__file__, type(self).__name__)
+        self.fromFile(os.path.join(os.path.dirname(__file__), type(self).__name__ + '.model3'))

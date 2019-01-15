@@ -3,5 +3,5 @@
 *.c
 *.o
 *.so
-test
+cython/terrain_analysis/*.cpp
 .DS_Store

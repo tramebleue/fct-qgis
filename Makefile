@@ -24,6 +24,9 @@ install: resources.py
 	cp metadata.txt $(TARGET)
 	echo Installed to $(TARGET)
 
+extensions:
+	make -C cython TARGET=$(TARGET) install
+
 uninstall:
 	echo Remove directory $(TARGET) ...
 	rm -rf $(TARGET)
@@ -31,5 +34,4 @@ uninstall:
 clean:
 	rm -f *.c
 	rm -f *.pyc
-	rm -f *.so
-	rm -rf build
+	make -C cython clean

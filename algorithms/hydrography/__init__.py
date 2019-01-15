@@ -13,22 +13,36 @@ Hydrography Algorithms
 ***************************************************************************
 """
 
+from .AggregateLines import AggregateLines
 from .AggregateLineSegments import AggregateLineSegments
+from .FixLinkOrientation import FixLinkOrientation
 from .FlowAccumulation import FlowAccumulation
+from .IdentifyNetworkNodes import IdentifyNetworkNodes
 from .LengthOrder import LengthOrder
+from .LongestPathInDirectedGraph import LongestPathInDirectedGraph
+from .MeasureNetworkFromOutlet import MeasureNetworkFromOutlet
 from .NetworkNodes import NetworkNodes
+from .ReverseFlowDirection import ReverseFlowDirection
 from .SelectConnectedComponents import SelectConnectedComponents
 from .StrahlerOrder import StrahlerOrder
 from .TopologicalStreamBurn import TopologicalStreamBurn
+from .UpstreamChannelLength import UpstreamChannelLength
 
 def hydrography_algorithms():
 
     return [
+        AggregateLines(),
         AggregateLineSegments(),
+        FixLinkOrientation(),
         FlowAccumulation(),
+        IdentifyNetworkNodes(),
         LengthOrder(),
+        LongestPathInDirectedGraph(),
+        MeasureNetworkFromOutlet(),
         NetworkNodes(),
+        ReverseFlowDirection(),
         SelectConnectedComponents(),
         StrahlerOrder(),
-        TopologicalStreamBurn()
+        TopologicalStreamBurn(),
+        UpstreamChannelLength()
     ]

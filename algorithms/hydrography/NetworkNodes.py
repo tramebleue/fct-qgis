@@ -31,6 +31,7 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
+from ..util import asQgsFields
 
 def asPolyline(geometry):
 
@@ -119,20 +120,21 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         feedback.pushInfo(self.tr("Build node index ..."))
 
-        fields = QgsFields()
+        fields = [
+            QgsField('GID', type=QVariant.Int, len=10),
+            QgsField('DIN', type=QVariant.Int, len=6),
+            QgsField('DOUT', type=QVariant.Int, len=6),
+            QgsField('TYPE', type=QVariant.String, len=4),
+            QgsField('MEAS', type=QVariant.Double, len=10, prec=2)
+        ]
 
-        for field in [
-                QgsField('GID', type=QVariant.Int, len=10),
-                QgsField('DIN', type=QVariant.Int, len=6),
-                QgsField('DOUT', type=QVariant.Int, len=6),
-                QgsField('TYPE', type=QVariant.String, len=4),
-                QgsField('MEAS', type=QVariant.Double, len=10, prec=2)
-            ]:
-
-            fields.append(field)
-
-        (sink, dest_id) = self.parameterAsSink(parameters, self.OUTPUT, context,
-                                               fields, QgsWkbTypes.Point, layer.sourceCrs())
+        (sink, dest_id) = self.parameterAsSink(
+            parameters,
+            self.OUTPUT,
+            context,
+            asQgsFields(*fields),
+            QgsWkbTypes.Point,
+            layer.sourceCrs())
 
         adjacency = dict()
         nodes = dict()

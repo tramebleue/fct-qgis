@@ -52,9 +52,16 @@ def reverse_direction(x):
 
     return (x + 4) % 8
 
-def topo_stream_burn(elevations, streams, nodata, rx, ry, out=None, minslope=1e-3, feedback=None):
-    """ Fill sinks of digital elevation model (DEM),
-        based on the algorithm of Wang & Liu (2006).
+def topo_stream_burn(elevations, streams, nodata, rx, ry, minslope=1e-3, feedback=None, out=None):
+    """ Flow accumulation algorithm
+        based on Lindsay (2016) `Topological Stream Burn algorithm,
+        which is a variant of Wang and Liu (2006) `Fill Sinks` algorithm.
+        The algorithm fills stream cells before other cells,
+        starting from boundary cells with lowest z.
+        When a cell is discovered, its z value is fixed
+        so as z is no less than z of already disovered cells,
+        with a minimal slope of `minslope`.
+        Flow direction is set toward the cell from which the new cell was discovered
 
     Parameters
     ----------
@@ -63,43 +70,52 @@ def topo_stream_burn(elevations, streams, nodata, rx, ry, out=None, minslope=1e-
         Digital elevation model (DEM) raster (ndim=2)
 
     streams: array-like
-        Digital elevation model (DEM) raster (ndim=2)
+        Rasterize stream network, same shape as `elevations`,
+        with stream cells >= 1
 
     nodata: float
-        No-data value in elevations
+        no-data value in `elevations`    
 
     rx: float
-        Cell resolution in x direction of elevations
+        raster horizontal resolution in `elevations`
 
     ry: float
-        Cell resolution in y direction of elevations
-
-    out: array-like
-        Same shape and dtype as elevations, initialized to nodata
+        raster vertical resolution in `elevations`
+        (positive value)
 
     minslope: float
         Minimum slope to preserve between cells
         when filling up sinks.
 
+    feedback: QgsProcessingFeedback-like object
+        or None to disable feedback
+
+    out: array-like
+        Same shape as elevations, dtype=np.int8, initialized to -1
+
     Returns
     -------
 
-    D8 Flow Direction raster
+    D8 Flow Direction raster, dtype:np.int8, nodata=-1
 
     Notes
     -----
 
-    [1] Wang, L. & H. Liu (2006)
+    [1] Lindsay, J. B. (2016).
+        The Practice of DEM Stream Burning Revisited.
+        Earth Surface Processes and Landforms, 41(5), 658‑668. 
+        https://doi.org/10.1002/esp.3888
+
+    [2] Wang, L. & H. Liu (2006)
         An efficient method for identifying and filling surface depressions
         in digital elevation models.
         International Journal of Geographical Information Science,
         Vol. 20, No. 2: 193-213.
 
-    [2] SAGA C++ Implementation
+    [3] SAGA C++ Implementation
         https://github.com/saga-gis/saga-gis/blob/1b54363/saga-gis/src/tools/terrain_analysis/ta_preprocessor/FillSinks_WL_XXL.cpp
         GPL Licensed
     """
-
     height = elevations.shape[0]
     width = elevations.shape[1]
 
@@ -107,7 +123,7 @@ def topo_stream_burn(elevations, streams, nodata, rx, ry, out=None, minslope=1e-
     mindiff = np.float32(minslope*np.sqrt(np.sum(w*w, axis=1)))
 
     if out is None:
-        out = np.full(elevations.shape, -1, dtype=np.float32)
+        out = np.full(elevations.shape, -1, dtype=np.int8)
 
     # progress = TermProgressBar(2*width*height)
     # progress.write('Input is %d x %d' % (width, height))

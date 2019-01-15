@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Spatial Components Algorithms
+Graph Algorithm Helpers
 
 ***************************************************************************
 *                                                                         *
@@ -13,18 +13,16 @@ Spatial Components Algorithms
 ***************************************************************************
 """
 
-from .DetrendDEM import DetrendDEM
-from .DisaggregatePolygon import DisaggregatePolygon
-from .PolygonSkeleton import PolygonSkeleton
-from .ValleyBottom import ValleyBottom
-from .ValleyCenterLine import ValleyCenterLine
+from collections import defaultdict
 
-def spatial_componentsAlgorithms():
+def create_link_index(adjacency, key):
+    """ Index: key -> list of link corresponding to key
+    """
 
-    return [
-        DetrendDEM(),
-        DisaggregatePolygon(),
-        PolygonSkeleton(),
-        ValleyBottom(),
-        ValleyCenterLine()
-    ]
+    index = defaultdict(list)
+
+    for link in adjacency:
+        k = key(link)
+        index[k].append(link)
+
+    return index
