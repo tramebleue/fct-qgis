@@ -140,7 +140,7 @@ spelling-store-unknown-words=no
 bad-functions=map,filter,input
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=a,b,c,i,j,k,x,y,z,ex,pk,Run,_
+good-names=a,b,c,i,j,k,x,y,z,dx,dy,dz,ex,pk,Run,_
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata

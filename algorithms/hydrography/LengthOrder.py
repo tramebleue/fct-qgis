@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-LengthOrder - Length-wise stream order of each link in a stream network
+LengthOrder
 
 ***************************************************************************
 *                                                                         *

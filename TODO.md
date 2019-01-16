@@ -115,3 +115,4 @@
     * [ ] MeanderingEnvelope
     * [ ] ValleyBottom based on dem+flow direction
     * [x] UpstreamChannelLength
+    * [ ] KnickPoint

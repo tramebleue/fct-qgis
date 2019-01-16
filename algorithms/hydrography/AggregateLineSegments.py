@@ -231,12 +231,12 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                         next(fid),
                         category,
                         from_node,
-                        next_link.b,
+                        link.b,
                         measure
                     ])
                     sink.addFeature(feature)
 
-                    process_stack.append(next_link.b)
+                    process_stack.append(link.b)
 
 
         if category_field:

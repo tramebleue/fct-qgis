@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-RasterDimension - Return horizontal and vertical resolution of input raster
+RasterInfo
 
 ***************************************************************************
 *                                                                         *
