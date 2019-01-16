@@ -1,0 +1,10 @@
+displayName: Drape Features
+groupId: raster
+group: Tools for Rasters
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - raster
+  - gdal
+  - feature projection

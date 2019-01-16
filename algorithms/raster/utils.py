@@ -13,13 +13,14 @@ Raster utilities
 ***************************************************************************
 """
 
-from math import sqrt
+from math import sqrt, floor
 import numpy as np
 import gdal
 import osr
 
 from qgis.core import (
     QgsGeometry,
+    QgsPoint,
     QgsPointXY
 )
 
@@ -67,9 +68,18 @@ class RasterDataAccess(object):
             into raster pixel coordinates (px, py)
         """
         dem_tranform = self.dem.GetGeoTransform()
-        px = int((x - dem_tranform[0]) / dem_tranform[1])
-        py = int((y - dem_tranform[3]) / dem_tranform[5])
-        return (px, py)
+        px = int((x - dem_tranform[0] - 0.5*dem_tranform[1]) / dem_tranform[1])
+        py = int((y - dem_tranform[3] - 0.5*dem_tranform[5]) / dem_tranform[5])
+        return px, py
+
+    def pixeltoworld(self, px, py):
+        """ Transform raster pixel coordinates (px, py)
+            into real world coordinates (x, y)
+        """
+        dem_tranform = self.dem.GetGeoTransform()
+        x = px*dem_tranform[1] + dem_tranform[0] + 0.5*dem_tranform[1]
+        y = py*dem_tranform[5] + dem_tranform[3] + 0.5*dem_tranform[5]
+        return x, y
 
     def value(self, point):
         """ Returns point value (z) according to DEM
@@ -165,7 +175,7 @@ class RasterDataAccess(object):
 
             # Does it make sense to use a MultiLineString as input ??
 
-            for points in linestring.asMultiPolylineXY():
+            for points in linestring.asMultiPolyline():
 
                 m0 = 0.0
                 for a, b in zip(points[:-1], points[1:]):
@@ -175,12 +185,14 @@ class RasterDataAccess(object):
 
         else:
 
-            points = linestring.asPolylineXY()
+            points = linestring.asPolyline()
             m0 = 0.0
             for a, b in zip(points[:-1], points[1:]):
                 for x, y, z, m in self.segment(a, b):
                     yield x, y, z, m0 + m
                 m0 = m0 + QgsGeometry.fromPointXY(a).distance(QgsGeometry.fromPointXY(b))
+
+            yield b.x(), b.y(), self.value(b), m0
 
     def segment(self, a, b):
         """ Returns projected segment
@@ -205,29 +217,167 @@ class RasterDataAccess(object):
 
         dx = abs(b.x() - a.x())
         dy = abs(b.y() - a.y())
-        x = a.x()
-        y = a.y()
+
+        dem_tranform = self.dem.GetGeoTransform()
+        rx = dem_tranform[1]
+        ry = -dem_tranform[5]
+
+        # start pixel
+        px0, py0 = self.worldtopixel(a.x(), a.y())
 
         if dx > 0.0 or dy > 0.0:
 
             if dx > dy:
-                n = dx / self.dem.RasterXSize
-                dx = self.dem.RasterXSize
-                dy = dy / n
+                n = dx / rx
+                dx = 1.0
+                dy = -dy / n / ry
             else:
-                n = dy / self.dem.RasterYSize
-                dy = self.dem.RasterYSize
-                dx = dx / n
+                n = dy / ry
+                dy = -1.0
+                dx = dx / n / rx
 
-            if a.x() < b.x():
+            if a.x() > b.x():
                 dx = -dx
-            if a.y() < b.y():
+            if a.y() > b.y():
                 dy = -dy
-            dm = sqrt(dx*dx + dy*dy)
 
-            i = 0.0
+        yield a.x(), a.y(), self.value(a), 0.0
+
+        def project(px, py):
+            """ Project pixel on segment [AB]
+                Return True if the intersection is between A and B,
+                and the (x, y) coordinates of the intersection.
+            """
+
+            x0, y0 = self.pixeltoworld(px, py)
+            ux = b.x() - a.x()
+            uy = b.y() - a.y()
+            k = ((x0-a.x())*ux + (y0-a.y())*uy) / (ux**2+uy**2)
+            x = a.x() + k*ux
+            y = a.y() + k*uy
+            return (k >= 0 and k <= 1), x, y
+
+        i = 0
+        px, py = px0, py0
+        ok, x, y = project(px, py)
+
+        while not ok:
+
+            if i > 5:
+                break
+
+            i += 1
+            px, py = px0 + round(i*dx), py0 + round(i*dy)
+            ok, x, y = project(px, py)
+
+        x1 = a.x()
+        y1 = b.x()
+        m = 0.0
+
+        while ok:
+
+            m += QgsPoint(x, y).distance(QgsPoint(x1, y1))
+            yield x, y, self.value(QgsPointXY(x, y)), m
+            i += 1
+            px, py = px0 + round(i*dx), py0 + round(i*dy)
+            x1, y1 = x, y
+            ok, x, y = project(px, py)
+
+
+
+    def segment2(self, a, b):
+        """ Returns projected segment
+            as a sequence of (x, y, z, m) coordinates
+
+        Parameters
+        ----------
+        a, b: QgsPointXY
+            end points of segment [AB]
+
+        nodata: float
+            elevation value to return
+            when point falls out of raster grid
+
+        Returns
+        -------
+        Generator of (x, y, z, m) coordinates
+        corresponding to the intersection of raster cells with segment [AB],
+        yielding one data point per intersected cell.
+
+        """
+
+        dx = abs(b.x() - a.x())
+        dy = abs(b.y() - a.y())
+
+        dem_tranform = self.dem.GetGeoTransform()
+        rx = dem_tranform[1]
+        ry = -dem_tranform[5]
+
+        if dx > 0.0 or dy > 0.0:
+
+            if dx > dy:
+                n = dx / rx
+                dx = rx
+                dy = dy / n
+                interceptx = True
+            else:
+                n = dy / ry
+                dy = ry
+                dx = dx / n
+                interceptx = False
+
+            if a.x() > b.x():
+                dx = -dx
+            if a.y() > b.y():
+                dy = -dy
+
+            x = a.x()
+            y = a.y()
+            yield x, y, self.value(a), 0.0
+
+            # # Align sample points on raster grid
+
+            # # 1. set start point
+            # x0, y0 = self.pixeltoworld(*self.worldtopixel(x, y))
+            # if interceptx:
+            #     x1 = x0
+            #     y1 = y + (x0-x)*dy/dx
+            #     if np.sign(dx)*np.sign(x-x0) == 1:
+            #         x = x1 + dx
+            #         y = y1 + dy
+            #         i = 1.0
+            #     else:
+            #         x = x1
+            #         y = y1
+            #         i = 0.0
+            # else:
+            #     x1 = x + (y0-y)*dx/dy
+            #     y1 = y0
+            #     if np.sign(dy)*np.sign(y-y0) == 1:
+            #         x = x1 + dx
+            #         y = y1 + dy
+            #         i = 1.0
+            #     else:
+            #         x = x1
+            #         y = y1
+            #         i = 0.0
+
+            # # 2. set number of iterations needed to reach B
+            # x0, y0 = self.pixeltoworld(*self.worldtopixel(b.x(), b.y()))
+            # if interceptx:
+            #     if np.sign(dx)*np.sign(b.x()-x0) == -1:
+            #         n = n - 1
+            # else:
+            #     if np.sign(dy)*np.sign(b.y()-y0) == -1:
+            #         n = n - 1
+
+            # Iterate along segment
+
+            dm = sqrt(dx*dx + dy*dy)
             m = 0.0
-            while i < n:
+            # i = 0.0
+
+            while i < n-0.5:
 
                 z = self.value(QgsPointXY(x, y))
                 yield x, y, z, m
@@ -236,3 +386,12 @@ class RasterDataAccess(object):
                 y = y + dy
                 m = m + dm
                 i = i + 1.0
+
+            # z = self.value(b)
+            # yield b.x(), b.y(), z, b.distance(a)
+
+        else:
+
+            z = self.value(a)
+            yield x, y, z, 0.0
+            # yield x, y, z, 0.0
