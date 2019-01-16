@@ -68,8 +68,8 @@ class RasterDataAccess(object):
             into raster pixel coordinates (px, py)
         """
         dem_tranform = self.dem.GetGeoTransform()
-        px = int((x - dem_tranform[0] - 0.5*dem_tranform[1]) / dem_tranform[1])
-        py = int((y - dem_tranform[3] - 0.5*dem_tranform[5]) / dem_tranform[5])
+        px = round((x - dem_tranform[0]) / dem_tranform[1] - 0.5)
+        py = round((y - dem_tranform[3]) / dem_tranform[5] - 0.5)
         return px, py
 
     def pixeltoworld(self, px, py):
@@ -77,8 +77,8 @@ class RasterDataAccess(object):
             into real world coordinates (x, y)
         """
         dem_tranform = self.dem.GetGeoTransform()
-        x = px*dem_tranform[1] + dem_tranform[0] + 0.5*dem_tranform[1]
-        y = py*dem_tranform[5] + dem_tranform[3] + 0.5*dem_tranform[5]
+        x = (px + 0.5)*dem_tranform[1] + dem_tranform[0]
+        y = (py + 0.5)*dem_tranform[5] + dem_tranform[3]
         return x, y
 
     def value(self, point):
@@ -222,34 +222,29 @@ class RasterDataAccess(object):
         rx = dem_tranform[1]
         ry = -dem_tranform[5]
 
-        # start pixel
-        px0, py0 = self.worldtopixel(a.x(), a.y())
-
         if dx > 0.0 or dy > 0.0:
 
             if dx > dy:
                 n = dx / rx
-                dx = 1.0
-                dy = -dy / n / ry
+                dx = rx
+                dy = dy / n
             else:
                 n = dy / ry
-                dy = -1.0
-                dx = dx / n / rx
+                dy = ry
+                dx = dx / n
 
             if a.x() > b.x():
                 dx = -dx
             if a.y() > b.y():
                 dy = -dy
 
-        yield a.x(), a.y(), self.value(a), 0.0
-
-        def project(px, py):
-            """ Project pixel on segment [AB]
+        def project(x0, y0):
+            """ Project point on segment [AB]
                 Return True if the intersection is between A and B,
                 and the (x, y) coordinates of the intersection.
             """
 
-            x0, y0 = self.pixeltoworld(px, py)
+            # x0, y0 = self.pixeltoworld(px, py)
             ux = b.x() - a.x()
             uy = b.y() - a.y()
             k = ((x0-a.x())*ux + (y0-a.y())*uy) / (ux**2+uy**2)
@@ -258,30 +253,41 @@ class RasterDataAccess(object):
             return (k >= 0 and k <= 1), x, y
 
         i = 0
-        px, py = px0, py0
-        ok, x, y = project(px, py)
+        yield a.x(), a.y(), self.value(a), 0.0
+        # start pixel
+        # px, py = self.worldtopixel(a.x(), a.y())
+        x0, y0 = self.pixeltoworld(*self.worldtopixel(a.x(), a.y()))
+        onsegment, x, y = project(x0, y0)
 
-        while not ok:
+        def point(i):
+            """ Return i-th point in segment direction
+            """
+            x = a.x() + i*dx
+            y = a.y() + i*dy
+            # return self.worldtopixel(x, y)
+            return x, y
+
+        while not onsegment:
 
             if i > 5:
                 break
 
             i += 1
-            px, py = px0 + round(i*dx), py0 + round(i*dy)
-            ok, x, y = project(px, py)
+            px, py = point(i)
+            onsegment, x, y = project(px, py)
 
         x1 = a.x()
         y1 = b.x()
         m = 0.0
 
-        while ok:
+        while onsegment:
 
             m += QgsPoint(x, y).distance(QgsPoint(x1, y1))
             yield x, y, self.value(QgsPointXY(x, y)), m
             i += 1
-            px, py = px0 + round(i*dx), py0 + round(i*dy)
+            px, py = point(i)
             x1, y1 = x, y
-            ok, x, y = project(px, py)
+            onsegment, x, y = project(px, py)
 
 
 

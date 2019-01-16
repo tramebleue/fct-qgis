@@ -133,6 +133,9 @@ class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
                 if feedback.isCanceled():
                     break
 
+                if vertex.z() == nodata:
+                    continue
+
                 dz = previous.z() - vertex.z()
                 if dz < min_dz:
                     continue
