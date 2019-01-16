@@ -1,0 +1,11 @@
+displayName: KnickPoints
+groupId: metrics
+group: Metrics
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - longitudinal profile
+  - elevation
+  - slope
+  - anomaly detection

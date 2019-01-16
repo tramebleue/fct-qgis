@@ -3,10 +3,11 @@ from PyQt5.QtCore import QCoreApplication
 from qgis.core import (QgsApplication,
                        QgsProcessingProvider)
 
-from .algorithms.spatial_components import spatial_componentsAlgorithms
 from .algorithms.hydrography import hydrography_algorithms
-from .algorithms.vector import vector_algorithms
+from .algorithms.metrics import metrics_algorithms
 from .algorithms.raster import rasterAlgorithms
+from .algorithms.spatial_components import spatial_componentsAlgorithms
+from .algorithms.vector import vector_algorithms
 
 class FluvialCorridorToolboxPlugin:
 
@@ -52,9 +53,10 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
     def loadAlgorithms(self):
 
         algs = hydrography_algorithms() + \
+               metrics_algorithms() + \
                spatial_componentsAlgorithms() + \
-               vector_algorithms() + \
-               rasterAlgorithms()
+               rasterAlgorithms() + \
+               vector_algorithms()
 
         for alg in algs:
             self.addAlgorithm(alg)
