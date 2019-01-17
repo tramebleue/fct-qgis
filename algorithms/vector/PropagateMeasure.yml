@@ -1,0 +1,12 @@
+displayName: Propage Measure Coordinate
+groupId: fctvectortools
+group: Tools for Vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - vector
+  - linestring
+  - m
+  - coordinate
+  - inplace edit

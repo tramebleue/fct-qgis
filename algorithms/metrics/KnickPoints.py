@@ -38,14 +38,19 @@ from ..metadata import AlgorithmMetadata
 class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Knickpoints detection based on Relative Slope Extension Index (RSE)
 
-        See:
+        References:
 
-        [1] Queiroz et al. (2015).
+        [1] Seeber, L., & Gornitz, V. (1983).
+            River profiles along the Himalayan arc as indicators of active tectonics.
+            Tectonophysics, 92(4), 335‑367.
+            https://doi.org/10.1016/0040-1951(83)90201-9
+
+        [2] Queiroz et al. (2015).
             Knickpoint finder: A software tool that improves neotectonic analysis.
             Computers & Geosciences, 76, 80‑87.
             https://doi.org/10.1016/j.cageo.2014.11.004
 
-        [2] Knickpoint Finder, ArcGIS implementation
+        [3] Knickpoint Finder, ArcGIS implementation
             http://www.neotectonica.ufpr.br/2013/index.php/aplicativos/doc_download/87-knickpointfinder
             No License
     """
@@ -56,6 +61,7 @@ class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
     NODATA = 'NODATA'
     MIN_DZ = 'MIN_DZ'
     MIN_RSE = 'MIN_RSE'
+    MIN_RSE_TOTAL = 'MIN_RSE_TOTAL'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
@@ -77,9 +83,15 @@ class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterNumber(
             self.MIN_RSE,
-            self.tr('Minimum Relative-Slope Extension Value for Knickpoints'),
+            self.tr('Minimum Knickpoints RSE Value'),
             minValue=0.0,
             defaultValue=2.0))
+
+        self.addParameter(QgsProcessingParameterNumber(
+            self.MIN_RSE_TOTAL,
+            self.tr('Minimum RSE Total Value'),
+            minValue=0.0,
+            defaultValue=1.0))
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
@@ -92,6 +104,7 @@ class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
         nodata = self.parameterAsDouble(parameters, self.NODATA, context)
         min_dz = self.parameterAsDouble(parameters, self.MIN_DZ, context)
         knickpoint_min_rse = self.parameterAsDouble(parameters, self.MIN_RSE, context)
+        min_rse_total = self.parameterAsDouble(parameters, self.MIN_RSE_TOTAL, context)
 
         if not QgsWkbTypes.hasZ(layer.wkbType()):
             raise QgsProcessingException('Input features must have Z coordinate')
@@ -119,10 +132,11 @@ class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             geometry = feature.geometry()
             vertices = [v for v in geometry.vertices()]
-            dz = vertices[0].z() - vertices[-1].z()
-            # rse_total = dz / geometry.length() * max(0.0001, math.log(geometry.length()))
-            rse_total = dz / max(0.0001, math.log(geometry.length()))
-            # rse_total = dz / geometry.length()
+            profile_height = vertices[0].z() - vertices[-1].z()
+            rse_total = profile_height / max(0.0001, math.log(geometry.length()))
+
+            if rse_total < min_rse_total:
+                continue
 
             stretch_length = 0.0
             upstream_length = 0.0
