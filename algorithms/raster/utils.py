@@ -171,28 +171,14 @@ class RasterDataAccess(object):
 
         """
 
-        if linestring.isMultipart():
+        points = linestring.asPolyline()
+        m0 = 0.0
+        for a, b in zip(points[:-1], points[1:]):
+            for x, y, z, m in self.segment(a, b):
+                yield x, y, z, m0 + m
+            m0 = m0 + QgsGeometry.fromPointXY(a).distance(QgsGeometry.fromPointXY(b))
 
-            # Does it make sense to use a MultiLineString as input ??
-
-            for points in linestring.asMultiPolyline():
-
-                m0 = 0.0
-                for a, b in zip(points[:-1], points[1:]):
-                    for x, y, z, m in self.segment(a, b):
-                        yield x, y, z, m0 + m
-                    m0 = m0 + QgsGeometry.fromPointXY(a).distance(QgsGeometry.fromPointXY(b))
-
-        else:
-
-            points = linestring.asPolyline()
-            m0 = 0.0
-            for a, b in zip(points[:-1], points[1:]):
-                for x, y, z, m in self.segment(a, b):
-                    yield x, y, z, m0 + m
-                m0 = m0 + QgsGeometry.fromPointXY(a).distance(QgsGeometry.fromPointXY(b))
-
-            yield b.x(), b.y(), self.value(b), m0
+        yield b.x(), b.y(), self.value(b), m0
 
     def segment(self, a, b):
         """ Returns projected segment

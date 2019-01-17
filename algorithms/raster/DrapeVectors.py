@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-DrapeFeatures
+DrapeVectors
 
 ***************************************************************************
 *                                                                         *
@@ -17,10 +17,11 @@ from qgis.core import ( # pylint:disable=no-name-in-module
     QgsFeature,
     QgsGeometry,
     QgsLineString,
+    QgsMultiLineString,
+    QgsMultiPolygon,
     QgsPoint,
     QgsPolygon,
     QgsProcessing,
-    QgsProcessingException,
     QgsProcessingFeatureBasedAlgorithm,
     QgsProcessingParameterBand,
     QgsProcessingParameterRasterLayer,
@@ -30,13 +31,13 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 from ..metadata import AlgorithmMetadata
 from .utils import RasterDataAccess
 
-class DrapeFeatures(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
-    """ Drape input features onto raster
+class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
+    """ Drape input vectors onto raster
         and interpolate additional vertices between original vertices
         to match pixels.
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'DrapeFeatures')
+    METADATA = AlgorithmMetadata.read(__file__, 'DrapeVectors')
 
     INPUT = 'INPUT'
     RASTER = 'RASTER'
@@ -96,33 +97,104 @@ class DrapeFeatures(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
     def processFeature(self, feature, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        def processLineString(line): # pylint: disable=unused-argument
+            """ Drape simple linestring
+            """
+
+            points = [QgsPoint(x, y, z) for x, y, z, m in self.data.linestring(QgsGeometry(line))]
+            return points
+
+        def processPolygon(polygon):
+            """ Drape simple polygon
+            """
+
+            rings = [
+                processLineString(polygon.childGeometry(i))
+                for i in range(polygon.childCount())
+            ]
+
+            return rings
+
+            # new_polygon = QgsPolygon()
+            # ring = rings[0]
+            # new_polygon.setExteriorRing(ring)
+            # for ring in rings[1:]:
+            #     new_polygon.addInteriorRing(ring)
+
+            # return new_polygon
+
         geometry = feature.geometry()
 
         if geometry.isMultipart():
 
-            raise QgsProcessingException(self.tr('Multipart geometries are not supported'))
+            if QgsWkbTypes.singleType(geometry.wkbType()) == QgsWkbTypes.LineString:
+
+                parts = QgsMultiLineString()
+
+                for part in geometry.constParts():
+
+                    # part instance of QgsLineString
+                    points = processLineString(part)
+                    linestring = QgsLineString(points)
+                    parts.addGeometry(linestring)
+
+            else:
+
+                parts = QgsMultiPolygon()
+
+                for part in geometry.constParts():
+
+                    # part instance of QgsPolygon
+                    points = processPolygon(part)
+                    polygon = QgsPolygon()
+                    ring = QgsLineString(points[0])
+                    polygon.setExteriorRing(ring)
+
+                    for ring_points in points[1:]:
+
+                        ring = QgsLineString(ring_points)
+                        polygon.addInteriorRing(ring)
+
+                    parts.addGeometry(polygon)
+
+            outfeature = QgsFeature()
+            outfeature.setAttributes(feature.attributes())
+            outfeature.setGeometry(QgsGeometry(parts))
+
 
         else:
 
             if QgsWkbTypes.flatType(geometry.wkbType()) == QgsWkbTypes.LineString:
 
-                points = [QgsPoint(x, y, z) for x, y, z, m in self.data.linestring(geometry)]
+                points = processLineString(geometry)
                 outfeature = QgsFeature()
-                outfeature.setGeometry(QgsGeometry(QgsLineString(points)))
+                linestring = QgsLineString(points)
+                outfeature.setGeometry(QgsGeometry(linestring))
                 outfeature.setAttributes(feature.attributes())
 
             else:
 
                 polygon = [part for part in geometry.constParts()][0]
-                rings = list()
+                points = processPolygon(polygon)
 
-                for i in range(polygon.ringCount()):
-                    ring = polygon.childGeometry(i)
-                    points = [QgsPoint(x, y, z) for x, y, z, m in self.data.linestring(QgsGeometry(ring))]
-                    rings.append(QgsLineString(points))
+                new_polygon = QgsPolygon()
+                ring = QgsLineString(points[0])
+                new_polygon.setExteriorRing(ring)
+
+                for ring_points in points[1:]:
+
+                    ring = QgsLineString(ring_points)
+                    new_polygon.addInteriorRing(ring)
 
                 outfeature = QgsFeature()
-                outfeature.setGeometry(QgsGeometry(QgsPolygon(rings)))
+                # outfeature.setGeometry(QgsGeometry(new_polygon))
+                wkt = new_polygon.asWkt()
+                new_geometry = QgsGeometry.fromWkt(wkt)
+                print(wkt)
+                outfeature.setGeometry(QgsGeometry(new_geometry.constGet()))
                 outfeature.setAttributes(feature.attributes())
+
+                del new_geometry
+                del ring
 
         return [outfeature]

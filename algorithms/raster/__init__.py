@@ -14,7 +14,7 @@ Raster General Algorithms
 """
 
 from .BinaryClosing import BinaryClosing
-from .DrapeFeatures import DrapeFeatures
+from .DrapeVectors import DrapeVectors
 from .DifferentialRasterThreshold import DifferentialRasterThreshold
 from .FocalMean import FocalMean
 from .RasterDifference import RasterDifference
@@ -24,7 +24,7 @@ def rasterAlgorithms():
 
     return [
         BinaryClosing(),
-        DrapeFeatures(),
+        DrapeVectors(),
         DifferentialRasterThreshold(),
         FocalMean(),
         # ExtractRasterValueAtPoints(),
