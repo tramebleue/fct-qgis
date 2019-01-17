@@ -4,4 +4,5 @@
 *.o
 *.so
 cython/terrain_analysis/*.cpp
+tests/testdata/*.aux.xml
 .DS_Store

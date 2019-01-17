@@ -57,7 +57,8 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             defaultValue=1))
 
     def inputLayerTypes(self): #pylint: disable=no-self-use,missing-docstring
-        return [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPolygon]
+        # return [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPolygon]
+        return [QgsProcessing.TypeVectorLine]
 
     def outputName(self): #pylint: disable=missing-docstring
         return self.tr('Draped Features')
@@ -82,6 +83,10 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         code1 = raster.crs().authid().split(':')[1]
         code2 = layer.sourceCrs().authid().split(':')[1]
 
+        if QgsWkbTypes.isMultiType(layer.wkbType()):
+            feedback.reportError(self.tr('Multipart geometries are not currently supported'), True)
+            return False
+
         self.data = RasterDataAccess(
             raster.dataProvider().dataSourceUri(),
             int(code1), int(code2),
@@ -102,7 +107,7 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             """
 
             points = [QgsPoint(x, y, z) for x, y, z, m in self.data.linestring(QgsGeometry(line))]
-            return points
+            return QgsLineString(points)
 
         def processPolygon(polygon):
             """ Drape simple polygon
@@ -113,15 +118,13 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                 for i in range(polygon.childCount())
             ]
 
-            return rings
+            new_polygon = QgsPolygon()
+            ring = rings[0]
+            new_polygon.setExteriorRing(ring)
+            for ring in rings[1:]:
+                new_polygon.addInteriorRing(ring)
 
-            # new_polygon = QgsPolygon()
-            # ring = rings[0]
-            # new_polygon.setExteriorRing(ring)
-            # for ring in rings[1:]:
-            #     new_polygon.addInteriorRing(ring)
-
-            # return new_polygon
+            return new_polygon
 
         geometry = feature.geometry()
 
@@ -134,8 +137,7 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                 for part in geometry.constParts():
 
                     # part instance of QgsLineString
-                    points = processLineString(part)
-                    linestring = QgsLineString(points)
+                    linestring = processLineString(part)
                     parts.addGeometry(linestring)
 
             else:
@@ -145,16 +147,7 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                 for part in geometry.constParts():
 
                     # part instance of QgsPolygon
-                    points = processPolygon(part)
-                    polygon = QgsPolygon()
-                    ring = QgsLineString(points[0])
-                    polygon.setExteriorRing(ring)
-
-                    for ring_points in points[1:]:
-
-                        ring = QgsLineString(ring_points)
-                        polygon.addInteriorRing(ring)
-
+                    polygon = processPolygon(part)
                     parts.addGeometry(polygon)
 
             outfeature = QgsFeature()
@@ -166,35 +159,16 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
             if QgsWkbTypes.flatType(geometry.wkbType()) == QgsWkbTypes.LineString:
 
-                points = processLineString(geometry)
+                linestring = processLineString(geometry)
                 outfeature = QgsFeature()
-                linestring = QgsLineString(points)
                 outfeature.setGeometry(QgsGeometry(linestring))
                 outfeature.setAttributes(feature.attributes())
 
             else:
 
                 polygon = [part for part in geometry.constParts()][0]
-                points = processPolygon(polygon)
-
-                new_polygon = QgsPolygon()
-                ring = QgsLineString(points[0])
-                new_polygon.setExteriorRing(ring)
-
-                for ring_points in points[1:]:
-
-                    ring = QgsLineString(ring_points)
-                    new_polygon.addInteriorRing(ring)
-
-                outfeature = QgsFeature()
-                # outfeature.setGeometry(QgsGeometry(new_polygon))
-                wkt = new_polygon.asWkt()
-                new_geometry = QgsGeometry.fromWkt(wkt)
-                print(wkt)
-                outfeature.setGeometry(QgsGeometry(new_geometry.constGet()))
+                new_polygon = processPolygon(polygon)
+                outfeature.setGeometry(QgsGeometry(new_polygon))
                 outfeature.setAttributes(feature.attributes())
-
-                del new_geometry
-                del ring
 
         return [outfeature]
