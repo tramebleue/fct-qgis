@@ -53,15 +53,18 @@ def reverse_direction(x):
     return (x + 4) % 8
 
 def topo_stream_burn(elevations, streams, nodata, rx, ry, minslope=1e-3, feedback=None, out=None):
-    """ Flow accumulation algorithm
-        based on Lindsay (2016) `Topological Stream Burn algorithm,
-        which is a variant of Wang and Liu (2006) `Fill Sinks` algorithm.
-        The algorithm fills stream cells before other cells,
-        starting from boundary cells with lowest z.
-        When a cell is discovered, its z value is fixed
-        so as z is no less than z of already disovered cells,
-        with a minimal slope of `minslope`.
-        Flow direction is set toward the cell from which the new cell was discovered
+    """
+    Flow accumulation
+
+    Implementation of Lindsay (2016) `Topological Stream Burn algorithm,
+    which is a variant of Wang and Liu (2006) `Fill Sinks` algorithm.
+    
+    The algorithm fills stream cells before other cells,
+    starting from boundary cells with lowest z.
+    When a cell is discovered, its z value is fixed
+    so as z is no less than z of already disovered cells,
+    with a minimal slope of `minslope`.
+    Flow direction is set toward the cell from which the new cell was discovered
 
     Parameters
     ----------
