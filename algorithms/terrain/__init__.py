@@ -16,11 +16,13 @@ Terrain Analysis Algorithms
 from .DetrendDEM import DetrendDEM
 from .FlowAccumulation import FlowAccumulation
 from .TopologicalStreamBurn import TopologicalStreamBurn
+from .Watershed import Watershed
 
 def terrain_algorithms():
 
     return [
         DetrendDEM(),
         FlowAccumulation(),
-        TopologicalStreamBurn()
+        TopologicalStreamBurn(),
+        Watershed()
     ]

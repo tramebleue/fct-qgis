@@ -16,8 +16,8 @@ def reverse_direction(x):
 #     --------------------
 #       SW=5 | S=4 | SE=3
 
-D8_DIR = np.array([0, 1, 2, 3, 4, 5, 6, 7])
-D8POW2 = np.power(2, D8_DIR, dtype=np.uint8)
+D8_DIR = np.array([0, 1, 2, 3, 4, 5, 6, 7], dtype=np.uint8)
+D8POW2 = np.power(2, D8_DIR)
 
 # Flow direction value of upward cells
 # in each search direction,
@@ -25,7 +25,7 @@ D8POW2 = np.power(2, D8_DIR, dtype=np.uint8)
 #      if its flow direction is 4 (southward)
 
 D8_UPWARD = reverse_direction(D8_DIR)
-D8POW2_UPWARD = np.power(2, D8_UPWARD, dtype=np.uint8)
+D8POW2_UPWARD = np.power(2, D8_UPWARD)
 
 # D8 directions in 3x3 neighborhood
 
