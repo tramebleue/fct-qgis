@@ -1,0 +1,191 @@
+<!DOCTYPE model>
+<Option type="Map">
+  <Option name="children" type="Map">
+    <Option name="fct:rasterinfo_1" type="Map">
+      <Option value="true" name="active" type="bool"/>
+      <Option name="alg_config"/>
+      <Option value="fct:rasterinfo" name="alg_id" type="QString"/>
+      <Option value="Raster Info" name="component_description" type="QString"/>
+      <Option value="120" name="component_pos_x" type="double"/>
+      <Option value="160" name="component_pos_y" type="double"/>
+      <Option name="dependencies"/>
+      <Option value="fct:rasterinfo_1" name="id" type="QString"/>
+      <Option name="outputs"/>
+      <Option value="true" name="outputs_collapsed" type="bool"/>
+      <Option value="true" name="parameters_collapsed" type="bool"/>
+      <Option name="params" type="Map">
+        <Option name="INPUT" type="List">
+          <Option type="Map">
+            <Option value="rastertemplate" name="parameter_name" type="QString"/>
+            <Option value="0" name="source" type="int"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
+    <Option name="gdal:rasterize_1" type="Map">
+      <Option value="true" name="active" type="bool"/>
+      <Option name="alg_config"/>
+      <Option value="gdal:rasterize" name="alg_id" type="QString"/>
+      <Option value="Rastérisation (vecteur vers raster)" name="component_description" type="QString"/>
+      <Option value="340" name="component_pos_x" type="double"/>
+      <Option value="260" name="component_pos_y" type="double"/>
+      <Option name="dependencies"/>
+      <Option value="gdal:rasterize_1" name="id" type="QString"/>
+      <Option name="outputs" type="Map">
+        <Option name="Rasterized Stream Network" type="Map">
+          <Option value="gdal:rasterize_1" name="child_id" type="QString"/>
+          <Option value="Rasterized Stream Network" name="component_description" type="QString"/>
+          <Option value="540" name="component_pos_x" type="double"/>
+          <Option value="305" name="component_pos_y" type="double"/>
+          <Option name="default_value" type="invalid"/>
+          <Option value="false" name="mandatory" type="bool"/>
+          <Option value="Rasterized Stream Network" name="name" type="QString"/>
+          <Option value="OUTPUT" name="output_name" type="QString"/>
+        </Option>
+      </Option>
+      <Option value="true" name="outputs_collapsed" type="bool"/>
+      <Option value="true" name="parameters_collapsed" type="bool"/>
+      <Option name="params" type="Map">
+        <Option name="BURN" type="List">
+          <Option type="Map">
+            <Option value="2" name="source" type="int"/>
+            <Option value="0" name="static_value" type="double"/>
+          </Option>
+        </Option>
+        <Option name="DATA_TYPE" type="List">
+          <Option type="Map">
+            <Option value="2" name="source" type="int"/>
+            <Option value="5" name="static_value" type="int"/>
+          </Option>
+        </Option>
+        <Option name="EXTENT" type="List">
+          <Option type="Map">
+            <Option value="rastertemplate" name="parameter_name" type="QString"/>
+            <Option value="0" name="source" type="int"/>
+          </Option>
+        </Option>
+        <Option name="FIELD" type="List">
+          <Option type="Map">
+            <Option value="streamidfield" name="parameter_name" type="QString"/>
+            <Option value="0" name="source" type="int"/>
+          </Option>
+        </Option>
+        <Option name="HEIGHT" type="List">
+          <Option type="Map">
+            <Option value="fct:rasterinfo_1" name="child_id" type="QString"/>
+            <Option value="YSIZE" name="output_name" type="QString"/>
+            <Option value="1" name="source" type="int"/>
+          </Option>
+        </Option>
+        <Option name="INIT" type="List">
+          <Option type="Map">
+            <Option value="2" name="source" type="int"/>
+            <Option value="0" name="static_value" type="double"/>
+          </Option>
+        </Option>
+        <Option name="INPUT" type="List">
+          <Option type="Map">
+            <Option value="streamnetwork" name="parameter_name" type="QString"/>
+            <Option value="0" name="source" type="int"/>
+          </Option>
+        </Option>
+        <Option name="INVERT" type="List">
+          <Option type="Map">
+            <Option value="2" name="source" type="int"/>
+            <Option value="false" name="static_value" type="bool"/>
+          </Option>
+        </Option>
+        <Option name="NODATA" type="List">
+          <Option type="Map">
+            <Option value="2" name="source" type="int"/>
+            <Option value="0" name="static_value" type="double"/>
+          </Option>
+        </Option>
+        <Option name="OPTIONS" type="List">
+          <Option type="Map">
+            <Option value="2" name="source" type="int"/>
+            <Option value="" name="static_value" type="QString"/>
+          </Option>
+        </Option>
+        <Option name="UNITS" type="List">
+          <Option type="Map">
+            <Option value="2" name="source" type="int"/>
+            <Option value="0" name="static_value" type="int"/>
+          </Option>
+        </Option>
+        <Option name="WIDTH" type="List">
+          <Option type="Map">
+            <Option value="fct:rasterinfo_1" name="child_id" type="QString"/>
+            <Option value="XSIZE" name="output_name" type="QString"/>
+            <Option value="1" name="source" type="int"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
+  </Option>
+  <Option name="help"/>
+  <Option value="Hydrography" name="model_group" type="QString"/>
+  <Option value="Rasterize Stream Network" name="model_name" type="QString"/>
+  <Option name="parameterDefinitions" type="Map">
+    <Option name="gdal:rasterize_1:Rasterized Stream Network" type="Map">
+      <Option value="true" name="create_by_default" type="bool"/>
+      <Option name="default" type="invalid"/>
+      <Option value="Rasterized Stream Network" name="description" type="QString"/>
+      <Option value="0" name="flags" type="int"/>
+      <Option name="metadata"/>
+      <Option value="gdal:rasterize_1:Rasterized Stream Network" name="name" type="QString"/>
+      <Option value="rasterDestination" name="parameter_type" type="QString"/>
+      <Option value="false" name="supports_non_file_outputs" type="bool"/>
+    </Option>
+    <Option name="rastertemplate" type="Map">
+      <Option name="default" type="invalid"/>
+      <Option value="Raster Template" name="description" type="QString"/>
+      <Option value="0" name="flags" type="int"/>
+      <Option name="metadata"/>
+      <Option value="rastertemplate" name="name" type="QString"/>
+      <Option value="raster" name="parameter_type" type="QString"/>
+    </Option>
+    <Option name="streamidfield" type="Map">
+      <Option value="false" name="allow_multiple" type="bool"/>
+      <Option value="0" name="data_type" type="int"/>
+      <Option value="GID" name="default" type="QString"/>
+      <Option value="Stream ID Field" name="description" type="QString"/>
+      <Option value="0" name="flags" type="int"/>
+      <Option name="metadata"/>
+      <Option value="streamidfield" name="name" type="QString"/>
+      <Option value="field" name="parameter_type" type="QString"/>
+      <Option value="streamnetwork" name="parent_layer" type="QString"/>
+    </Option>
+    <Option name="streamnetwork" type="Map">
+      <Option name="data_types" type="List">
+        <Option value="1" type="int"/>
+      </Option>
+      <Option name="default" type="invalid"/>
+      <Option value="Stream Network" name="description" type="QString"/>
+      <Option value="0" name="flags" type="int"/>
+      <Option name="metadata"/>
+      <Option value="streamnetwork" name="name" type="QString"/>
+      <Option value="vector" name="parameter_type" type="QString"/>
+    </Option>
+  </Option>
+  <Option name="parameters" type="Map">
+    <Option name="rastertemplate" type="Map">
+      <Option value="rastertemplate" name="component_description" type="QString"/>
+      <Option value="120" name="component_pos_x" type="double"/>
+      <Option value="60" name="component_pos_y" type="double"/>
+      <Option value="rastertemplate" name="name" type="QString"/>
+    </Option>
+    <Option name="streamidfield" type="Map">
+      <Option value="streamidfield" name="component_description" type="QString"/>
+      <Option value="560" name="component_pos_x" type="double"/>
+      <Option value="60" name="component_pos_y" type="double"/>
+      <Option value="streamidfield" name="name" type="QString"/>
+    </Option>
+    <Option name="streamnetwork" type="Map">
+      <Option value="streamnetwork" name="component_description" type="QString"/>
+      <Option value="340" name="component_pos_x" type="double"/>
+      <Option value="60" name="component_pos_y" type="double"/>
+      <Option value="streamnetwork" name="name" type="QString"/>
+    </Option>
+  </Option>
+</Option>
