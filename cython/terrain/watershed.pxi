@@ -114,13 +114,7 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
 
             if direction > -1:
 
-                x = ilog2(direction)
-                di = ci[x]
-                dj = cj[x]
-
-                # Check if (i,j) flows in nodata or outside grid
-
-                if not ingrid(height, width, i+di, j+dj) or flow[i+di, j+dj] == -1:
+                if direction == 0:
 
                     current += propagate(
                         flow, height, width, values, nodata,
@@ -130,3 +124,22 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
                     if progress1 > progress0:
                         feedback.setProgress(progress1)
                         progress0 = progress1
+
+                else:
+
+                    x = ilog2(direction)
+                    di = ci[x]
+                    dj = cj[x]
+
+                    # Check if (i,j) flows in nodata or outside grid
+
+                    if not ingrid(height, width, i+di, j+dj) or flow[i+di, j+dj] == -1:
+
+                        current += propagate(
+                            flow, height, width, values, nodata,
+                            i, j)
+
+                        progress1 = int(current*total)
+                        if progress1 > progress0:
+                            feedback.setProgress(progress1)
+                            progress0 = progress1

@@ -13,6 +13,7 @@ Raster General Algorithms
 ***************************************************************************
 """
 
+from .ApplyMask import ApplyMask
 from .BinaryClosing import BinaryClosing
 from .DrapeVectors import DrapeVectors
 from .DifferentialRasterThreshold import DifferentialRasterThreshold
@@ -23,6 +24,7 @@ from .RasterInfo import RasterInfo
 def rasterAlgorithms():
 
     return [
+        ApplyMask(),
         BinaryClosing(),
         DrapeVectors(),
         DifferentialRasterThreshold(),

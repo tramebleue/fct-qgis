@@ -13,14 +13,15 @@ Hydrography Algorithms
 ***************************************************************************
 """
 
-from .AggregateLines import AggregateLines
 from .AggregateLineSegments import AggregateLineSegments
+from .AggregateLines import AggregateLines
 from .FixLinkOrientation import FixLinkOrientation
 from .IdentifyNetworkNodes import IdentifyNetworkNodes
 from .LengthOrder import LengthOrder
 from .LongestPathInDirectedGraph import LongestPathInDirectedGraph
 from .MeasureNetworkFromOutlet import MeasureNetworkFromOutlet
 from .NetworkNodes import NetworkNodes
+from .RasterizeStreamNetwork import RasterizeStreamNetwork
 from .ReverseFlowDirection import ReverseFlowDirection
 from .SelectConnectedComponents import SelectConnectedComponents
 from .StrahlerOrder import StrahlerOrder
@@ -37,6 +38,7 @@ def hydrography_algorithms():
         LongestPathInDirectedGraph(),
         MeasureNetworkFromOutlet(),
         NetworkNodes(),
+        RasterizeStreamNetwork(),
         ReverseFlowDirection(),
         SelectConnectedComponents(),
         StrahlerOrder(),

@@ -73,8 +73,12 @@ class FlowAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
         # srs.ImportFromEPSG(epsg)
 
         out = flow_accumulation(flow, feedback=feedback)
-        feedback.setProgress(100)
 
+        if feedback.isCanceled():
+            feedback.reportError(self.tr('Aborted'), True)
+            return {}
+
+        feedback.setProgress(100)
         feedback.pushInfo(self.tr('Write output ...'))
 
         driver = gdal.GetDriverByName('GTiff')

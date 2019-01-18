@@ -23,14 +23,8 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessingParameterRasterLayer
 )
 
+from processing.core.ProcessingConfig import ProcessingConfig
 from ..metadata import AlgorithmMetadata
-
-try:
-    from ...lib.terrain_analysis import watershed
-    CYTHON = True
-except ImportError:
-    from ...lib.watershed import watershed
-    CYTHON = False
 
 class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
@@ -69,7 +63,18 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        if CYTHON:
+        if ProcessingConfig.getSetting('FCT_ACTIVATE_CYTHON'):
+            try:
+                from ...lib.terrain_analysis import watershed
+                with_cython = True
+            except ImportError:
+                from ...lib.watershed import watershed
+                with_cython = False
+        else:
+            from ...lib.watershed import watershed
+            with_cython = False
+
+        if with_cython:
             feedback.pushInfo("Using Cython watershed() ...")
         else:
             feedback.pushInfo("Using pure python watershed() - this may take a while ...")
@@ -87,6 +92,10 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
         target = np.float32(target_ds.GetRasterBand(1).ReadAsArray())
 
         watershed(flow, target, nodata, feedback=feedback)
+        
+        if feedback.isCanceled():
+            feedback.reportError(self.tr('Aborted'), True)
+            return {}
 
         feedback.setProgress(100)
         feedback.pushInfo(self.tr('Write output ...'))
@@ -95,7 +104,6 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
         dst = driver.CreateCopy(output, target_ds, strict=0, options=['TILED=YES', 'COMPRESS=DEFLATE'])
 
         dst.GetRasterBand(1).WriteArray(target)
-        dst.GetRasterBand(1).SetNoDataValue(0)
 
         # Properly close GDAL resources
         flow_ds = None

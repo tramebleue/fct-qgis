@@ -17,6 +17,7 @@ import gdal
 
 from qgis.core import ( # pylint:disable=no-name-in-module
     QgsProcessingAlgorithm,
+    QgsProcessingParameterBand,
     QgsProcessingParameterRasterLayer,
     QgsProcessingOutputNumber
 )
@@ -30,16 +31,24 @@ class RasterInfo(AlgorithmMetadata, QgsProcessingAlgorithm):
     METADATA = AlgorithmMetadata.read(__file__, 'RasterInfo')
 
     INPUT = 'INPUT'
+    BAND = 'BAND'
     XRES = 'XRES'
     YRES = 'YRES'
     XSIZE = 'XSIZE'
     YSIZE = 'YSIZE'
+    NODATA = 'NODATA'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
         self.addParameter(QgsProcessingParameterRasterLayer(
             self.INPUT,
             self.tr('Input Raster')))
+
+        self.addParameter(QgsProcessingParameterBand(
+            self.BAND,
+            self.tr('Band'),
+            parentLayerParameterName=self.INPUT,
+            defaultValue=1))
 
         self.addOutput(QgsProcessingOutputNumber(self.XRES, self.tr('Horizontal Resolution')))
 
@@ -49,9 +58,12 @@ class RasterInfo(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addOutput(QgsProcessingOutputNumber(self.YSIZE, self.tr('Height (Pixels)')))
 
+        self.addOutput(QgsProcessingOutputNumber(self.NODATA, self.tr('No Data Value')))
+
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         dem = self.parameterAsRasterLayer(parameters, self.INPUT, context)
+        band = self.parameterAsInt(parameters, self.BAND, context)
         path = str(dem.dataProvider().dataSourceUri())
 
         raster = gdal.Open(path)
@@ -60,11 +72,12 @@ class RasterInfo(AlgorithmMetadata, QgsProcessingAlgorithm):
         yres = -geotransform[5]
         xsize = raster.RasterXSize
         ysize = raster.RasterYSize
-
+        nodata = raster.GetRasterBand(band).GetNoDataValue()
 
         return {
             self.XRES: xres,
             self.YRES: yres,
             self.XSIZE: xsize,
-            self.YSIZE: ysize
+            self.YSIZE: ysize,
+            self.NODATA: nodata
         }

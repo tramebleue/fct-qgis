@@ -13,15 +13,11 @@ RasterDifference
 ***************************************************************************
 """
 
-from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
-    QCoreApplication
-)
-
 from qgis.core import ( # pylint:disable=no-name-in-module
     QgsProcessingAlgorithm,
+    QgsProcessingException,
     QgsProcessingParameterRasterDestination,
-    QgsProcessingParameterRasterLayer,
-    QgsProcessingException
+    QgsProcessingParameterRasterLayer
 )
 
 from qgis.analysis import ( # pylint:disable=no-name-in-module
@@ -148,10 +144,3 @@ class RasterDifference(AlgorithmMetadata, QgsProcessingAlgorithm):
             raise QgsProcessingException(self.tr("Error parsing formula"))
 
         return {self.OUTPUT: output}
-
-
-    def tr(self, string):
-        return QCoreApplication.translate('FluvialCorridorToolbox', string)
-
-    def createInstance(self):
-      return RasterDifference()

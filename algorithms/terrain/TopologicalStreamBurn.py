@@ -90,6 +90,10 @@ class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):
             minslope=1e-3,
             feedback=feedback)
 
+        if feedback.isCanceled():
+            feedback.reportError(self.tr('Aborted'), True)
+            return {}
+
         feedback.setProgress(100)
         feedback.pushInfo(self.tr('Write output ...'))
 

@@ -1,7 +1,11 @@
 from PyQt5.QtCore import QCoreApplication
 
-from qgis.core import (QgsApplication,
-                       QgsProcessingProvider)
+from qgis.core import (
+    QgsApplication,
+    QgsProcessingProvider
+)
+
+from processing.core.ProcessingConfig import ProcessingConfig, Setting
 
 from .algorithms.hydrography import hydrography_algorithms
 from .algorithms.metrics import metrics_algorithms
@@ -50,6 +54,22 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
     
     def longName(self):
         return 'Fluvial Corridor Toolbox'
+
+    def load(self):
+        
+        ProcessingConfig.addSetting(
+            Setting(
+                "Fluvial Corridor Toolbox",
+                'FCT_ACTIVATE_CYTHON',
+                self.tr('Activate Cython Extensions'), True))
+
+        ProcessingConfig.readSettings()
+        self.refreshAlgorithms()
+
+        return True
+
+    def unload(self):
+        ProcessingConfig.removeSetting('FCT_ACTIVATE_CYTHON')
 
     def loadAlgorithms(self):
 
