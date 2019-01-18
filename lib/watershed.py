@@ -66,22 +66,20 @@ def watershed(flow, values, nodata, feedback=None):
 
             direction = flow[i, j]
 
-            if direction > -1:
+            if direction == 0:
 
-                if direction == 0:
+                propagate(flow, values, nodata, i, j, feedback)
+
+            elif direction > 0:
+
+                # Check if (i,j) flows in nodata or outside grid
+
+                x = int(np.log2(direction))
+                di, dj = D8_SEARCH[x]
+
+                if not ingrid(flow, i+di, j+dj) or flow[i+di, j+dj] == -1:
 
                     propagate(flow, values, nodata, i, j, feedback)
-
-                else:
-
-                    # Check if (i,j) flows in nodata or outside grid
-
-                    x = int(np.log2(direction))
-                    di, dj = D8_SEARCH[x]
-
-                    if not ingrid(flow, i+di, j+dj) or flow[i+di, j+dj] == -1:
-
-                        propagate(flow, values, nodata, i, j, feedback)
 
 def propagate(flow, values, nodata, i0, j0, feedback=None):
     """
