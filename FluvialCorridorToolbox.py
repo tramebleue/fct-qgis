@@ -7,6 +7,7 @@ from .algorithms.hydrography import hydrography_algorithms
 from .algorithms.metrics import metrics_algorithms
 from .algorithms.raster import rasterAlgorithms
 from .algorithms.spatial_components import spatial_componentsAlgorithms
+from .algorithms.terrain import terrain_algorithms
 from .algorithms.vector import vector_algorithms
 
 class FluvialCorridorToolboxPlugin:
@@ -56,6 +57,7 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
                metrics_algorithms() + \
                spatial_componentsAlgorithms() + \
                rasterAlgorithms() + \
+               terrain_algorithms() + \
                vector_algorithms()
 
         for alg in algs:

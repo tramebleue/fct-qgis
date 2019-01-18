@@ -3,6 +3,6 @@
 *.c
 *.o
 *.so
-cython/terrain_analysis/*.cpp
+cython/terrain/*.cpp
 tests/testdata/*.aux.xml
 .DS_Store

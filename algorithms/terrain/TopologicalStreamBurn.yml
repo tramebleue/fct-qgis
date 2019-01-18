@@ -1,6 +1,6 @@
-displayName: Flow Accumulation
-groupId: hydrography
-group: Hydrography
+displayName: Topological Stream Burn
+groupId: terrain
+group: Terrain Analysis
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL

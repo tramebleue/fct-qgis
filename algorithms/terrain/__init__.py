@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Spatial Components Algorithms
+Terrain Analysis Algorithms
 
 ***************************************************************************
 *                                                                         *
@@ -13,16 +13,14 @@ Spatial Components Algorithms
 ***************************************************************************
 """
 
-from .DisaggregatePolygon import DisaggregatePolygon
-from .PolygonSkeleton import PolygonSkeleton
-from .ValleyBottom import ValleyBottom
-from .ValleyCenterLine import ValleyCenterLine
+from .DetrendDEM import DetrendDEM
+from .FlowAccumulation import FlowAccumulation
+from .TopologicalStreamBurn import TopologicalStreamBurn
 
-def spatial_componentsAlgorithms():
+def terrain_algorithms():
 
     return [
-        DisaggregatePolygon(),
-        PolygonSkeleton(),
-        ValleyBottom(),
-        ValleyCenterLine()
+        DetrendDEM(),
+        FlowAccumulation(),
+        TopologicalStreamBurn()
     ]
