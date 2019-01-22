@@ -28,7 +28,8 @@ def watershed(flow, values, nodata, feedback=None):
     Fills no-data cells in `values`
     by propagating data values in the inverse (ie. upstream) flow direction
     given by `flow`.
-    Modifies `values` in place.
+
+    Raster `values` will be modified in place.
 
     In typical usage,
     `values` is the Strahler order for stream cells and no data elsewhere,

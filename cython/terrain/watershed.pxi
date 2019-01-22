@@ -20,7 +20,7 @@ cdef long propagate(
     long i0, long j0):
     """
     Propagate data values upstream.
-    Start from cell (i, j) and move in inverse flow direction
+    Start from cell (i0, j0) and move in inverse flow direction
     """
 
     cdef long i, j, count
@@ -64,8 +64,9 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
     Fills no-data cells in `values`
     by propagating data values in the inverse (ie. upstream) flow direction
     given by `flow`.
-    Modifies `values` in place.
-
+    
+    Raster `values` will be modified in place.
+    
     In typical usage,
     `values` is the Strahler order for stream cells and no data elsewhere,
     and the result is a raster map of watersheds,

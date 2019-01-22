@@ -61,10 +61,6 @@ class ApplyMask(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.MASK_EXPRESSION,
             self.tr('Mask Condition')))
 
-        # self.addParameter(QgsProcessingParameterNumber(
-        #     self.NODATA,
-        #     self.tr('Output No-Data Value')))
-
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.OUTPUT,
             self.tr('Masked')))
