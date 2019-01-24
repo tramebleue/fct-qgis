@@ -70,11 +70,6 @@ class OrthogonalTransects(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm)
 
     def initParameters(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
-        # self.addParameter(QgsProcessingParameterFeatureSource(
-        #     self.INPUT,
-        #     self.tr('Stream Network Aggregated by Hack Order with Z Coordinate'),
-        #     [QgsProcessing.TypeVectorLine]))
-
         param_length = QgsProcessingParameterNumber(
             self.LENGTH,
             self.tr('Transect Length'),
@@ -87,11 +82,6 @@ class OrthogonalTransects(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm)
                 self.tr('Transect Length'),
                 QgsPropertyDefinition.DoublePositive))
         self.addParameter(param_length)
-
-        # self.addParameter(QgsProcessingParameterFeatureSink(
-        #     self.OUTPUT,
-        #     self.tr('Transects'),
-        #     QgsProcessing.TypeVectorLine))
 
     def inputLayerTypes(self): #pylint: disable=no-self-use,missing-docstring
         return [QgsProcessing.TypeVectorLine]
