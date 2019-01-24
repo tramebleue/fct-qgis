@@ -214,7 +214,7 @@ class AggregateLineSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                     current = current + 1
                     feedback.setProgress(int(current * total))
 
-                    while link.b in downward_index and degree[link.b] == 2:
+                    while degree[link.b] == 2 and downward_index[link.b]:
 
                         next_link = downward_index[link.b][0]
                         segment = srclayer.getFeature(next_link.feature_id)

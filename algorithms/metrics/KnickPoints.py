@@ -36,23 +36,24 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 from ..metadata import AlgorithmMetadata
 
 class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
-    """ Knickpoints detection based on Relative Slope Extension Index (RSE)
+    """
+    Knickpoints detection based on Relative Slope Extension Index (RSE)
 
-        References:
+    References:
 
-        [1] Seeber, L., & Gornitz, V. (1983).
-            River profiles along the Himalayan arc as indicators of active tectonics.
-            Tectonophysics, 92(4), 335‑367.
-            https://doi.org/10.1016/0040-1951(83)90201-9
+    [1] Seeber, L., & Gornitz, V. (1983).
+        River profiles along the Himalayan arc as indicators of active tectonics.
+        Tectonophysics, 92(4), 335‑367.
+        https://doi.org/10.1016/0040-1951(83)90201-9
 
-        [2] Queiroz et al. (2015).
-            Knickpoint finder: A software tool that improves neotectonic analysis.
-            Computers & Geosciences, 76, 80‑87.
-            https://doi.org/10.1016/j.cageo.2014.11.004
+    [2] Queiroz et al. (2015).
+        Knickpoint finder: A software tool that improves neotectonic analysis.
+        Computers & Geosciences, 76, 80‑87.
+        https://doi.org/10.1016/j.cageo.2014.11.004
 
-        [3] Knickpoint Finder, ArcGIS implementation
-            http://www.neotectonica.ufpr.br/2013/index.php/aplicativos/doc_download/87-knickpointfinder
-            No License
+    [3] Knickpoint Finder, ArcGIS implementation
+        http://www.neotectonica.ufpr.br/2013/index.php/aplicativos/doc_download/87-knickpointfinder
+        No License
     """
 
     METADATA = AlgorithmMetadata.read(__file__, 'KnickPoints')
