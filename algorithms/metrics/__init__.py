@@ -14,9 +14,11 @@ Metrics Algorithms
 """
 
 from .KnickPoints import KnickPoints
+from .OrthogonalTransects import OrthogonalTransects
 
 def metrics_algorithms():
 
     return [
-       KnickPoints()
+       KnickPoints(),
+       OrthogonalTransects()
     ]
