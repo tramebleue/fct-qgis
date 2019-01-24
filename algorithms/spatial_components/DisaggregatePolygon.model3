@@ -50,6 +50,46 @@
         </Option>
       </Option>
     </Option>
+    <Option name="native:orderbyexpression_1" type="Map">
+      <Option name="active" type="bool" value="true"/>
+      <Option name="alg_config"/>
+      <Option name="alg_id" type="QString" value="native:orderbyexpression"/>
+      <Option name="component_description" type="QString" value="Ordonner par expression"/>
+      <Option name="component_pos_x" type="double" value="1701"/>
+      <Option name="component_pos_y" type="double" value="1106"/>
+      <Option name="dependencies"/>
+      <Option name="id" type="QString" value="native:orderbyexpression_1"/>
+      <Option name="outputs"/>
+      <Option name="outputs_collapsed" type="bool" value="true"/>
+      <Option name="parameters_collapsed" type="bool" value="true"/>
+      <Option name="params" type="Map">
+        <Option name="ASCENDING" type="List">
+          <Option type="Map">
+            <Option name="source" type="int" value="2"/>
+            <Option name="static_value" type="bool" value="true"/>
+          </Option>
+        </Option>
+        <Option name="EXPRESSION" type="List">
+          <Option type="Map">
+            <Option name="source" type="int" value="2"/>
+            <Option name="static_value" type="QString" value="&quot;distance&quot;"/>
+          </Option>
+        </Option>
+        <Option name="INPUT" type="List">
+          <Option type="Map">
+            <Option name="child_id" type="QString" value="native:clip_1"/>
+            <Option name="output_name" type="QString" value="OUTPUT"/>
+            <Option name="source" type="int" value="1"/>
+          </Option>
+        </Option>
+        <Option name="NULLS_FIRST" type="List">
+          <Option type="Map">
+            <Option name="source" type="int" value="2"/>
+            <Option name="static_value" type="bool" value="false"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
     <Option name="native:simplifygeometries_1" type="Map">
       <Option name="active" type="bool" value="true"/>
       <Option name="alg_config"/>
@@ -129,16 +169,16 @@
       <Option name="alg_config"/>
       <Option name="alg_id" type="QString" value="qgis:fieldcalculator"/>
       <Option name="component_description" type="QString" value="Calculatrice de champ"/>
-      <Option name="component_pos_x" type="double" value="1708"/>
-      <Option name="component_pos_y" type="double" value="1112"/>
+      <Option name="component_pos_x" type="double" value="1880"/>
+      <Option name="component_pos_y" type="double" value="1188"/>
       <Option name="dependencies"/>
       <Option name="id" type="QString" value="qgis:fieldcalculator_1"/>
       <Option name="outputs" type="Map">
         <Option name="DISAGGREGATED" type="Map">
           <Option name="child_id" type="QString" value="qgis:fieldcalculator_1"/>
           <Option name="component_description" type="QString" value="DISAGGREGATED"/>
-          <Option name="component_pos_x" type="double" value="1908"/>
-          <Option name="component_pos_y" type="double" value="1157"/>
+          <Option name="component_pos_x" type="double" value="2068"/>
+          <Option name="component_pos_y" type="double" value="1247"/>
           <Option name="default_value" type="invalid"/>
           <Option name="mandatory" type="bool" value="false"/>
           <Option name="name" type="QString" value="DISAGGREGATED"/>
@@ -180,7 +220,7 @@
         </Option>
         <Option name="INPUT" type="List">
           <Option type="Map">
-            <Option name="child_id" type="QString" value="native:clip_1"/>
+            <Option name="child_id" type="QString" value="native:orderbyexpression_1"/>
             <Option name="output_name" type="QString" value="OUTPUT"/>
             <Option name="source" type="int" value="1"/>
           </Option>
