@@ -13,14 +13,16 @@ Metrics Algorithms
 ***************************************************************************
 """
 
-from .KnickPoints import KnickPoints
-from .OrthogonalTransects import OrthogonalTransects
 from .AggregateFeatures import AggregateFeatures
+from .KnickPoints import KnickPoints
+from .LineStringZSlope import LineStringZSlope
+from .OrthogonalTransects import OrthogonalTransects
 
 def metrics_algorithms():
 
     return [
         AggregateFeatures(),
         KnickPoints(),
+        LineStringZSlope(),
         OrthogonalTransects()
     ]

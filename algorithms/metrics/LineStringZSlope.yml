@@ -1,0 +1,11 @@
+displayName: LineStringZ Slope
+groupId: metrics
+group: Metrics
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - longitudinal profile
+  - elevation
+  - slope
+  - z

@@ -21,9 +21,9 @@
         * [ ] MeasureDistanceToPointLayer
         * [ ] MergeGeometries
         * [ ] ~~PointOnSurface~~ (replaced by native:pointonsurface)
-        * [ ] RandomPoints
-        * [x] RandomPoissonDiscSampling
-        * [x] RegularHexPoints
+        * [ ] RandomSamples
+        * [x] RandomPoissonDiscSamples
+        * [x] RegularHexSamples
         * [x] RemoveSmallPolygonalObjects
         * [ ] SafePolygonIntersection
         * [ ] ~~SegmentEndpoints~~ (replaced by qgis:extractspecificvertices)
@@ -99,11 +99,11 @@
         * [x] PolygonSkeleton
         * [ ] ValleyBottom
 
-    * [ ] Unstable (unstable, must be fixed)
-        * [ ] CenterLine
+    * [ ] ~~Unstable~~ (unstable, must be fixed)
+        * [ ] ~~CenterLine~~
         * [ ] ~~LeftRightBox~~
-        * [ ] MatchPolygonWithMostImportantLine
-        * [ ] MatchPolygonWithNearestCentroid
+        * [ ] ~~MatchPolygonWithMostImportantLine~~
+        * [ ] ~~MatchPolygonWithNearestCentroid~~
         * [ ] ~~SimplifyVisvalingam~~
         * [ ] ~~SplitLineAtNearestPoint~~
 
@@ -114,10 +114,12 @@
     * [x] SciPyVoronoiPolygons
     * [x] RasterInfo
     * [x] FixLinkOrientation
-    * [ ] BuildDirectedStreamNetwork
+    * [ ] DirectedStreamNetwork
     * [ ] MeanderingEnvelope
     * [x] ValleyBottom based on dem+flow direction
     * [x] UpstreamChannelLength
     * [x] KnickPoint
     * [x] Vectorize Stream Features
     * [x] SetMCoordFromMeasureField
+    * [x] LineStringZSlope
+    * [ ] VertexWiseLineBuffer
