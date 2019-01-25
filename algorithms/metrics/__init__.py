@@ -15,10 +15,12 @@ Metrics Algorithms
 
 from .KnickPoints import KnickPoints
 from .OrthogonalTransects import OrthogonalTransects
+from .HubertTest import HubertTest
 
 def metrics_algorithms():
 
     return [
        KnickPoints(),
-       OrthogonalTransects()
+       OrthogonalTransects(),
+       HubertTest()
     ]

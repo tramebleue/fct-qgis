@@ -1,0 +1,11 @@
+displayName: HubertTest
+groupId: metrics
+group: Metrics
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - AGO
+  - aggregation
+  - statistics
+  - hubert

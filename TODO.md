@@ -69,6 +69,9 @@
     * [ ] Metrics (metrics)
         * [x] DetrendDEM
         * [ ] FilterByMinRank
+        * [x] HubertTest
+            * [ ] Add iterations parameter?
+            * [ ] Add dissolve result option?
         * [ ] LocalFeatureSize
         * [ ] ~~OrthogonalTransects~~ (replaced by native:transect)
         * [ ] PlanformMetrics
