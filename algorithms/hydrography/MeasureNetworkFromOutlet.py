@@ -82,13 +82,15 @@ class MeasureNetworkFromOutlet(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.FROM_NODE_FIELD,
             self.tr('From Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEA'))
 
         self.addParameter(QgsProcessingParameterField(
             self.TO_NODE_FIELD,
             self.tr('To Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEB'))
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
@@ -150,7 +152,7 @@ class MeasureNetworkFromOutlet(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr("Find maximum distance from outlet ..."))
 
         current = 0
-        seen_nodes = set(outlets)
+        seen_nodes = set()
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
 
         while stack:

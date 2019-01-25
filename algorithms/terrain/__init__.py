@@ -15,6 +15,7 @@ Terrain Analysis Algorithms
 
 from .DetrendDEM import DetrendDEM
 from .FlowAccumulation import FlowAccumulation
+from .StreamToFeature import StreamToFeature
 from .TopologicalStreamBurn import TopologicalStreamBurn
 from .Watershed import Watershed
 
@@ -23,6 +24,7 @@ def terrain_algorithms():
     return [
         DetrendDEM(),
         FlowAccumulation(),
+        StreamToFeature(),
         TopologicalStreamBurn(),
         Watershed()
     ]

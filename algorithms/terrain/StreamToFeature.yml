@@ -1,0 +1,10 @@
+displayName: Vectorize Streams
+groupId: terrain
+group: Terrain Analysis
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - hydrography
+  - raster
+  - feature extraction

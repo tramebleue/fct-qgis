@@ -1,5 +1,4 @@
 import numpy as np
-from heapq import heapify, heappop, heappush
 
 # D8 directions in 3x3 neighborhood
 
@@ -83,13 +82,8 @@ def flow_accumulation(flow, out=None, feedback=None):
 
     inflow = np.full(flow.shape, -1, dtype=np.int8)
 
-    # progress = TermProgressBar(2*width*height)
-    # progress.write('Input is %d x %d' % (width, height))
     feedback.setProgressText('Find source cells ...')
 
-    # We use a heap queue to sort cells
-    # from lower z to higher z.
-    # Remember python's heapq is a min-heap.
     stack = list()
     total = 100.0 / (height*width)
     ncells = 0
