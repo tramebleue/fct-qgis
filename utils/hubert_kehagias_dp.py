@@ -85,7 +85,7 @@ def approx(x, segmentation):
 class HubertKehagiasSegmentation(object):
     """
     Find homogeneous segments in mean and variance
-    within an univariate sequence of observations (eg. time serie),
+    within an ordered sequence of univariate observations (eg. time serie),
     using Hubert-Kehagias Dynamic Programming Segmentation Procedure.
 
     Example:
@@ -115,8 +115,14 @@ class HubertKehagiasSegmentation(object):
 
         Indices of segment breakpoints :
 
-        >>> segmentation.segments(kopt)
+        >>> segmentation.breakpoints(kopt)
         [0, 10, 25, 45, 51, 65]
+
+        segments() returns a segment index sequence
+        with same length as `sequence`:
+
+        >>> len(segmentation.segments(kopt))
+        65
 
         Plot modeled sequence (red) on top of input sequence (blue) :
 
@@ -172,11 +178,26 @@ class HubertKehagiasSegmentation(object):
             kmax = min(kmax, len(bic))
         return np.argmin(bic[:kmax+1]) + 1
 
-    def segments(self, rank):
+    def breakpoints(self, rank):
         """
         Returns breakpoints indices for segmentation with `rank` breakpoints
         """
         return backtrack(self.T, rank)
+
+    def segments(self, rank):
+        """
+        Returns the calculated segment index for each input observation
+        for segmentation with `rank` breakpoints.
+        The returned sequence has same length as the input sequence.
+        """
+
+        breakpoints = self.breakpoints(rank)
+        segments = np.zeros(len(self.x), dtype=np.uint16)
+
+        for seg_index, (start, stop) in enumerate(zip(breakpoints[:-1], breakpoints[1:])):
+            segments[start:stop] = seg_index
+
+        return segments
 
     def model(self, rank):
         """
@@ -186,7 +207,7 @@ class HubertKehagiasSegmentation(object):
         Approximate observations in `x`
         by the mean of the segment corresponding to each observation.
         """
-        return approx(self.x, self.segments(rank))
+        return approx(self.x, self.breakpoints(rank))
 
     def sqerror(self, rank):
         """

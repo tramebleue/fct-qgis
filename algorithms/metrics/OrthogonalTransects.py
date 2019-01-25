@@ -115,7 +115,6 @@ class OrthogonalTransects(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm)
 
             return self.length
 
-
     def processFeature(self, feature, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         out_feature = QgsFeature()

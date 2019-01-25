@@ -1,4 +1,4 @@
-displayName: HubertTest
+displayName: Hubert-Kehagias Aggregation
 groupId: metrics
 group: Metrics
 shortHelpString: NULL
@@ -7,5 +7,6 @@ helpUrl: NULL
 tags:
   - AGO
   - aggregation
+  - segmentation
   - statistics
   - hubert
