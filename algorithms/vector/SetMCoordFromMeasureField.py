@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-PropagateMeasure
+Set M Coordinate From Measure Field
 
 ***************************************************************************
 *                                                                         *
@@ -27,11 +27,11 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 
 from ..metadata import AlgorithmMetadata
 
-class PropagateMeasure(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
+class SetMCoordFromMeasureField(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
     """ Set M coordinate with respect to given `measure` field
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'PropagateMeasure')
+    METADATA = AlgorithmMetadata.read(__file__, 'SetMCoordFromMeasureField')
 
     INPUT = 'INPUT'
     MEASURE_FIELD = 'GROUP_FIELD'

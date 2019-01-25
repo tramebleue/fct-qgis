@@ -1,9 +1,9 @@
 * [ ] Dev Strategy
     * [ ] Test Framework for automated tests : split tests YAML into small chunks, one per algorithm
     * [ ] I18n Framework
-    * [ ] Write python installer
+    * [ ] Write python installer (use `doit`)
     * [ ] Dependencies not available in QGIS3 default installation 
-        * [ ] SciPy for BinaryClosing
+        * [ ] SciPy for morphology operations (eg. BinaryClosing) and better Voronoi Polygons
 
 * [ ] Migration of QGis 2.14 Algorithms to QGis 3.4
 
@@ -14,7 +14,7 @@
         * [ ] ~~SimpleRasterStatistics~~
 
     * [ ] Tools for Vectors (vector)
-        * [ ] DeduplicateLines
+        * [ ] ~~DeduplicateLines~~ (replaced by qgis:deleteduplicategeometries)
         * [ ] InterpolateLine
         * [ ] JoinByNearest
         * [x] LineMidpoints
@@ -71,9 +71,9 @@
         * [ ] FilterByMinRank
         * [x] HubertTest
             * [ ] Add iterations parameter?
-            * [ ] Add dissolve result option?
+            * [x] Add dissolve result option?
         * [ ] LocalFeatureSize
-        * [ ] ~~OrthogonalTransects~~ (replaced by native:transect)
+        * [x] OrthogonalTransects (possible alternative is native:transect)
         * [ ] PlanformMetrics
         * [ ] SegmentMeanSlope
         * [ ] SegmentMeanValue
@@ -116,6 +116,8 @@
     * [x] FixLinkOrientation
     * [ ] BuildDirectedStreamNetwork
     * [ ] MeanderingEnvelope
-    * [ ] ValleyBottom based on dem+flow direction
+    * [x] ValleyBottom based on dem+flow direction
     * [x] UpstreamChannelLength
-    * [ ] KnickPoint
+    * [x] KnickPoint
+    * [x] Vectorize Stream Features
+    * [x] SetMCoordFromMeasureField
