@@ -48,12 +48,12 @@ def resolveField(source, field):
     idx = source.fields().lookupField(field)
     return source.fields().at(idx) if idx > -1 else None
 
-class RegularHexPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
+class RegularHexSamples(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Generate a regular hexagon grid of points,
         such as all the points are within the same distance.
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'RegularHexPoints')
+    METADATA = AlgorithmMetadata.read(__file__, 'RegularHexSamples')
 
     INPUT = 'INPUT'
     PK_FIELD = 'PK_FIELD'

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-RandomPoissonDiscSampling - Generate samples from a blue noise distribution,
-                            with a minimal distance between samples
+Random Poisson Disc Samples
 
 ***************************************************************************
 *                                                                         *
@@ -196,12 +195,12 @@ class PoissonDiscSampler(object):
         return self
 
 
-class RandomPoissonDiscSampling(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
+class RandomPoissonDiscSamples(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
     """ Generate samples from a blue noise distribution,
         with a minimal distance between samples
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'RandomPoissonDiscSampling')
+    METADATA = AlgorithmMetadata.read(__file__, 'RandomPoissonDiscSamples')
 
     PK_FIELD = 'PK_FIELD'
     EXISTING_SAMPLES = 'EXISTING_SAMPLES'
