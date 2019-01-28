@@ -1,0 +1,11 @@
+displayName: Transform Coordinate Z|M By Expression
+groupId: fctvectortools
+group: Tools for Vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - vector
+  - generator
+  - z
+  - m

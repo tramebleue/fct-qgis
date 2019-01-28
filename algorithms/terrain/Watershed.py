@@ -28,17 +28,13 @@ from ..metadata import AlgorithmMetadata
 
 class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
-    Watershed Analysis
-
-    Fills no-data cells in `values`
-    by propagating data values in the inverse (ie. upstream) flow direction
-    given by `flow`.
-    Modifies `values` in place.
+    Fills no-data cells in Target Raster
+    by propagating data values in the inverse (ie. upward) flow direction
+    given by D8-encoded Flow Direction.
 
     In typical usage,
-    `values` is the Strahler order for stream cells and no data elsewhere,
-    and the result is a raster map of watersheds,
-    identified by their Strahler order.
+    the `Target Raster` is the Strahler order for stream cells and no data elsewhere,
+    and the result is a raster map of watersheds, identified by their Strahler order.
     """
 
     METADATA = AlgorithmMetadata.read(__file__, 'Watershed')
@@ -50,12 +46,12 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
         self.addParameter(QgsProcessingParameterRasterLayer(
-            self.FLOW,
-            self.tr('Flow Direction')))
-
-        self.addParameter(QgsProcessingParameterRasterLayer(
             self.TARGET,
             self.tr('Target Raster')))
+
+        self.addParameter(QgsProcessingParameterRasterLayer(
+            self.FLOW,
+            self.tr('Flow Direction')))
 
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.OUTPUT,

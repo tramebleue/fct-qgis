@@ -22,8 +22,9 @@ from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
 )
 
 class AlgorithmMetadata(object):
-    """ Base class for storing algorithm metadata
-        in a separate YAML file next to the .py source file.
+    """
+    Base class for storing algorithm metadata
+    in a separate YAML (.yml) file next to the .py source file.
     """
 
     # pylint:disable=no-member,missing-docstring
@@ -63,10 +64,13 @@ class AlgorithmMetadata(object):
         return self.METADATA.get('helpUrl')
 
     def shortDescription(self):
-        return self.METADATA.get('shortDescription', self.__doc__)
+        return self.renderHelpText(self.METADATA.get('shortDescription', self.__doc__))
 
     def shortHelpString(self):
         return self.METADATA.get('shortHelpString')
 
     def tags(self):
         return [self.tr(tag) for tag in self.METADATA.get('tags', [])]
+
+    def renderHelpText(self, text): #pylint:disable=no-self-use
+        return text.replace('\n', '<br/>') if text else ''

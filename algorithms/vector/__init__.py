@@ -14,6 +14,7 @@ Vector General Algorithms
 """
 
 from .LineMidpoints import LineMidpoints
+from .LineStringBuffer import LineStringBuffer
 from .PointsAlongPolygon import PointsAlongPolygon
 from .PointsInPolygon import PointsInPolygon
 from .PointsMedialAxis import PointsMedialAxis
@@ -22,12 +23,14 @@ from .RegularHexSamples import RegularHexSamples
 from .RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from .SciPyVoronoiPolygons import SciPyVoronoiPolygons
 from .SetMCoordFromMeasureField import SetMCoordFromMeasureField
+from .TransformCoordinateByExpression import TransformCoordinateByExpression
 from .UniquePoints import UniquePoints
 
 def vector_algorithms():
 
     return [
         LineMidpoints(),
+        LineStringBuffer(),
         PointsAlongPolygon(),
         PointsInPolygon(),
         PointsMedialAxis(),
@@ -36,5 +39,6 @@ def vector_algorithms():
         RemoveSmallPolygonalObjects(),
         SciPyVoronoiPolygons(),
         SetMCoordFromMeasureField(),
+        TransformCoordinateByExpression(),
         UniquePoints()
     ]
