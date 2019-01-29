@@ -14,7 +14,7 @@ Vector General Algorithms
 """
 
 from .LineMidpoints import LineMidpoints
-from .LineStringBuffer import LineStringBuffer
+from .LineStringBufferByM import LineStringBufferByM
 from .PointsAlongPolygon import PointsAlongPolygon
 from .PointsInPolygon import PointsInPolygon
 from .PointsMedialAxis import PointsMedialAxis
@@ -30,7 +30,7 @@ def vector_algorithms():
 
     return [
         LineMidpoints(),
-        LineStringBuffer(),
+        LineStringBufferByM(),
         PointsAlongPolygon(),
         PointsInPolygon(),
         PointsMedialAxis(),

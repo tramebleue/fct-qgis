@@ -15,6 +15,7 @@ Variable-Width Vertex-Wise Buffer
 
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsExpression,
+    QgsExpressionContext,
     QgsExpressionContextScope,
     QgsFeature,
     QgsLineString,
@@ -84,31 +85,30 @@ class TransformCoordinateByExpression(AlgorithmMetadata, QgsProcessingFeatureBas
 
         store = self.parameterAsInt(parameters, self.STORE, context)
 
-        self.expression_context = self.createExpressionContext(parameters, context)
-        self.zm_scope = QgsExpressionContextScope()
+        self.vertex_scope = QgsExpressionContextScope()
 
         for variable in ('x', 'y', 'z', 'm', 'vertex'):
             var = QgsExpressionContextScope.StaticVariable(
                 variable, 0.0,
                 readOnly=False,
                 isStatic=False)
-            self.zm_scope.addVariable(var)
-        self.expression_context.appendScope(self.zm_scope)
+            self.vertex_scope.addVariable(var)
+        context.expressionContext().appendScope(self.vertex_scope)
 
         self.store_m = (store == self.STORE_M)
 
-        context.setExpressionContext(self.expression_context)
+        # context.setExpressionContext(self.expression_context)
 
         self.expression = QgsExpression(self.parameterAsExpression(parameters, self.EXPRESSION, context))
         if self.expression.hasParserError():
             feedback.reportError(self.expression.parserErrorString())
             return False
 
-        self.expression.prepare(self.expression_context)
+        self.expression.prepare(context.expressionContext())
 
         return True
 
-    def transform(self, geometry):
+    def transform(self, geometry, context):
         """
         Evaluate input expression for each vertex,
         and store the result into M coordinate.
@@ -119,13 +119,13 @@ class TransformCoordinateByExpression(AlgorithmMetadata, QgsProcessingFeatureBas
 
         for i, vertex in enumerate(geometry.vertices()):
 
-            self.zm_scope.setVariable('x', vertex.x())
-            self.zm_scope.setVariable('y', vertex.y())
-            self.zm_scope.setVariable('z', vertex.z())
-            self.zm_scope.setVariable('m', vertex.m())
-            self.zm_scope.setVariable('vertex', i)
+            self.vertex_scope.setVariable('x', vertex.x())
+            self.vertex_scope.setVariable('y', vertex.y())
+            self.vertex_scope.setVariable('z', vertex.z())
+            self.vertex_scope.setVariable('m', vertex.m())
+            self.vertex_scope.setVariable('vertex', i)
 
-            value = self.expression.evaluate(self.expression_context)
+            value = self.expression.evaluate(context.expressionContext())
             if self.expression.hasEvalError():
                 raise QgsProcessingException(
                     self.tr('Evaluation error: {0}').format(self.expression.evalErrorString()))
@@ -142,7 +142,7 @@ class TransformCoordinateByExpression(AlgorithmMetadata, QgsProcessingFeatureBas
         features = []
 
         for geometry in feature.geometry().asGeometryCollection():
-            new_geometry = self.transform(geometry)
+            new_geometry = self.transform(geometry, context)
             new_feature = QgsFeature()
             new_feature.setAttributes(feature.attributes())
             new_feature.setGeometry(new_geometry)
