@@ -13,7 +13,7 @@ DrapeVectors
 ***************************************************************************
 """
 
-from qgis.core import ( # pylint:disable=no-name-in-module
+from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsFeature,
     QgsGeometry,
     QgsLineString,
@@ -57,8 +57,8 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             defaultValue=1))
 
     def inputLayerTypes(self): #pylint: disable=no-self-use,missing-docstring
-        # return [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPolygon]
-        return [QgsProcessing.TypeVectorLine]
+        return [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPolygon]
+        # return [QgsProcessing.TypeVectorLine]
 
     def outputName(self): #pylint: disable=missing-docstring
         return self.tr('Draped Features')
@@ -72,8 +72,8 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
     def supportInPlaceEdit(self, layer): #pylint: disable=no-self-use,missing-docstring
         return super().supportInPlaceEdit(layer) \
-            and QgsWkbTypes.hasZ(layer.wkbType()) \
-            and QgsWkbTypes.isSingleType(layer.wkbType())
+            and QgsWkbTypes.hasZ(layer.wkbType())
+            # and QgsWkbTypes.isSingleType(layer.wkbType())
 
     def prepareAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
@@ -83,9 +83,9 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         code1 = raster.crs().authid().split(':')[1]
         code2 = layer.sourceCrs().authid().split(':')[1]
 
-        if QgsWkbTypes.isMultiType(layer.wkbType()):
-            feedback.reportError(self.tr('Multipart geometries are not currently supported'), True)
-            return False
+        # if QgsWkbTypes.isMultiType(layer.wkbType()):
+        #     feedback.reportError(self.tr('Multipart geometries are not currently supported'), True)
+        #     return False
 
         self.data = RasterDataAccess(
             raster.dataProvider().dataSourceUri(),
@@ -99,32 +99,31 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         with self.data:
             return super().processAlgorithm(parameters, context, feedback)
 
+    def processLineString(self, line): # pylint: disable=unused-argument
+        """ Drape simple linestring
+        """
+
+        points = [QgsPoint(x, y, z) for x, y, z, m in self.data.linestring(QgsGeometry(line))]
+        return QgsLineString(points)
+
+    def processPolygon(self, polygon):
+        """ Drape simple polygon
+        """
+
+        rings = [
+            self.processLineString(polygon.childGeometry(i))
+            for i in range(polygon.childCount())
+        ]
+
+        new_polygon = QgsPolygon()
+        new_polygon.setExteriorRing(rings[0].clone())
+        for ring in rings[1:]:
+            new_polygon.addInteriorRing(ring.clone())
+
+        return new_polygon
+
 
     def processFeature(self, feature, context, feedback): #pylint: disable=unused-argument,missing-docstring
-
-        def processLineString(line): # pylint: disable=unused-argument
-            """ Drape simple linestring
-            """
-
-            points = [QgsPoint(x, y, z) for x, y, z, m in self.data.linestring(QgsGeometry(line))]
-            return QgsLineString(points)
-
-        def processPolygon(polygon):
-            """ Drape simple polygon
-            """
-
-            rings = [
-                processLineString(polygon.childGeometry(i))
-                for i in range(polygon.childCount())
-            ]
-
-            new_polygon = QgsPolygon()
-            ring = rings[0]
-            new_polygon.setExteriorRing(ring)
-            for ring in rings[1:]:
-                new_polygon.addInteriorRing(ring)
-
-            return new_polygon
 
         geometry = feature.geometry()
 
@@ -137,8 +136,8 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                 for part in geometry.constParts():
 
                     # part instance of QgsLineString
-                    linestring = processLineString(part)
-                    parts.addGeometry(linestring)
+                    linestring = self.processLineString(part)
+                    parts.addGeometry(linestring.clone())
 
             else:
 
@@ -147,8 +146,8 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                 for part in geometry.constParts():
 
                     # part instance of QgsPolygon
-                    polygon = processPolygon(part)
-                    parts.addGeometry(polygon)
+                    polygon = self.processPolygon(part)
+                    parts.addGeometry(polygon.clone())
 
             outfeature = QgsFeature()
             outfeature.setAttributes(feature.attributes())
@@ -159,7 +158,7 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
             if QgsWkbTypes.flatType(geometry.wkbType()) == QgsWkbTypes.LineString:
 
-                linestring = processLineString(geometry)
+                linestring = self.processLineString(geometry)
                 outfeature = QgsFeature()
                 outfeature.setGeometry(QgsGeometry(linestring))
                 outfeature.setAttributes(feature.attributes())
@@ -167,7 +166,7 @@ class DrapeVectors(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             else:
 
                 polygon = [part for part in geometry.constParts()][0]
-                new_polygon = processPolygon(polygon)
+                new_polygon = self.processPolygon(polygon)
                 outfeature.setGeometry(QgsGeometry(new_polygon))
                 outfeature.setAttributes(feature.attributes())
 
