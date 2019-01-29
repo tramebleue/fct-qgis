@@ -69,9 +69,9 @@
     * [ ] Metrics (metrics)
         * [x] DetrendDEM
         * [ ] FilterByMinRank
-        * [x] HubertTest
-            * [ ] Add iterations parameter?
-            * [x] Add dissolve result option?
+        * [x] AggregateFeatures
+            * [x] Add dissolve result option
+            * [ ] Add new segmentation algorithms (Lise Vaudor)
         * [ ] LocalFeatureSize
         * [x] OrthogonalTransects (possible alternative is native:transect)
         * [ ] PlanformMetrics
