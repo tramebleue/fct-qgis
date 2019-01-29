@@ -122,4 +122,5 @@
     * [x] Vectorize Stream Features
     * [x] SetMCoordFromMeasureField
     * [x] LineStringZSlope
-    * [ ] VertexWiseLineBuffer
+    * [x] TransformCoordinateByExpression
+    * [x] LineStringBufferByM

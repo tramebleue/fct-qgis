@@ -15,7 +15,6 @@ Variable-Width Vertex-Wise Buffer
 
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsExpression,
-    QgsExpressionContext,
     QgsExpressionContextScope,
     QgsFeature,
     QgsLineString,
