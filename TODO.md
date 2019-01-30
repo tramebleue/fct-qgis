@@ -60,7 +60,7 @@
         * [x] SelectDownstreamComponents (merged with SelectConnectedComponents)
         * [ ] SelectFullLengthPaths
         * [ ] SelectGraphCycle
-        * [ ] SelectMainDrain
+        * [x] SelectMainDrain (renamed to ExportMainDrain)
         * [ ] SelectShortTributaries
         * [x] SelectUpstreamComponents (merged with SelectConnectedComponents)
         * [ ] ~~Sequencing~~ (replaced by BuildDirectedStreamNetwork)
@@ -127,3 +127,4 @@
     * [ ] Fill Sinks (Wang & Liu)
     * [ ] Strahler Order (Raster)
     * [ ] Simple Raster Filter (Mean, Median, Max, Min, ...)
+    * [ ] ConnectLines

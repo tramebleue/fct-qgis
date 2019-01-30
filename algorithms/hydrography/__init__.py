@@ -15,6 +15,8 @@ Hydrography Algorithms
 
 from .AggregateLineSegments import AggregateLineSegments
 from .AggregateLines import AggregateLines
+from .ConnectLines import ConnectLines
+from .ExportMainDrain import ExportMainDrain
 from .FixLinkOrientation import FixLinkOrientation
 from .IdentifyNetworkNodes import IdentifyNetworkNodes
 from .LengthOrder import LengthOrder
@@ -32,6 +34,8 @@ def hydrography_algorithms():
     return [
         AggregateLines(),
         AggregateLineSegments(),
+        ConnectLines(),
+        ExportMainDrain(),
         FixLinkOrientation(),
         IdentifyNetworkNodes(),
         LengthOrder(),

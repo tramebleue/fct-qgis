@@ -78,14 +78,14 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             self.tr('From Node Field'),
             parentLayerParameterName=self.INPUT,
             type=QgsProcessingParameterField.Numeric,
-            defaultValue='NODE_A'))
+            defaultValue='NODEA'))
 
         self.addParameter(QgsProcessingParameterField(
             self.TO_NODE_FIELD,
             self.tr('To Node Field'),
             parentLayerParameterName=self.INPUT,
             type=QgsProcessingParameterField.Numeric,
-            defaultValue='NODE_B'))
+            defaultValue='NODEB'))
 
         self.addParameter(QgsProcessingParameterFeatureSource(
             self.NODES,
