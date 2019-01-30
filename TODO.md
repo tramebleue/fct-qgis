@@ -74,7 +74,7 @@
             * [ ] Add new segmentation algorithms (Lise Vaudor)
         * [ ] LocalFeatureSize
         * [x] OrthogonalTransects (possible alternative is native:transect)
-        * [ ] PlanformMetrics
+        * [x] PlanformMetrics
         * [ ] SegmentMeanSlope
         * [ ] SegmentMeanValue
         * [ ] SegmentPlanarSlope
@@ -124,3 +124,6 @@
     * [x] LineStringZSlope
     * [x] TransformCoordinateByExpression
     * [x] LineStringBufferByM
+    * [ ] Fill Sinks (Wang & Liu)
+    * [ ] Strahler Order (Raster)
+    * [ ] Simple Raster Filter (Mean, Median, Max, Min, ...)

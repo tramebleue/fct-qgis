@@ -17,6 +17,7 @@ from .AggregateFeatures import AggregateFeatures
 from .KnickPoints import KnickPoints
 from .LineStringZSlope import LineStringZSlope
 from .OrthogonalTransects import OrthogonalTransects
+from .PlanformMetrics import PlanformMetrics
 
 def metrics_algorithms():
 
@@ -24,5 +25,6 @@ def metrics_algorithms():
         AggregateFeatures(),
         KnickPoints(),
         LineStringZSlope(),
-        OrthogonalTransects()
+        OrthogonalTransects(),
+        PlanformMetrics()
     ]

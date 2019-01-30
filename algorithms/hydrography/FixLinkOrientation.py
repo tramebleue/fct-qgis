@@ -131,7 +131,7 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         outlets_def = self.parameterAsInt(parameters, self.OUTLETS_DEFINITION, context)
 
         if not QgsWkbTypes.hasZ(nodes.wkbType()):
-            feedback.pushInfo(self.tr('Input nodes must have Z coordinate'))
+            feedback.reportError(self.tr('Input nodes must have Z coordinate'), True)
             return False
 
         self.parameters = Parameters(
