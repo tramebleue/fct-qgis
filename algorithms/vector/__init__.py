@@ -25,6 +25,7 @@ from .SciPyVoronoiPolygons import SciPyVoronoiPolygons
 from .SetMCoordFromMeasureField import SetMCoordFromMeasureField
 from .TransformCoordinateByExpression import TransformCoordinateByExpression
 from .UniquePoints import UniquePoints
+from .VariableLengthTransects import VariableLengthTransects
 
 def vector_algorithms():
 
@@ -40,5 +41,6 @@ def vector_algorithms():
         SciPyVoronoiPolygons(),
         SetMCoordFromMeasureField(),
         TransformCoordinateByExpression(),
-        UniquePoints()
+        UniquePoints(),
+        VariableLengthTransects()
     ]
