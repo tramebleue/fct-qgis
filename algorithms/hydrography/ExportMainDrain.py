@@ -68,7 +68,7 @@ class ExportMainDrain(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Traversal Cost'),
             defaultValue=0.0)
         param_cost.setIsDynamic(True)
-        param_cost.setDynamicLayerParameterName('INPUT')
+        param_cost.setDynamicLayerParameterName(self.COST)
         param_cost.setDynamicPropertyDefinition(
             QgsPropertyDefinition(
                 self.COST,
