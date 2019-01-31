@@ -45,11 +45,11 @@ from qgis.core import (
 from ..metadata import AlgorithmMetadata
 
 class LineMidpoints(AlgorithmMetadata, QgsProcessingAlgorithm):
-    """ Generate a point at the middle of each segment
+    """
+    Generate a point at the middle of each segment
     """
 
     METADATA = AlgorithmMetadata.read(__file__, 'LineMidpoints')
-
 
     INPUT = 'INPUT'
     OUTPUT = 'OUTPUT'

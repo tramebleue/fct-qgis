@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Variable-length transects
+Transect By Point
 
 ***************************************************************************
 *                                                                         *
@@ -17,14 +17,17 @@ import math
 
 from qgis.core import ( #pylint: disable=import-error,no-name-in-module
     QgsFeature,
+    QgsFeatureRequest,
     QgsGeometry,
     QgsPointXY,
     QgsProcessing,
     QgsProcessingException,
     QgsProcessingFeatureBasedAlgorithm,
     QgsProcessingParameterDistance,
+    QgsProcessingParameterFeatureSource,
     QgsProcessingParameters,
     QgsPropertyDefinition,
+    QgsSpatialIndex,
     QgsVector,
     QgsWkbTypes
 )
@@ -51,20 +54,23 @@ def transect(origin, direction, length):
 
     return QgsGeometry.fromPolylineXY([t1, t2])
 
-class VariableLengthTransects(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
+class TransectByPoint(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
     """
-    Variable-length transects.
-
-    Create transects of variable length specified in a field,
-    spaced by given interval along the generating polyline.
+    Creates transects along line at specified points.
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'VariableLengthTransects')
+    METADATA = AlgorithmMetadata.read(__file__, 'TransectByPoint')
 
+    LINES = 'LINES'
     LENGTH = 'LENGTH'
-    INTERVAL = 'INTERVAL'
+    SEARCH_DISTANCE = 'SEARCH_DISTANCE'
 
     def initParameters(self, configuration): #pylint: disable=unused-argument,missing-docstring
+
+        self.addParameter(QgsProcessingParameterFeatureSource(
+            self.LINES,
+            self.tr('Lines'),
+            [QgsProcessing.TypeVectorLine]))
 
         param_length = QgsProcessingParameterDistance(
             self.LENGTH,
@@ -80,22 +86,14 @@ class VariableLengthTransects(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
                 QgsPropertyDefinition.Double))
         self.addParameter(param_length)
 
-        param_distance = QgsProcessingParameterDistance(
-            self.INTERVAL,
-            self.tr('Distance Between Transects'),
+        self.addParameter(QgsProcessingParameterDistance(
+            self.SEARCH_DISTANCE,
+            self.tr('Search Distance'),
             parentParameterName='INPUT',
-            defaultValue=20.0)
-        param_distance.setIsDynamic(True)
-        param_distance.setDynamicLayerParameterName(self.INTERVAL)
-        param_distance.setDynamicPropertyDefinition(
-            QgsPropertyDefinition(
-                self.INTERVAL,
-                self.tr('Distance Between Transects'),
-                QgsPropertyDefinition.Double))
-        self.addParameter(param_distance)
+            defaultValue=50.0))
 
     def inputLayerTypes(self): #pylint: disable=no-self-use,missing-docstring
-        return [QgsProcessing.TypeVectorLine]
+        return [QgsProcessing.TypeVectorPoint]
 
     def outputName(self): #pylint: disable=missing-docstring
         return self.tr('Transects')
@@ -109,9 +107,11 @@ class VariableLengthTransects(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
     def prepareAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         self.dynamic_parameters = dict()
-
         self.registerDynamicParameterAsDouble(parameters, self.LENGTH, context)
-        self.registerDynamicParameterAsDouble(parameters, self.INTERVAL, context)
+
+        self.lines = self.parameterAsSource(parameters, self.LINES, context)
+        self.search_distance = self.parameterAsDouble(parameters, self.SEARCH_DISTANCE, context)
+        self.line_index = QgsSpatialIndex(self.lines.getFeatures())
 
         return True
 
@@ -146,23 +146,38 @@ class VariableLengthTransects(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
 
     def processFeature(self, feature, context, feedback): #pylint: disable=no-self-use,unused-argument,missing-docstring
 
-        cursor = 0.0
+        transects = []
         length = self.dynamicParameterAsDouble(self.LENGTH, context)
-        interval = self.dynamicParameterAsDouble(self.INTERVAL, context)
-        geometry = feature.geometry()
-        transects = list()
+        point = feature.geometry()
 
-        while cursor < geometry.length():
+        nearest_line = None
+        min_distance = float('inf')
 
-            origin = geometry.interpolate(cursor).asPoint()
+        rect = point.boundingBox()
+        rect.grow(self.search_distance)
+        candidates = self.line_index.intersects(rect)
+        request = QgsFeatureRequest().setFilterFids(candidates)
+
+        for line in self.lines.getFeatures(request):
+
+            distance = line.geometry().distance(point)
+
+            if distance < self.search_distance and distance < min_distance:
+
+                min_distance = distance
+                nearest_line = line
+
+        if nearest_line:
+
+            geometry = nearest_line.geometry()
+            cursor = geometry.lineLocatePoint(point)
+            origin = geometry.interpolate(cursor)
             angle = geometry.interpolateAngle(cursor)
             direction = QgsVector(-math.cos(angle), math.sin(angle))
 
             new_feature = QgsFeature()
             new_feature.setAttributes(feature.attributes())
-            new_feature.setGeometry(transect(origin, direction, length))
+            new_feature.setGeometry(transect(origin.asPoint(), direction, length))
             transects.append(new_feature)
-
-            cursor += interval
 
         return transects

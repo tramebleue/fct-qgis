@@ -18,11 +18,13 @@ from .LineStringBufferByM import LineStringBufferByM
 from .PointsAlongPolygon import PointsAlongPolygon
 from .PointsInPolygon import PointsInPolygon
 from .PointsMedialAxis import PointsMedialAxis
+from .ProjectPointOnNearestLine import ProjectPointOnNearestLine
 from .RandomPoissonDiscSamples import RandomPoissonDiscSamples
 from .RegularHexSamples import RegularHexSamples
 from .RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from .SciPyVoronoiPolygons import SciPyVoronoiPolygons
 from .SetMCoordFromMeasureField import SetMCoordFromMeasureField
+from .TransectByPoint import TransectByPoint
 from .TransformCoordinateByExpression import TransformCoordinateByExpression
 from .UniquePoints import UniquePoints
 from .VariableLengthTransects import VariableLengthTransects
@@ -35,11 +37,13 @@ def vector_algorithms():
         PointsAlongPolygon(),
         PointsInPolygon(),
         PointsMedialAxis(),
+        ProjectPointOnNearestLine(),
         RandomPoissonDiscSamples(),
         RegularHexSamples(),
         RemoveSmallPolygonalObjects(),
         SciPyVoronoiPolygons(),
         SetMCoordFromMeasureField(),
+        TransectByPoint(),
         TransformCoordinateByExpression(),
         UniquePoints(),
         VariableLengthTransects()
