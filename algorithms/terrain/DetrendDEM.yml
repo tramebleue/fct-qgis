@@ -1,4 +1,4 @@
-displayName: Detrend Digital Elevation Model
+displayName: Relative DEM (Topological)
 groupId: terrain
 group: Terrain Analysis
 shortHelpString: NULL
@@ -7,3 +7,4 @@ helpUrl: NULL
 tags:
   - dem
   - elevation
+  - voronoi

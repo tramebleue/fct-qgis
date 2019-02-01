@@ -21,7 +21,7 @@
         * [ ] MeasureDistanceToPointLayer
         * [ ] MergeGeometries
         * [ ] ~~PointOnSurface~~ (replaced by native:pointonsurface)
-        * [ ] RandomSamples
+        * [ ] ~~RandomSamples~~
         * [x] RandomPoissonDiscSamples
         * [x] RegularHexSamples
         * [x] RemoveSmallPolygonalObjects
@@ -52,9 +52,9 @@
         * [ ] MatchNetworkNodes
         * [ ] MatchNetworkSegments
         * [x] MeasureLinesFromOutlet (renamed to MeasureNetworkFromOutlet)
-        * [ ] MeasurePointsAlongLine
+        * [x] MeasurePointsAlongLine (merged with ProjectPointOnNearestLine)
         * [x] NetworkNodes
-        * [ ] ProjectPointsAlongLine
+        * [x] ProjectPointsAlongLine (renamed to ProjectPointOnNearestLine)
         * [x] ReverseFlowDirection (~~replaced by native:reverselinedirection~~)
         * [x] SelectConnectedComponents
         * [x] SelectDownstreamComponents (merged with SelectConnectedComponents)
@@ -126,5 +126,7 @@
     * [x] LineStringBufferByM
     * [ ] Fill Sinks (Wang & Liu)
     * [ ] Strahler Order (Raster)
-    * [ ] Simple Raster Filter (Mean, Median, Max, Min, ...)
-    * [ ] ConnectLines
+    * [ ] Simple Raster Filter (Mean, Median, Max, Min, Std/Var...)
+    * [x] ConnectLines
+    * [x] Variable Length Transect By Interval
+    * [x] Variable Length Transect By Point
