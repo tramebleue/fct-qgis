@@ -398,6 +398,64 @@
         </Option>
       </Option>
     </Option>
+    <Option name="qgis:fieldcalculator_3" type="Map">
+      <Option name="active" type="bool" value="true"/>
+      <Option name="alg_config"/>
+      <Option name="alg_id" type="QString" value="qgis:fieldcalculator"/>
+      <Option name="component_description" type="QString" value="Compute ORDERING_FIELD"/>
+      <Option name="component_pos_x" type="double" value="928"/>
+      <Option name="component_pos_y" type="double" value="1580"/>
+      <Option name="dependencies"/>
+      <Option name="id" type="QString" value="qgis:fieldcalculator_3"/>
+      <Option name="outputs"/>
+      <Option name="outputs_collapsed" type="bool" value="true"/>
+      <Option name="parameters_collapsed" type="bool" value="true"/>
+      <Option name="params" type="Map">
+        <Option name="FIELD_LENGTH" type="List">
+          <Option type="Map">
+            <Option name="source" type="int" value="2"/>
+            <Option name="static_value" type="int" value="10"/>
+          </Option>
+        </Option>
+        <Option name="FIELD_NAME" type="List">
+          <Option type="Map">
+            <Option name="source" type="int" value="2"/>
+            <Option name="static_value" type="QString" value="ORDERING_FIELD"/>
+          </Option>
+        </Option>
+        <Option name="FIELD_PRECISION" type="List">
+          <Option type="Map">
+            <Option name="source" type="int" value="2"/>
+            <Option name="static_value" type="int" value="0"/>
+          </Option>
+        </Option>
+        <Option name="FIELD_TYPE" type="List">
+          <Option type="Map">
+            <Option name="source" type="int" value="2"/>
+            <Option name="static_value" type="int" value="1"/>
+          </Option>
+        </Option>
+        <Option name="FORMULA" type="List">
+          <Option type="Map">
+            <Option name="source" type="int" value="2"/>
+            <Option name="static_value" type="QString" value="&quot;AXIS_FID&quot;*1000000 + &quot;DGO_FID&quot;"/>
+          </Option>
+        </Option>
+        <Option name="INPUT" type="List">
+          <Option type="Map">
+            <Option name="child_id" type="QString" value="qgis:fieldcalculator_2"/>
+            <Option name="output_name" type="QString" value="OUTPUT"/>
+            <Option name="source" type="int" value="1"/>
+          </Option>
+        </Option>
+        <Option name="NEW_FIELD" type="List">
+          <Option type="Map">
+            <Option name="source" type="int" value="2"/>
+            <Option name="static_value" type="bool" value="true"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
     <Option name="qgis:pointsalonglines_1" type="Map">
       <Option name="active" type="bool" value="true"/>
       <Option name="alg_config"/>
@@ -443,16 +501,16 @@
       <Option name="alg_config"/>
       <Option name="alg_id" type="QString" value="qgis:refactorfields"/>
       <Option name="component_description" type="QString" value="Refactoriser les champs"/>
-      <Option name="component_pos_x" type="double" value="934"/>
-      <Option name="component_pos_y" type="double" value="1588"/>
+      <Option name="component_pos_x" type="double" value="938"/>
+      <Option name="component_pos_y" type="double" value="1668"/>
       <Option name="dependencies"/>
       <Option name="id" type="QString" value="qgis:refactorfields_1"/>
       <Option name="outputs" type="Map">
         <Option name="DISAGGREGATED" type="Map">
           <Option name="child_id" type="QString" value="qgis:refactorfields_1"/>
           <Option name="component_description" type="QString" value="DISAGGREGATED"/>
-          <Option name="component_pos_x" type="double" value="1167"/>
-          <Option name="component_pos_y" type="double" value="1615"/>
+          <Option name="component_pos_x" type="double" value="1169"/>
+          <Option name="component_pos_y" type="double" value="1698"/>
           <Option name="default_value" type="invalid"/>
           <Option name="mandatory" type="bool" value="false"/>
           <Option name="name" type="QString" value="DISAGGREGATED"/>
@@ -468,7 +526,7 @@
             <Option name="static_value" type="List">
               <Option type="Map">
                 <Option name="expression" type="QString" value="&quot;DGO_FID&quot;"/>
-                <Option name="length" type="int" value="15"/>
+                <Option name="length" type="int" value="10"/>
                 <Option name="name" type="QString" value="DGO_FID"/>
                 <Option name="precision" type="int" value="0"/>
                 <Option name="type" type="int" value="2"/>
@@ -478,7 +536,14 @@
                 <Option name="length" type="int" value="10"/>
                 <Option name="name" type="QString" value="AXIS_FID"/>
                 <Option name="precision" type="int" value="0"/>
-                <Option name="type" type="int" value="4"/>
+                <Option name="type" type="int" value="2"/>
+              </Option>
+              <Option type="Map">
+                <Option name="expression" type="QString" value="&quot;ORDERING_FIELD&quot;"/>
+                <Option name="length" type="int" value="10"/>
+                <Option name="name" type="QString" value="ORDERING_FIELD"/>
+                <Option name="precision" type="int" value="0"/>
+                <Option name="type" type="int" value="2"/>
               </Option>
               <Option type="Map">
                 <Option name="expression" type="QString" value="&quot;HubDist&quot; * 2"/>
@@ -492,7 +557,7 @@
         </Option>
         <Option name="INPUT" type="List">
           <Option type="Map">
-            <Option name="child_id" type="QString" value="qgis:fieldcalculator_2"/>
+            <Option name="child_id" type="QString" value="qgis:fieldcalculator_3"/>
             <Option name="output_name" type="QString" value="OUTPUT"/>
             <Option name="source" type="int" value="1"/>
           </Option>
