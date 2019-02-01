@@ -72,7 +72,7 @@
         * [x] AggregateFeatures
             * [x] Add dissolve result option
             * [ ] Add new segmentation algorithms (Lise Vaudor)
-        * [ ] LocalFeatureSize
+        * [x] ~~LocalFeatureSize~~ (replaced by PolygonWidth)
         * [x] OrthogonalTransects (possible alternative is native:transect)
         * [x] PlanformMetrics
         * [ ] SegmentMeanSlope

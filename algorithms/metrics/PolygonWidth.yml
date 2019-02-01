@@ -1,0 +1,9 @@
+displayName: Mean polygon width by DGO
+groupId: metrics
+group: Metrics
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - metric
+  - width

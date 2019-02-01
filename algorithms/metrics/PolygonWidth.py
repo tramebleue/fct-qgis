@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Metrics Algorithms
+PolygonWidth
 
 ***************************************************************************
 *                                                                         *
@@ -13,20 +13,19 @@ Metrics Algorithms
 ***************************************************************************
 """
 
-from .AggregateFeatures import AggregateFeatures
-from .KnickPoints import KnickPoints
-from .LineStringZSlope import LineStringZSlope
-from .OrthogonalTransects import OrthogonalTransects
-from .PlanformMetrics import PlanformMetrics
-from .PolygonWidth import PolygonWidth
+import os
 
-def metrics_algorithms():
+from qgis.core import ( 
+    QgsProcessingModelAlgorithm
+)
 
-    return [
-        AggregateFeatures(),
-        KnickPoints(),
-        LineStringZSlope(),
-        OrthogonalTransects(),
-        PlanformMetrics(),
-        PolygonWidth()
-    ]
+from ..metadata import AlgorithmMetadata
+
+
+class PolygonWidth(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.METADATA = AlgorithmMetadata.read(__file__, type(self).__name__)
+        self.fromFile(os.path.join(os.path.dirname(__file__), type(self).__name__ + '.model3'))
