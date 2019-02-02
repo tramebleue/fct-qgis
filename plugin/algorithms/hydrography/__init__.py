@@ -28,23 +28,3 @@ from .ReverseFlowDirection import ReverseFlowDirection
 from .SelectConnectedComponents import SelectConnectedComponents
 from .StrahlerOrder import StrahlerOrder
 from .UpstreamChannelLength import UpstreamChannelLength
-
-def hydrography_algorithms():
-
-    return [
-        AggregateLines(),
-        AggregateLineSegments(),
-        ConnectLines(),
-        ExportMainDrain(),
-        FixLinkOrientation(),
-        IdentifyNetworkNodes(),
-        LengthOrder(),
-        LongestPathInDirectedGraph(),
-        MeasureNetworkFromOutlet(),
-        NetworkNodes(),
-        RasterizeStreamNetwork(),
-        ReverseFlowDirection(),
-        SelectConnectedComponents(),
-        StrahlerOrder(),
-        UpstreamChannelLength()
-    ]

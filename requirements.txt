@@ -1,0 +1,4 @@
+scipy>=1.2.0
+plotly>=3.3
+Click>=7.0
+doit

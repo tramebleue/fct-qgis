@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Spatial Components Algorithms
+Metrics Algorithms
 
 ***************************************************************************
 *                                                                         *
@@ -13,16 +13,9 @@ Spatial Components Algorithms
 ***************************************************************************
 """
 
-from .DisaggregatePolygon import DisaggregatePolygon
-from .PolygonSkeleton import PolygonSkeleton
-from .ValleyBottom import ValleyBottom
-from .ValleyCenterLine import ValleyCenterLine
-
-def spatial_componentsAlgorithms():
-
-    return [
-        DisaggregatePolygon(),
-        PolygonSkeleton(),
-        ValleyBottom(),
-        ValleyCenterLine()
-    ]
+from .AggregateFeatures import AggregateFeatures
+from .KnickPoints import KnickPoints
+from .LineStringZSlope import LineStringZSlope
+from .OrthogonalTransects import OrthogonalTransects
+from .PlanformMetrics import PlanformMetrics
+from .PolygonWidth import PolygonWidth

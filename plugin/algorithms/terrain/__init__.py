@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Metrics Algorithms
+Terrain Analysis Algorithms
 
 ***************************************************************************
 *                                                                         *
@@ -13,20 +13,8 @@ Metrics Algorithms
 ***************************************************************************
 """
 
-from .AggregateFeatures import AggregateFeatures
-from .KnickPoints import KnickPoints
-from .LineStringZSlope import LineStringZSlope
-from .OrthogonalTransects import OrthogonalTransects
-from .PlanformMetrics import PlanformMetrics
-from .PolygonWidth import PolygonWidth
-
-def metrics_algorithms():
-
-    return [
-        AggregateFeatures(),
-        KnickPoints(),
-        LineStringZSlope(),
-        OrthogonalTransects(),
-        PlanformMetrics(),
-        PolygonWidth()
-    ]
+from .DetrendDEM import DetrendDEM
+from .FlowAccumulation import FlowAccumulation
+from .StreamToFeature import StreamToFeature
+from .TopologicalStreamBurn import TopologicalStreamBurn
+from .Watershed import Watershed

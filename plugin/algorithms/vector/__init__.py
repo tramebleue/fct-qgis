@@ -28,23 +28,3 @@ from .TransectByPoint import TransectByPoint
 from .TransformCoordinateByExpression import TransformCoordinateByExpression
 from .UniquePoints import UniquePoints
 from .VariableLengthTransects import VariableLengthTransects
-
-def vector_algorithms():
-
-    return [
-        LineMidpoints(),
-        LineStringBufferByM(),
-        PointsAlongPolygon(),
-        PointsInPolygon(),
-        PointsMedialAxis(),
-        ProjectPointOnNearestLine(),
-        RandomPoissonDiscSamples(),
-        RegularHexSamples(),
-        RemoveSmallPolygonalObjects(),
-        SciPyVoronoiPolygons(),
-        SetMCoordFromMeasureField(),
-        TransectByPoint(),
-        TransformCoordinateByExpression(),
-        UniquePoints(),
-        VariableLengthTransects()
-    ]

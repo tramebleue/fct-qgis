@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Terrain Analysis Algorithms
+Spatial Components Algorithms
 
 ***************************************************************************
 *                                                                         *
@@ -13,18 +13,7 @@ Terrain Analysis Algorithms
 ***************************************************************************
 """
 
-from .DetrendDEM import DetrendDEM
-from .FlowAccumulation import FlowAccumulation
-from .StreamToFeature import StreamToFeature
-from .TopologicalStreamBurn import TopologicalStreamBurn
-from .Watershed import Watershed
-
-def terrain_algorithms():
-
-    return [
-        DetrendDEM(),
-        FlowAccumulation(),
-        StreamToFeature(),
-        TopologicalStreamBurn(),
-        Watershed()
-    ]
+from .DisaggregatePolygon import DisaggregatePolygon
+from .PolygonSkeleton import PolygonSkeleton
+from .ValleyBottom import ValleyBottom
+from .ValleyCenterLine import ValleyCenterLine

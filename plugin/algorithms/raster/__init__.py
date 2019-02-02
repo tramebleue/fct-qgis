@@ -20,17 +20,3 @@ from .DifferentialRasterThreshold import DifferentialRasterThreshold
 from .FocalMean import FocalMean
 from .RasterDifference import RasterDifference
 from .RasterInfo import RasterInfo
-
-def rasterAlgorithms():
-
-    return [
-        ApplyMask(),
-        BinaryClosing(),
-        DrapeVectors(),
-        DifferentialRasterThreshold(),
-        FocalMean(),
-        # ExtractRasterValueAtPoints(),
-        # SimpleRasterStatistics()
-        RasterDifference(),
-        RasterInfo()
-    ]
