@@ -1,0 +1,40 @@
+site_name: Fluvial Corridor Toolbox Documentation
+
+repo_name: tramebleue/fct
+repo_url: https://github.com/tramebleue/fct
+
+nav:
+  - Introduction: index.md
+  - tutorials/index.md
+  - Algorithms Reference:
+    - Hydrography: algorithms/hydrography/
+
+theme:
+  name: material
+  language: en
+  palette:
+    primary: blue
+    accent: blue
+
+extra:
+  manifest: 'manifest.webmanifest'
+  social:
+    - type: 'github'
+      link: 'https://github.com/tramebleue/fct'
+
+extra_javascript: 
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - footnotes
+  - sane_lists
+  - smarty
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+  - mdx_bib:
+      bibtex_file: docs/bibliography.bib
+      order: sorted
