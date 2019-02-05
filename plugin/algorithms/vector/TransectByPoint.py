@@ -78,7 +78,7 @@ class TransectByPoint(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             parentParameterName='INPUT',
             defaultValue=10.0)
         param_length.setIsDynamic(True)
-        param_length.setDynamicLayerParameterName(self.LENGTH)
+        param_length.setDynamicLayerParameterName('INPUT')
         param_length.setDynamicPropertyDefinition(
             QgsPropertyDefinition(
                 self.LENGTH,

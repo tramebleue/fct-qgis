@@ -72,7 +72,7 @@ class VariableLengthTransects(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
             parentParameterName='INPUT',
             defaultValue=10.0)
         param_length.setIsDynamic(True)
-        param_length.setDynamicLayerParameterName(self.LENGTH)
+        param_length.setDynamicLayerParameterName('INPUT')
         param_length.setDynamicPropertyDefinition(
             QgsPropertyDefinition(
                 self.LENGTH,
@@ -86,7 +86,7 @@ class VariableLengthTransects(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
             parentParameterName='INPUT',
             defaultValue=20.0)
         param_distance.setIsDynamic(True)
-        param_distance.setDynamicLayerParameterName(self.INTERVAL)
+        param_distance.setDynamicLayerParameterName('INPUT')
         param_distance.setDynamicPropertyDefinition(
             QgsPropertyDefinition(
                 self.INTERVAL,
