@@ -104,7 +104,7 @@ class RemoveSmallPolygonalObjects(QgsProcessingAlgorithm):
       return 'RemoveSmallPolygonalObjects'
 
     def groupId(self):
-      return 'fctvectortools'
+      return 'vector'
 
     def displayName(self):
       return self.tr('Remove Small Polygonal Objects')

@@ -1,10 +1,45 @@
 displayName: Connect Lines
 groupId: hydrography
 group: Hydrography
-shortHelpString: NULL
-helpString: NULL
+helpString: |
+  Search for a point on the nearest line for each input node.
+  
+  If a line is found within the search distance,
+  the line is splitted at the nearest point,
+  and a new link is created between that node and the nearest point
+  to connect lines together.
+
+  The created link is oriented from the existing node
+  to the nearest line, though it may not be meaningful.
+  You should fix link orientation with `FixLinkOrientation`.
 helpUrl: NULL
 tags:
   - hydrography
   - graph
   - aggregate
+parameters:
+  INPUT:
+    type: LineString
+    description: |
+      Line network with identified nodes,
+      such as the output of `IdentifyNetworkNodes`
+  FROM_NODE_FIELD:
+    type: Numeric Field
+    description: |
+      Node identifier of first vertex
+      of each link in `INPUT`
+  TO_NODE_FIELD:
+    type: Numeric Field
+    description: |
+      Node identifier of last vertex
+      of each link in `INPUT`
+  SEARCH_DISTANCE:
+    type: Distance
+    description: |
+      Maximum distance to search for a point on the nearest line
+      in order to connect an existing node.
+  OUTPUT:
+    type: LineString
+    description: |
+      Line network with exta links added
+      to connect existing nodes to the nearest line.

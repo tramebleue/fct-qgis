@@ -43,7 +43,7 @@ class PointsInPolygon(QgsProcessingAlgorithm):
         return self.tr('Tools for Vectors')
 
     def groupId(self):
-        return 'fctvectortools'
+        return 'vector'
 
     def initAlgorithm(self, config=None):
 

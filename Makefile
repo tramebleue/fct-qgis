@@ -19,7 +19,12 @@ uninstall:
 	echo Remove directory $(TARGET) ...
 	rm -rf $(TARGET)
 
+doc: install clean-doc
+	cp README.md docs/index.md
+	python3 autodoc.py
+
+clean-doc:
+	rm -rf docs/algorithms
+
 clean:
-	rm -f *.c
-	rm -f *.pyc
 	make -C cython clean

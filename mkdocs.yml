@@ -5,9 +5,15 @@ repo_url: https://github.com/tramebleue/fct
 
 nav:
   - Introduction: index.md
+  - install.md
   - tutorials/index.md
   - Algorithms Reference:
-    - Hydrography: algorithms/hydrography/
+    - algorithms/hydrography/index.md
+    - algorithms/terrain/index.md
+    - algorithms/spatialcomponents/index.md
+    - algorithms/metrics/index.md
+    - algorithms/raster/index.md
+    - algorithms/vector/index.md
 
 theme:
   name: material

@@ -1,17 +1,19 @@
-# Fluvial Corridor Toolbox for QGis
+# Fluvial Toolbox Corridor
 
 The Fluvial Corridor Toolbox is a set of geoalgorithms intended to describe and measure fluvial features and processes.
-
-If your are looking for the ArcGIS version of the toolbox,
-please go to [Fluvial Corridor Toolbox for ArcGIS](https://github.com/EVS-GIS/Fluvial-Corridor-Toolbox-ArcGIS).
 
 ## Supported versions of QGis
 
 This branch is under development and is an open effort to support QGis 3 (currently QGis 3.4).
 
+## License
+
+The Fluvial Corridor Toolbox is released under the [GNU Public License][].
+
 ## Acknowledgements
 
-The toolbox is developed within the programme [Trame bleue, espaces et continuités](https://www.tramebleue.fr/)
+The toolbox is developed within the programme
+[Trame bleue, espaces et continuités](https://www.tramebleue.fr/)
 in collaboration with :
 
 * [GeoPeka](http://www.geopeka.com)
@@ -19,6 +21,10 @@ in collaboration with :
 
 Funding and support have been kindly provided by :
 
-* European Union and Région Auvergne-Rhône-Alpes
-* Association nationale pour la recherche technologique
-* Agence de l'eau Rhône-Méditerranée-Corse
+* [European Union](http://www.europe-en-france.gouv.fr/Centre-de-ressources/Actualites/Le-FEDER-qu-est-ce-que-c-est)
+  and [Région Auvergne-Rhône-Alpes](https://www.auvergnerhonealpes.fr/)
+* [Association nationale pour la recherche technologique](http://www.anrt.asso.fr/fr)
+* [Agence de l'eau Rhône-Méditerranée-Corse](https://www.eaurmc.fr/)
+
+[GNU Public License]: https://github.com/tramebleue/fct/blob/master/LICENSE
+*[FCT]: Fluvial Corridor Toolbox
