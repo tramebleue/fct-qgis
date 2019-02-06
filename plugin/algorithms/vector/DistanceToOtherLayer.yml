@@ -1,0 +1,9 @@
+displayName: Distance To Other Layer
+group: vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - distance
+  - nearest
+  - spatial join

@@ -13,6 +13,7 @@ Vector General Algorithms
 ***************************************************************************
 """
 
+from .DistanceToOtherLayer import DistanceToOtherLayer
 from .LineMidpoints import LineMidpoints
 from .LineStringBufferByM import LineStringBufferByM
 from .PointsAlongPolygon import PointsAlongPolygon

@@ -26,21 +26,21 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsWkbTypes,
     QgsField,
     QgsProcessing,
+    QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingParameterDistance,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFeatureSink
 )
 
-from processing.algs.qgis.QgisAlgorithm import QgisAlgorithm # pylint:disable=import-error,no-name-in-module
-
 from ..metadata import AlgorithmMetadata
 
 
-class PointsAlongPolygon(AlgorithmMetadata, QgisAlgorithm):
-    """ Creates points at regular intervals along polygon geometries, including holes boundaries
-        (contrary to qgis:createpointalonglines).
-        Created points will have new attributes added for the distance along the geometry.
+class PointsAlongPolygon(AlgorithmMetadata, QgsProcessingAlgorithm):
+    """
+    Creates points at regular intervals along polygon geometries, including holes boundaries
+    (contrary to qgis:createpointalonglines).
+    Created points will have new attributes added for the distance along the geometry.
     """
 
     METADATA = AlgorithmMetadata.read(__file__, 'PointsAlongPolygon')
