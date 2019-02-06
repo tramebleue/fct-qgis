@@ -17,6 +17,7 @@ import os
 import importlib
 
 from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtGui import QIcon
 
 from qgis.core import ( # pylint: disable=import-error,no-name-in-module
     QgsApplication,
@@ -94,6 +95,9 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
     def groupDisplayName(self, group):
 
         return self.groups[group]
+
+    def icon(self):
+        return QIcon(os.path.join(os.path.dirname(__file__), 'icon.png'))
 
     def loadAlgorithms(self):
 
