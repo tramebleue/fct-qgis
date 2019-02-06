@@ -1,6 +1,5 @@
 displayName: Variable Length Transects
-groupId: vector
-group: Tools for Vector
+group: vector
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL

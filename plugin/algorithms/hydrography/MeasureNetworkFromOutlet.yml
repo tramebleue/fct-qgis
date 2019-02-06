@@ -1,6 +1,5 @@
 displayName: Measure Network from Outlet
-groupId: hydrography
-group: Hydrography
+group: hydrography
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL

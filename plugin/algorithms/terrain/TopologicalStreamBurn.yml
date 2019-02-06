@@ -1,6 +1,5 @@
 displayName: Topological Stream Burn
-groupId: terrain
-group: Terrain Analysis
+group: terrain
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL

@@ -1,20 +1,81 @@
 # Contributing to the documentation
 
+The documentation is built with MkDocs.
+
+## Documenting algorithms
+
+Documentation for algorithms is generated from the YAML metadata.
+You should also provide a useful docstring in the Python class
+where the algorithm is defined.
+
+What to document in YAML metadata:
+
+1. description of the algorithms
+
+    - `displayName`: label to display in the processing toolbox
+    - `group`: algorithm's group id
+    - `summary`: a short description of what the algorithm does
+    - `description`: a longer description
+    - `tags`: a list of (untranslated) tags
+    - `parameters`: list of parameter descriptions; see after
+    - `example`: (optional) python example
+    - `seealso`:
+        (optional)
+        a list of relevant pointers ;
+        designate other algorithm by their class name, eg. AggregateStreamSegments
+    - `references`:
+        (optional)
+        a list of bibliographic reference to include in the doc
+
+2. description of parameters
+
+    - `type`: informative type of parameter
+    - `description`: a longer description
+
+    example:
+
+    ```yaml
+    INPUT:
+      type: LineString(ZM)
+      description: |
+        Linestrings with identified nodes.
+        MutliLineStrings are not supported.
+    ```
+
+3. fields for output parameters
+
+    example:
+
+    ```yaml
+    OUTPUT:
+      type: LineString(ZM)
+      description: |
+        Aggregated lines
+      fields:
+        - GID: new unique identifier
+        - LENGTH: length of the aggregated line feature
+        - $CATEGORY_FIELD: from <code>INPUT</code>
+    ```
+
+
 ## MkDocs
 
-Install with pip using `requirements_dev.txt` in the above directory :
+### Installing
+
+Install with pip using `requirements_dev.txt` in parent directory :
 
     pip install -r requirements_dev.txt
 
 For full documentation visit [mkdocs.org](https://mkdocs.org).
 
-## Commands
+### Commands
 
 * `mkdocs serve` - Start the live-reloading docs server.
 * `mkdocs build` - Build the documentation site.
+* `mkdocs gh-deploy` - Deploy documentation on GitHub Pages.
 * `mkdocs help` - Print this help message.
 
-## Activated Markdown Extensions
+### Activated Markdown Extensions
 
 - abbr
 - admonition

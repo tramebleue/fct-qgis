@@ -1,0 +1,47 @@
+displayName: Aggregate Stream Segments
+group: hydrography
+summary: Merge connected stream segments.
+description: |
+  Aggregate connected segments together.
+  Singular nodes, having in- or out-degree greater than 2
+  such as confluences, are preserved.
+  M and Z coordinates are preserved if present in the input dataset.
+
+  Optionally, the input lines are processed in separate subsets
+  corresponding to the values in the category field.
+tags:
+  - hydrography
+  - graph
+  - aggregate
+parameters:
+  INPUT:
+    type: LineString(ZM)
+    description: |
+      Stream network with identified nodes, oriented from upstream to downstream.
+      MutliLineStrings are not supported.
+  CATEGORY_FIELD:
+    type: Field
+    description: |
+      Aggregate features by category defined in category field.
+  FROM_NODE_FIELD:
+    type: Numeric Field
+    description: |
+      Node identifier of first vertex
+      of each link in <code>INPUT</code>
+  TO_NODE_FIELD:
+    type: Numeric Field
+    description: |
+      Node identifier of last vertex
+      of each link in <code>INPUT</code>
+  OUTPUT:
+    type: LineString(ZM)
+    description: |
+      Aggregated lines
+    fields:
+      - GID: new unique identifier
+      - LENGTH: length of the aggregated line feature
+      - $CATEGORY_FIELD: from <code>INPUT</code>
+      - $FROM_NODE_FIELD: from <code>INPUT</code>
+      - $TO_NODE_FIELD: from <code>INPUT</code>
+seealso:
+  - AggregateUndirectedLines

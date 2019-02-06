@@ -4,7 +4,7 @@ TARGET=$(PLUGIN_DIR)/FluvialCorridorToolbox
 
 default: install
 
-plugin/resources.py: plugin/resources.qrc
+plugin/resources.py: plugin/resources.qrc plugin/icon.png
 	pyrcc5 -o plugin/resources.py plugin/resources.qrc
 
 install: plugin/resources.py

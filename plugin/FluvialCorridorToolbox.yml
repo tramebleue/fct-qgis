@@ -1,0 +1,13 @@
+groups:
+  - id: hydrography
+    displayName: Hydrography
+  - id: terrain
+    displayName: Terrain Analysis
+  - id: spatialcomponents
+    displayName: Spatial Components
+  - id: metrics
+    displayName: Metrics
+  - id: raster
+    displayName: Tools for Rasters
+  - id: vector
+    displayName: Tools for Vectors

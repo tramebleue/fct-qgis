@@ -1,6 +1,5 @@
 displayName: Drape Vectors
-groupId: raster
-group: Tools for Rasters
+group: raster
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL

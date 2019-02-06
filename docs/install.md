@@ -40,3 +40,5 @@ Alternatively, you can cd into the `cython` directory and type :
 
 where `/path/to/plugin` is the installation folder for the FCT plugin,
 for example `$QGIS_USER_DIR/FluvialCorridorToolbox`.
+
+*[FCT]: Fluvial Corridor Toolbox

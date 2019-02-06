@@ -13,8 +13,8 @@ Hydrography Algorithms
 ***************************************************************************
 """
 
-from .AggregateLineSegments import AggregateLineSegments
-from .AggregateLines import AggregateLines
+from .AggregateStreamSegments import AggregateStreamSegments
+from .AggregateUndirectedLines import AggregateUndirectedLines
 from .ConnectLines import ConnectLines
 from .ExportMainDrain import ExportMainDrain
 from .FixLinkOrientation import FixLinkOrientation

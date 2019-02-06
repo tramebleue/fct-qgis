@@ -26,6 +26,8 @@ from qgis.core import ( # pylint: disable=import-error,no-name-in-module
 
 from processing.core.ProcessingConfig import ProcessingConfig, Setting
 
+from .algorithms.metadata import AlgorithmMetadata
+
 class FluvialCorridorToolboxPlugin:
 
     def __init__(self, iface):
@@ -58,6 +60,12 @@ class FluvialCorridorToolboxPlugin:
 
 class FluvialCorridorToolboxProvider(QgsProcessingProvider):
 
+    METADATA = AlgorithmMetadata.read(__file__, 'FluvialCorridorToolbox')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.groups = {g['id']: g['displayName'] for g in self.METADATA['groups']}
+
     def id(self):
         return 'fct'
 
@@ -82,6 +90,10 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
 
     def unload(self):
         ProcessingConfig.removeSetting('FCT_ACTIVATE_CYTHON')
+
+    def groupDisplayName(self, group):
+
+        return self.groups[group]
 
     def loadAlgorithms(self):
 

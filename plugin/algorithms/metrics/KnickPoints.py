@@ -111,12 +111,13 @@ class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
             raise QgsProcessingException('Input features must have Z coordinate')
 
         fields = QgsFields(layer.fields())
-        fields.append(QgsField('LENGTH', QVariant.Double, len=10, prec=2))
-        fields.append(QgsField('UCL', QVariant.Double, len=10, prec=2))
-        fields.append(QgsField('DZ', QVariant.Double, len=16, prec=12))
-        fields.append(QgsField('RSE', QVariant.Double, len=16, prec=12))
-        fields.append(QgsField('RSES', QVariant.Double, len=16, prec=12))
-        fields.append(QgsField('RSET', QVariant.Double, len=16, prec=12))
+        fields.append(QgsField('L', QVariant.Double))
+        fields.append(QgsField('H', QVariant.Double))
+        fields.append(QgsField('DL', QVariant.Double))
+        fields.append(QgsField('DH', QVariant.Double))
+        fields.append(QgsField('HGI', QVariant.Double))
+        fields.append(QgsField('RSE', QVariant.Double))
+        fields.append(QgsField('RSET', QVariant.Double))
 
         (sink, dest_id) = self.parameterAsSink(
             parameters, self.OUTPUT, context,
@@ -133,7 +134,8 @@ class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             geometry = feature.geometry()
             vertices = [v for v in geometry.vertices()]
-            profile_height = vertices[0].z() - vertices[-1].z()
+            z0 = vertices[0].z()
+            profile_height = z0 - vertices[-1].z()
             rse_total = profile_height / max(0.0001, math.log(geometry.length()))
 
             if rse_total < min_rse_total:
@@ -160,19 +162,20 @@ class KnickPoints(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                 if stretch_length:
 
-                    rse_stretch = dz/stretch_length * upstream_length
-                    rse_index = rse_stretch / max(0.0001, rse_total)
+                    gradient_index = dz/stretch_length * upstream_length
+                    rse_index = gradient_index / max(0.0001, rse_total)
 
                     if knickpoint_min_rse <= 0 or rse_index >= knickpoint_min_rse:
 
                         knickpoint = QgsFeature()
                         knickpoint.setGeometry(QgsGeometry(vertex))
                         knickpoint.setAttributes(feature.attributes() + [
-                            stretch_length,
                             upstream_length,
+                            z0 - vertex.z(),
+                            stretch_length,
                             dz,
+                            gradient_index,
                             rse_index,
-                            rse_stretch,
                             rse_total
                         ])
 

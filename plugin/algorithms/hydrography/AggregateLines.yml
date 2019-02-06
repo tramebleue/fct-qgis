@@ -1,9 +1,0 @@
-displayName: Aggregate Undirected Lines
-groupId: hydrography
-group: Hydrography
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
-tags:
-  - hydrography
-  - aggregate

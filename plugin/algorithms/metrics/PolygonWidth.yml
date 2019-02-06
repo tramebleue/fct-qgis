@@ -1,6 +1,5 @@
 displayName: Mean polygon width by DGO
-groupId: metrics
-group: Metrics
+group: metrics
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL

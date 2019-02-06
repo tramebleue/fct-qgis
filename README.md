@@ -27,4 +27,3 @@ Funding and support have been kindly provided by :
 * [Agence de l'eau Rhône-Méditerranée-Corse](https://www.eaurmc.fr/)
 
 [GNU Public License]: https://github.com/tramebleue/fct/blob/master/LICENSE
-*[FCT]: Fluvial Corridor Toolbox

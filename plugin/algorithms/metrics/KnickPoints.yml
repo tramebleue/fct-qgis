@@ -1,11 +1,90 @@
 displayName: KnickPoints
-groupId: metrics
-group: Metrics
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
+group: metrics
+summary: |
+  Knickpoints detection based on Relative Slope Extension Index (RSE)
+description: |
+  Knickpoints correspond to anomalies in the elevation profile,
+  and are expected to exhibit a sudden change in slope.
+
+  The elevation profile of a stream is normally such that
+  the slope is inversely proportional to the distance to the source,
+  which can be written :
+
+  $$ H = k . \ln(L) $$
+
+  where
+  \\(H\\) is the height relative to the source,
+  \\(L\\) the distance to the source,
+  and \\(k\\) is a constant.
+
+  RSE is the ratio between the gradient index \\(G\\) and \\(k\\).
+  \\(G\\) is computed for every stream stretch of length \\(\Delta L\\)
+  as :
+
+  $$ G = \frac{\Delta H}{\Delta L} L $$
+
+  The higher the value of RSE at some point in the elevation profile,
+  the more likely this point is a knickpoint.
+
+  *[RSE]: Relative Slope Extension Index
 tags:
   - longitudinal profile
   - elevation
   - slope
   - anomaly detection
+parameters:
+  INPUT:
+    type: LineStringZ(M)
+    description: |
+      Stream network aggregated by Hack order (length-wise)
+      with elevation as z-coordinate,
+      oriented from upstream to downstream.
+  NODATA:
+    type: Number
+    description: No-data value for z
+  MIN_DZ:
+    type: Number
+    description: |
+      Minimum z difference between two knickpoints
+  MIN_RSE:
+    type: Number
+    description: |
+      Output knickpoints having a RSE greater or equal than this value.
+  MIN_RSE_TOTAL:
+    type: Number
+    description: |
+      Process only tributaries having a global RSE
+      greater or equal than this threshold.
+  OUTPUT:
+    type: PointZ(M)
+    description: |
+      Detected knickpoints
+    fields:
+      - existing fields in <code>INPUT</code>
+      - L: upstream channel length (ie. stream distance to source)
+      - H: height relative to source = source z - z at knickpoint
+      - DL: stretch length
+      - DH: stretch height = z at start - z at end
+      - HGI: Hack gradient index
+      - RSE: Relative Slope Extension index
+      - RSET: RSE total = profile height / ln(stream length)
+example: |
+  Lorem ipsum ...
+seealso:
+  - LengthOrder
+  - AggregateStreamSegments
+  - DrapeVectors
+references:
+  - |
+    Seeber, L., & Gornitz, V. (1983).
+    River profiles along the Himalayan arc as indicators of active tectonics.
+    Tectonophysics, 92(4), 335‑367.
+    https://doi.org/10.1016/0040-1951(83)90201-9
+  - |
+    Queiroz et al. (2015).
+    Knickpoint finder: A software tool that improves neotectonic analysis.
+    Computers & Geosciences, 76, 80‑87.
+    https://doi.org/10.1016/j.cageo.2014.11.004
+  - |
+    Knickpoint Finder, ArcGIS implementation
+    http://www.neotectonica.ufpr.br/2013/index.php/aplicativos/doc_download/87-knickpointfinder

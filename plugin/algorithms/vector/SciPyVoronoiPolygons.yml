@@ -1,6 +1,5 @@
 displayName: Voronoi Polygons
-groupId: vector
-group: Tools for Vector
+group: vector
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL

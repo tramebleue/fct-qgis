@@ -1,9 +1,8 @@
 displayName: Connect Lines
-groupId: hydrography
-group: Hydrography
-helpString: |
+group: hydrography
+summary: |
   Search for a point on the nearest line for each input node.
-  
+description: |
   If a line is found within the search distance,
   the line is splitted at the nearest point,
   and a new link is created between that node and the nearest point
@@ -12,7 +11,6 @@ helpString: |
   The created link is oriented from the existing node
   to the nearest line, though it may not be meaningful.
   You should fix link orientation with `FixLinkOrientation`.
-helpUrl: NULL
 tags:
   - hydrography
   - graph

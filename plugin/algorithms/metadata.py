@@ -17,9 +17,11 @@ import os
 import yaml
 
 
-from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
+from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QCoreApplication
 )
+
+DOC_URL = 'https://tramebleue.github.io/fct/algorithms/%s'
 
 class AlgorithmMetadata(object):
     """
@@ -30,8 +32,8 @@ class AlgorithmMetadata(object):
     # pylint:disable=no-member,missing-docstring
 
     @staticmethod
-    def read(sourcefile, algname):
-        with open(os.path.join(os.path.dirname(sourcefile), algname + '.yml')) as stream:
+    def read(sourcefile, basename):
+        with open(os.path.join(os.path.dirname(sourcefile), basename + '.yml')) as stream:
             return yaml.load(stream)
 
     def createInstance(self):
@@ -52,19 +54,19 @@ class AlgorithmMetadata(object):
         return self.tr(name) if name else None
 
     def groupId(self):
-        return self.METADATA['groupId']
+        return self.METADATA['group']
 
     def group(self):
-        return self.tr(self.METADATA['group'])
+        return self.provider().groupDisplayName(self.groupId())
 
     def helpString(self):
-        return self.METADATA.get('helpString')
+        return self.METADATA.get('description')
 
     def helpUrl(self):
-        return self.METADATA.get('helpUrl')
+        return self.METADATA.get('helpUrl', DOC_URL % type(self).__name__)
 
     def shortDescription(self):
-        return self.renderHelpText(self.METADATA.get('shortDescription', self.__doc__))
+        return self.renderHelpText(self.METADATA.get('summary', self.__doc__))
 
     def shortHelpString(self):
         return self.METADATA.get('shortHelpString')
@@ -73,4 +75,4 @@ class AlgorithmMetadata(object):
         return [self.tr(tag) for tag in self.METADATA.get('tags', [])]
 
     def renderHelpText(self, text): #pylint:disable=no-self-use
-        return text.replace('\n', '<br/>') if text else ''
+        return '<br/>'.join([s.lstrip() for s in text.split('\n')]) if text else ''

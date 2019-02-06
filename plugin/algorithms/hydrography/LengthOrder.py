@@ -61,7 +61,8 @@ class SourceEntry(object):
 
 
 class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
-    """ Length-wise stream order of each link in a stream network
+    """
+    Length-wise stream order of each link in a stream network
     """
 
     METADATA = AlgorithmMetadata.read(__file__, 'LengthOrder')
