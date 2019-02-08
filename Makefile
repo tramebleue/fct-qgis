@@ -25,6 +25,7 @@ doc: install clean-doc
 
 clean-doc:
 	rm -rf docs/algorithms
+	rm -rf site
 
 clean:
 	make -C cython clean

@@ -48,7 +48,7 @@ class LineStringZSlope(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
     def prepareAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        layer = self.parameterAsSource(parameters, self.INPUT, context)
+        layer = self.parameterAsSource(parameters, 'INPUT', context)
 
         if not QgsWkbTypes.hasZ(layer.wkbType()):
             feedback.reportError(self.tr('Input must have Z coordinate.'), True)

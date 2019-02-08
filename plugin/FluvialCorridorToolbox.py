@@ -110,7 +110,7 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
 
         for group in groups:
 
-            module = importlib.import_module('..algorithms.' + group, __name__)
+            module = importlib.reload(importlib.import_module('..algorithms.' + group, __name__))
             count = 0
 
             for key in dir(module):
