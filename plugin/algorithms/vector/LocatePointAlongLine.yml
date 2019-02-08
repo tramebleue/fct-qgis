@@ -1,0 +1,12 @@
+displayName: Locate Point Along Nearest Line
+group: vector
+summary: |
+  Set M and Z coordinates
+  from the nearest point on the nearest line
+description: |
+  Find the nearest point on the nearest line,
+  and transfer M and Z coordinates to the input point.
+tags:
+  - vector
+  - nearest
+  - m coordinate

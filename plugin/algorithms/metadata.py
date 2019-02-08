@@ -33,7 +33,11 @@ class AlgorithmMetadata(object):
 
     @staticmethod
     def read(sourcefile, basename):
-        with open(os.path.join(os.path.dirname(sourcefile), basename + '.yml')) as stream:
+
+        with open(
+            os.path.join(os.path.dirname(sourcefile), basename + '.yml'),
+            encoding='utf-8') as stream:
+
             return yaml.load(stream)
 
     def createInstance(self):

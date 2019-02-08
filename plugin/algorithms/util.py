@@ -13,7 +13,7 @@ Helper functions for processing algorithms
 ***************************************************************************
 """
 
-from qgis.core import ( # pylint:disable=no-name-in-module
+from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsFields
 )
 
@@ -42,3 +42,35 @@ class FidGenerator(object):
         """ Current value of generator
         """
         return self.x
+
+def createUniqueFieldName(name, fields):
+    """
+    Return a new name that is unique within `fields`
+    """
+
+    if fields.lookupField(name) == -1:
+        return name
+
+    if len(name) > 8:
+        basename = name[:8]
+    else:
+        basename = name
+
+    i = 0
+    unique_name = basename + '_%d' % i
+
+    while fields.lookupField(unique_name) > -1:
+        i += 1
+        unique_name = basename + '_%d' % i
+
+    return unique_name
+
+def appendUniqueField(field, fields):
+    """
+    Create a unique name for `field` within `fields`,
+    and append `field` to `fields`.
+    """
+
+    if fields.lookupField(field.name()) > -1:
+        field.setName(createUniqueFieldName(field.name(), fields))
+    fields.append(field)

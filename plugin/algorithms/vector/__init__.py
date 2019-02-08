@@ -16,6 +16,7 @@ Vector General Algorithms
 from .DistanceToOtherLayer import DistanceToOtherLayer
 from .LineMidpoints import LineMidpoints
 from .LineStringBufferByM import LineStringBufferByM
+from .LocatePointAlongLine import LocatePointAlongLine
 from .PointsAlongPolygon import PointsAlongPolygon
 from .PointsInPolygon import PointsInPolygon
 from .PointsMedialAxis import PointsMedialAxis

@@ -1,8 +1,13 @@
 displayName: Check/Fix Link Orientation
 group: hydrography
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
+summary: |
+  Check links are oriented downslope.
+description: |
+  * Wrongly oriented links can be either modified and reversed (default),
+    or selected in the input layer.
+  * Input nodes must have Z coordinate (extracted from a DEM for example).
+  * Optionnaly, outlets can be specified
+    by selecting relevant nodes in the node layer.
 tags:
   - hydrography
   - graph
