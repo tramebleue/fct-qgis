@@ -13,12 +13,14 @@ Raster utilities
 ***************************************************************************
 """
 
-from math import sqrt, floor
+from math import sqrt
 import numpy as np
-import gdal
-import osr
+from osgeo import (
+    gdal,
+    osr
+)
 
-from qgis.core import (
+from qgis.core import ( # pylint: disable=import-error,no-name-in-module
     QgsGeometry,
     QgsPoint,
     QgsPointXY

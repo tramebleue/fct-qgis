@@ -87,7 +87,7 @@ class RasterDifference(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processWithGDAL(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        import gdal
+        from osgeo import gdal
         import numpy as np
 
         raster1 = self.parameterAsRasterLayer(parameters, self.RASTER1, context)

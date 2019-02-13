@@ -16,17 +16,14 @@ The documentation is generated in directory `docs/algorithms`.
 ***************************************************************************
 """
 
-import sys
 import os
 from collections import defaultdict
+import click
 
 # pylint: disable=import-error,no-name-in-module,wrong-import-position
 
 import jinja2
 import bleach
-
-sys.path.append(os.path.expandvars('$QGIS_PREFIX/share/qgis/python/plugins'))
-sys.path.append(os.path.expandvars('$HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins'))
 
 from qgis.core import (
     QgsProcessingParameterDefinition
@@ -147,7 +144,67 @@ def generate_alg(alg, destination):
     with open(filename, 'w') as output:
         output.write(ALGORITHM_TEMPLATE.render(metadata))
 
-def generate_doc(destination='docs/algorithms'):
+def generate_doc(provider, destination='docs/algorithms'):
+    """
+    Generate Markdown documentation for each algorithms.
+    The documentation is generated in directory `docs/algorithms`.
+    """
+
+    groups = defaultdict(list)
+    algs = {a.name(): a for a in provider.algorithms()}
+    link_algorithm.algs = algs
+
+    if not os.path.isdir(destination) and not os.path.exists(destination):
+        os.mkdir(destination)
+
+    for alg in algs.values():
+
+        generate_alg(alg, destination)
+        groups[alg.groupId()].append((alg.__class__.__name__, alg.displayName()))
+
+    for group in provider.groups:
+
+        name = provider.groups[group]
+        filename = os.path.join(destination, group, 'index.md')
+        with open(filename, 'w') as output:
+            output.write(GROUP_TEMPLATE.render({
+                'group': name,
+                'algorithms': groups[group]
+            }))
+
+@click.command()
+def toc():
+    """
+    Print YAML Table of Content
+    (index of doc generated doc pages)
+    """
+
+    provider = FluvialCorridorToolboxProvider()
+    provider.loadAlgorithms()
+
+    groups = defaultdict(list)
+    algs = {a.name(): a for a in provider.algorithms()}
+    for alg in algs.values():
+        groups[alg.groupId()].append((alg.__class__.__name__, alg.displayName()))
+
+    for group in provider.groups:
+
+        name = provider.groups[group]
+
+        click.echo('- %s:' % name)
+        click.echo('  - Index: algorithm/%s/index.md' % group)
+
+        for link, algorithm in sorted(groups[group]):
+            click.echo('  - algorithms/%s/%s.md' % (group, link))
+
+@click.command()
+@click.argument('names', nargs=-1)
+@click.option(
+    '--destination',
+    type=click.Path(exists=False, file_okay=False),
+    default='docs/algorithms',
+    help='Output Folder')
+def autodoc(names, destination=None):
     """
     Generate Markdown documentation for each algorithms.
     The documentation is generated in directory `docs/algorithms`.
@@ -155,39 +212,21 @@ def generate_doc(destination='docs/algorithms'):
 
     provider = FluvialCorridorToolboxProvider()
     provider.loadAlgorithms()
-    algs = {a.name(): a for a in provider.algorithms()}
-    link_algorithm.algs = algs
 
-    if not os.path.isdir(destination) and not os.path.exists(destination):
-        os.mkdir(destination)
+    if names:
 
-    groups = defaultdict(list)
+        for name in names:
+            alg = provider.algorithm(name)
+            if alg:
+                generate_alg(alg, destination)
 
-    for alg in algs.values():
+    else:
 
-        generate_alg(alg, destination)
+        generate_doc(provider, destination)
 
-        groups[alg.groupId()].append((alg.__class__.__name__, alg.displayName()))
-
-    for group in provider.groups:
-
-        name = provider.groups[group]
-        filename = os.path.join(destination, group, 'index.md')
-
-        print('- %s:' % name)
-
-        with open(filename, 'w') as output:
-            output.write(GROUP_TEMPLATE.render({
-                'group': name,
-                'algorithms': groups[group]
-            }))
-
-        print('  - Index: algorithm/%s/index.md' % group)
-
-        for link, algorithm in sorted(groups[group]):
-            print('  - algorithms/%s/%s.md' % (group, link))
-
-def list_parameters(name):
+@click.command()
+@click.argument('algorithm')
+def parameters(algorithm):
     """
     List parameters of algorithm with name `name`
     """
@@ -196,18 +235,14 @@ def list_parameters(name):
     provider.loadAlgorithms()
     algs = {a.name(): a for a in provider.algorithms()}
 
-    if name.lower() in algs:
+    if algorithm.lower() in algs:
 
-        alg = algs[name.lower()]
+        alg = algs[algorithm.lower()]
 
-        print(name)
-        print('parameters:')
+        click.echo(algorithm)
+        click.echo('parameters:')
 
         for parameter in alg.parameterDefinitions():
-            print('  ' + parameter.name() + ':')
-            print('    type: ' + type(parameter).__name__)
-            print('    description: ' + parameter.description())
-
-
-if __name__ == '__main__':
-    generate_doc()
+            click.echo('  ' + parameter.name() + ':')
+            click.echo('    type: ' + type(parameter).__name__)
+            click.echo('    description: ' + parameter.description())

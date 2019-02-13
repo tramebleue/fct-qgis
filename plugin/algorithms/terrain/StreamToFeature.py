@@ -13,7 +13,7 @@ Watershed Analysis
 ***************************************************************************
 """
 
-import gdal
+from osgeo import gdal
 
 from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QVariant
