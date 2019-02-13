@@ -13,7 +13,7 @@ TopologicalStreamBurn
 ***************************************************************************
 """
 
-import gdal
+from osgeo import gdal
 import numpy as np
 
 from qgis.core import ( # pylint:disable=no-name-in-module

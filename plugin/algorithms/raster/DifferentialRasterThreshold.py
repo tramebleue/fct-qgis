@@ -29,7 +29,7 @@ from qgis.core import (QgsProcessingAlgorithm,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterRasterDestination)
-import gdal
+from osgeo import gdal
 import numpy as np
 
 from ..metadata import AlgorithmMetadata

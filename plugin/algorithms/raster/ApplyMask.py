@@ -13,7 +13,7 @@ ApplyMask
 ***************************************************************************
 """
 
-import gdal
+from osgeo import gdal
 
 from qgis.core import ( # pylint:disable=no-name-in-module
     QgsProcessingAlgorithm,

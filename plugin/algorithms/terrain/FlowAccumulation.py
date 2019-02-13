@@ -14,7 +14,7 @@ FlowAccumulation
 """
 
 import numpy as np
-import gdal
+from osgeo import gdal
 # import osr
 
 from qgis.core import ( # pylint:disable=no-name-in-module

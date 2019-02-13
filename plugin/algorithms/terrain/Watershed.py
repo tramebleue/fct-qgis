@@ -14,7 +14,7 @@ Watershed Analysis
 """
 
 import numpy as np
-import gdal
+from osgeo import gdal
 # import osr
 
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module

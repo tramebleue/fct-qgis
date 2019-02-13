@@ -122,5 +122,3 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
                     if isinstance(algorithm, QgsProcessingAlgorithm):
                         self.addAlgorithm(algorithm)
                         count += 1
-
-            print('Loaded %d algorithms in group %s' % (count, group))

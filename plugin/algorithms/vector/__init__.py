@@ -25,6 +25,7 @@ from .RandomPoissonDiscSamples import RandomPoissonDiscSamples
 from .RegularHexSamples import RegularHexSamples
 from .RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from .SciPyVoronoiPolygons import SciPyVoronoiPolygons
+from .SelectByDistance import SelectByDistance
 from .SetMCoordFromMeasureField import SetMCoordFromMeasureField
 from .TransectByPoint import TransectByPoint
 from .TransformCoordinateByExpression import TransformCoordinateByExpression
