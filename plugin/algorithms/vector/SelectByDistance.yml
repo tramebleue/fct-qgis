@@ -1,9 +1,0 @@
-displayName: Select by distance
-groupId: fctvectortools
-group: Tools for Vector
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
-tags:
-  - vector
-  - select
