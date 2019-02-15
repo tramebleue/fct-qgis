@@ -1,0 +1,11 @@
+*.pyc
+*.pyo
+*.c
+*.o
+*.so
+docs/index.md
+docs/algorithms
+site/
+cython/terrain/*.cpp
+tests/testdata/*.aux.xml
+.DS_Store
