@@ -1,6 +1,5 @@
 displayName: Select by distance
-groupId: fctvectortools
-group: Tools for Vector
+group: vector
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL
