@@ -16,7 +16,7 @@
         <deprecated>False</deprecated>
         <tracker></tracker>
         <repository>https://github.com/tramebleue/fct</repository>
-        <tags>fluvial corridor, vector, analysis, processing</tags>
+        <tags>fluvial, vector, analysis, processing</tags>
         <external_dependencies></external_dependencies>
         <server>True</server>
     </pyqgis_plugin>
