@@ -1,25 +1,26 @@
-<?xml version="1.0"?>
+<?xml version = '1.0' encoding = 'UTF-8'?>
 <plugins>
     <pyqgis_plugin name="Fluvial Corridor Toolbox" version="1.0.0" plugin_id="1">
-        <description><![CDATA[Fluvial Corridor analysis tools]]></description>
-        <about><![CDATA[Fluvial Corridor analysis tools]]></about>
+        <description>Fluvial Corridor analysis tools</description>
+        <about>Fluvial Corridor analysis tools</about>
         <version>1.0.0</version>
         <trusted>True</trusted>
         <qgis_minimum_version>3.4.0</qgis_minimum_version>
         <qgis_maximum_version>3.5.0</qgis_maximum_version>
-        <homepage><![CDATA[https://github.com/tramebleue/fct]]></homepage>
+        <homepage>https://github.com/tramebleue/fct</homepage>
         <file_name>fct_1.0.0.zip</file_name>
         <icon>/plugin/icon.png</icon>
-        <author_name><![CDATA[Geopeka]]></author_name>
+        <author_name>Geopeka</author_name>
         <download_url>https://github.com/tramebleue/fct/blob/master/release/</download_url>
-        <uploaded_by><![CDATA[sdunesme]]></uploaded_by>
+        <uploaded_by>sdunesme</uploaded_by>
         <create_date>2019-02-19</create_date>
         <update_date>2019-02-19</update_date>
         <experimental>True</experimental>
         <deprecated>False</deprecated>
-        <tracker><![CDATA[https://github.com/tramebleue/fct]]></tracker>
-        <repository><![CDATA[https://github.com/tramebleue/fct]]></repository>
-        <tags><![CDATA[fluvial corridor,hydromorphology]]></tags>
+        <tracker>https://github.com/tramebleue/fct</tracker>
+        <repository>https://github.com/tramebleue/fct</repository>
+        <tags>fluvial corridor,hydromorphology</tags>
         <external_dependencies></external_dependencies>
+        <server>False</server>
     </pyqgis_plugin>
 </plugins>
