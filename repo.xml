@@ -1,15 +1,12 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <plugins>
     <pyqgis_plugin name="Fluvial Corridor Toolbox" version="1.0.0" plugin_id="500">
-        <description>Fluvial Corridor analysis tools</description>
-        <about>Fluvial Corridor analysis tools</about>
+        <description>Fluvial Corridor Toolbox</description>
         <version>1.0.0</version>
-        <trusted>False</trusted>
-        <qgis_minimum_version>3.4.0</qgis_minimum_version>
-        <qgis_maximum_version>3.5.0</qgis_maximum_version>
+        <qgis_minimum_version>3.4</qgis_minimum_version>
         <homepage>https://github.com/tramebleue/fct</homepage>
         <file_name>fct_1.0.0.zip</file_name>
-        <icon>/raw/master/plugin/icon.png</icon>
+        <icon>icon.png</icon>
         <author_name>Geopeka</author_name>
         <download_url>https://github.com/tramebleue/fct/raw/master/release/fct_1.0.0.zip</download_url>
         <uploaded_by>sdunesme</uploaded_by>
@@ -17,7 +14,7 @@
         <update_date>2019-02-19</update_date>
         <experimental>True</experimental>
         <deprecated>False</deprecated>
-        <tracker>https://github.com/tramebleue/fct</tracker>
+        <tracker></tracker>
         <repository>https://github.com/tramebleue/fct</repository>
         <tags>fluvial corridor, vector, analysis, processing</tags>
         <external_dependencies></external_dependencies>
