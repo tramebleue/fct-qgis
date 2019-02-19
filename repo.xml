@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<plugins>
+    <pyqgis_plugin name="FluvialCorridorToolbox" version="1.0.0">
+        <description>Fluial Corridor Toolbox</description>
+        <homepage>https://github.com/tramebleue/fct</homepage>
+        <qgis_minimum_version>3.4</qgis_minimum_version>
+        <file_name>fct_1.0.0.zip</file_name>
+        <author_name>Geopeka</author_name>
+        <download_url>/home/sdunesme/Donnees/FluvialCorridor/fct/release/fct_1.0.0.zip</download_url>
+    </pyqgis_plugin>
+</plugins>
