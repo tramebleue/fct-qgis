@@ -7,7 +7,7 @@
         <qgis_minimum_version>3.4.0</qgis_minimum_version>
         <qgis_maximum_version>3.99.0</qgis_maximum_version>
         <homepage><![CDATA[https://github.com/tramebleue/fct]]></homepage>
-        <file_name>fct.1.0.0.zip</file_name>
+        <file_name>FluvialCorridorToolbox.1.0.0.zip</file_name>
         <icon>../plugin/icon.png</icon>
         <author_name><![CDATA[Geopeka]]></author_name>
         <download_url>https://github.com/tramebleue/fct/raw/master/release/fct.1.0.0.zip</download_url>
