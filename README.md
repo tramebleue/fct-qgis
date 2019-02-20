@@ -11,6 +11,14 @@ please go to [Fluvial Corridor Toolbox for ArcGIS](https://github.com/EVS-GIS/Fl
 
 This branch is under development and is an open effort to support QGis 3 (currently QGis 3.4).
 
+## Quick install
+
+To quickly install the latest released version, add the following repository to your QGIS plugin repositories :
+
+    https://raw.githubusercontent.com/tramebleue/fct/master/repo/plugins.xml
+
+Then check the ```Show experimental plugins``` box, and install the Fluvial Corridor Toolbox plugin with the QGIS plugin manager.
+
 ## License
 
 The Fluvial Corridor Toolbox is released under the [GNU Public License][].

@@ -11,7 +11,7 @@
 name=Fluvial Corridor Toolbox
 qgisMinimumVersion=3.4
 description=Fluvial Corridor Toolbox
-version=1.0.0
+version=1.0.1
 author=Geopeka
 email=contact@geopeka.fr 
 
@@ -21,8 +21,11 @@ email=contact@geopeka.fr
 
 # Uncomment the following line and add your changelog entries:
 category=Vector
-changelog=1.0.0
-    - First version published on QGIS Python Plugins Repository
+changelog=
+  1.0.1
+    - Actual dev version
+  1.0.0
+    - First version released in fct repository
 
 # tags are comma separated with spaces allowed
 tags=fluvial, vector, analysis, processing
