@@ -1,10 +1,47 @@
-displayName: Valley Center Line
+displayName: Valley Centerline
 group: spatialcomponents
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
+summary: |
+  Center-line (ie. medial axis) of the input polygons based on an auxiliary
+  stream network.
+description: |
+  Compute the medial axis of a polygon. 
+  Useful for computing centerlines of a valley bottom or any other 
+  polygon for which you have a corresponding stream network.
+
+  Algorithm
+  
+  - Intersect the input polygon boundaries with the stream network
+  - Keep the most distant resulting points (upstream and downstream points)
+  - Cut the input polygon boundaries with the upstream and downstream points (get two polygon sides)
+  - Compute Voronoi polygons with points on the sides and dissolve it on each side
+  - Cut the Voronoi lines with the input polygon
+  - Remove duplicate lines
 tags:
   - vector
+  - polygon
+  - medial axis
   - disaggregation
-  - dgo
   - model
+  - centerline
+  - valley
+parameters:
+  polygon:
+    type: Polygon
+    description:
+      Polygon to compute the centerline.
+  streamnetwork:
+    type: LineString
+    description: |
+      Stream network to compute the upstream and downstream points.
+      ex. french BDCarthage.
+  disaggregationdistance:
+    type: Number
+    description: |
+      Distance between points on the input polygon sides to compute the
+      Voronoi polygons. The smaller the distance, the smoother the result will be.
+  valleycenterline:
+    type: LineString
+    description:
+      Resulting centerline.
+seealso:
+  - PolygonCenterLine
