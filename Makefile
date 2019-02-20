@@ -24,6 +24,9 @@ doc: install clean-doc
 	cp README.md docs/index.md
 	QGIS_PREFIX=$(QGIS_PREFIX) PLUGIN_DIR=$(PLUGIN_DIR) python3 -m cli.__init__ autodoc
 
+doc-toc:
+	QGIS_PREFIX=$(QGIS_PREFIX) PLUGIN_DIR=$(PLUGIN_DIR) python3 -m cli.__init__ toc
+
 doc-build: doc
 	python3 -m mkdocs build
 
