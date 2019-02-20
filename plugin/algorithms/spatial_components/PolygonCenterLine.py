@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-ValleyCenterLine
+PolygonCenterLine
 
 ***************************************************************************
 *                                                                         *
@@ -21,9 +21,9 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 
 from ..metadata import AlgorithmMetadata
 
-class ValleyCenterLine(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+class PolygonCenterLine(AlgorithmMetadata, QgsProcessingModelAlgorithm):
     """ 
-    Center-line (ie. medial axis) of the input polygons based on an auxiliary stream network.
+    Center-line (ie. medial axis) of the input polygons based on the polygon sides boundaries.
     """
 
     def __init__(self, *args, **kwargs):
