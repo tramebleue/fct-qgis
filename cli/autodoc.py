@@ -142,6 +142,7 @@ def generate_alg(alg, destination):
         tags=[tag for tag in metadata.get('tags', [])])
 
     with open(filename, 'w') as output:
+        click.echo('Generating file %s' % filename)
         output.write(ALGORITHM_TEMPLATE.render(metadata))
 
 def generate_doc(provider, destination='docs/algorithms'):
