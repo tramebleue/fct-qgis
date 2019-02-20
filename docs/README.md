@@ -70,10 +70,11 @@ For full documentation visit [mkdocs.org](https://mkdocs.org).
 
 ### Commands
 
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs gh-deploy` - Deploy documentation on GitHub Pages.
-* `mkdocs help` - Print this help message.
+* `make doc-toc` - Print YAML Table of content to be included in `mkdocs.yml` (when you add a new algorithm)
+* `make doc-serve` - Start the live-reloading docs server.
+* `make doc-build` - Build the documentation site.
+* `make doc-deploy` - Deploy documentation on GitHub Pages.
+* `make doc-clean` - Clean generated documentation and website.
 
 ### Activated Markdown Extensions
 

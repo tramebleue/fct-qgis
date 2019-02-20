@@ -18,6 +18,7 @@ The documentation is generated in directory `docs/algorithms`.
 
 import os
 from collections import defaultdict
+from itertools import chain
 import click
 
 # pylint: disable=import-error,no-name-in-module,wrong-import-position
@@ -26,7 +27,8 @@ import jinja2
 import bleach
 
 from qgis.core import (
-    QgsProcessingParameterDefinition
+    QgsProcessingParameterDefinition,
+    QgsProcessingModelAlgorithm
 )
 
 from FluvialCorridorToolbox.FluvialCorridorToolbox import FluvialCorridorToolboxProvider
@@ -88,11 +90,34 @@ def unindent(text):
 
     return '\n'.join([s.lstrip() for s in text.split('\n')])
 
-def isOptional(p):
+def isOptional(parameter):
     """
     Return True if parameter `p` is optional.
     """
-    return int(p.flags() & QgsProcessingParameterDefinition.FlagOptional) > 0
+    if isinstance(parameter, QgsProcessingParameterDefinition):
+        return int(parameter.flags() & QgsProcessingParameterDefinition.FlagOptional) > 0
+    return False
+
+def default_value(parameter):
+    """
+    Return parameter's default value,
+    or None if it is an output parameter.
+    """
+    if isinstance(parameter, QgsProcessingParameterDefinition):
+        return parameter.defaultValue()
+    return None
+
+def model_outputs(alg):
+    """
+    List model's output parameters
+    """
+
+    output_parameters = dict()
+
+    for child in alg.childAlgorithms():
+        output_parameters.update(alg.childAlgorithm(child).modelOutputs())
+
+    return output_parameters
 
 def generate_alg(alg, destination):
     """
@@ -108,30 +133,78 @@ def generate_alg(alg, destination):
     key = alg.__class__.__name__
     filename = os.path.join(directory, key + '.md')
 
+    click.echo('Generating file %s' % filename)
+
     if not os.path.isdir(directory) and not os.path.exists(directory):
         os.mkdir(directory)
 
     parameters = list()
+    seen_parameters = set()
 
-    for p in alg.parameterDefinitions():
+    for parameter in chain(alg.parameterDefinitions(), alg.outputDefinitions()):
+
         if 'parameters' in metadata:
-            if p.name() in metadata['parameters']:
-                param = metadata['parameters'][p.name()].copy()
-                param.update(
-                    name=p.name(),
-                    shortDescription=p.description() or '',
-                    defaultValue=p.defaultValue(),
-                    optional=isOptional(p))
-                parameters.append(param)
+
+            if parameter.name() in metadata['parameters']:
+                name = parameter.name()
+            elif parameter.description() in metadata['parameters']:
+                name = parameter.description()
+            else:
+                continue
+
+            if name in seen_parameters:
+                continue
+
+            param = metadata['parameters'][name].copy()
+            param.update(
+                name=name,
+                shortDescription=parameter.description() or '',
+                defaultValue=default_value(parameter),
+                optional=isOptional(parameter))
+            parameters.append(param)
+
+            seen_parameters.add(name)
+
         else:
+
+            name = parameter.name()
+
+            if name in seen_parameters:
+                continue
+
             parameters.append({
-                'name': p.name(),
-                'shortDescription': p.description() or '',
+                'name': name,
+                'shortDescription': parameter.description() or '',
                 'description': '',
-                'type': type(p).__name__,
-                'defaultValue': p.defaultValue(),
-                'optional': isOptional(p)
+                'type': type(parameter).__name__,
+                'defaultValue': default_value(parameter),
+                'optional': isOptional(parameter)
             })
+
+            seen_parameters.add(name)
+
+    if isinstance(alg, QgsProcessingModelAlgorithm):
+
+        for name, parameter in model_outputs(alg).items():
+
+            if 'parameters' in metadata and name in metadata['parameters']:
+
+                param = metadata['parameters'][name].copy()
+                param.update(
+                    name=name,
+                    shortDescription=parameter.description() or '',
+                    optional=False)
+                parameters.append(param)
+
+            else:
+
+                parameters.append({
+                    'name': name,
+                    'shortDescription': parameter.description() or '',
+                    'description': '',
+                    'type': type(parameter).__name__,
+                    'optional': False
+                })
 
     summary = metadata.get('summary', alg.__doc__)
 
@@ -142,7 +215,6 @@ def generate_alg(alg, destination):
         tags=[tag for tag in metadata.get('tags', [])])
 
     with open(filename, 'w') as output:
-        click.echo('Generating file %s' % filename)
         output.write(ALGORITHM_TEMPLATE.render(metadata))
 
 def generate_doc(provider, destination='docs/algorithms'):
@@ -177,7 +249,7 @@ def generate_doc(provider, destination='docs/algorithms'):
 def toc():
     """
     Print YAML Table of Content
-    (index of doc generated doc pages)
+    (index of doc generated pages)
     """
 
     provider = FluvialCorridorToolboxProvider()
@@ -243,7 +315,21 @@ def parameters(algorithm):
         click.echo(algorithm)
         click.echo('parameters:')
 
-        for parameter in alg.parameterDefinitions():
+        seen_parameters = set()
+
+        for parameter in chain(alg.parameterDefinitions(), alg.outputDefinitions()):
+
+            if parameter.name() in seen_parameters:
+                continue
+
             click.echo('  ' + parameter.name() + ':')
             click.echo('    type: ' + type(parameter).__name__)
             click.echo('    description: ' + parameter.description())
+
+            seen_parameters.add(parameter.name())
+
+        if isinstance(alg, QgsProcessingModelAlgorithm):
+            for parameter in model_outputs(alg).values():
+                click.echo('  ' + parameter.name() + ':')
+                click.echo('    type: ' + type(parameter).__name__)
+                click.echo('    description: ' + parameter.description())

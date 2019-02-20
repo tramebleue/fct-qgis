@@ -20,8 +20,7 @@ uninstall:
 	echo Remove directory $(TARGET) ...
 	rm -rf $(TARGET)
 
-doc: install clean-doc
-	cp README.md docs/index.md
+doc: install doc-clean
 	QGIS_PREFIX=$(QGIS_PREFIX) PLUGIN_DIR=$(PLUGIN_DIR) python3 -m cli.__init__ autodoc
 
 doc-toc:
@@ -33,7 +32,10 @@ doc-build: doc
 doc-serve: doc
 	python3 -m mkdocs serve
 
-clean-doc:
+doc-deploy: doc
+	python3 -m mkdocs gh-deploy
+
+doc-clean:
 	rm -rf docs/algorithms
 	rm -rf site
 

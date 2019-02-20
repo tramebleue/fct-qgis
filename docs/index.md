@@ -2,8 +2,6 @@
 
 The Fluvial Corridor Toolbox is a set of geoalgorithms intended to describe and measure fluvial features and processes.
 
-Documentation (in progress) is available at : https://tramebleue.github.io/fct
-
 If your are looking for the ArcGIS version of the toolbox,
 please go to [Fluvial Corridor Toolbox for ArcGIS](https://github.com/EVS-GIS/Fluvial-Corridor-Toolbox-ArcGIS).
 
