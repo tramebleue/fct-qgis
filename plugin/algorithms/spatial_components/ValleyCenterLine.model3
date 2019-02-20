@@ -1,15 +1,15 @@
 <!DOCTYPE model>
 <Option type="Map">
   <Option name="children" type="Map">
-    <Option name="fct:aggregatelines_1" type="Map">
+    <Option name="fct:aggregateundirectedlines_1" type="Map">
       <Option value="true" name="active" type="bool"/>
       <Option name="alg_config"/>
-      <Option value="fct:aggregatelines" name="alg_id" type="QString"/>
+      <Option value="fct:aggregateundirectedlines" name="alg_id" type="QString"/>
       <Option value="Aggregate Undirected Lines" name="component_description" type="QString"/>
       <Option value="848" name="component_pos_x" type="double"/>
       <Option value="647" name="component_pos_y" type="double"/>
       <Option name="dependencies"/>
-      <Option value="fct:aggregatelines_1" name="id" type="QString"/>
+      <Option value="fct:aggregateundirectedlines_1" name="id" type="QString"/>
       <Option name="outputs"/>
       <Option value="true" name="outputs_collapsed" type="bool"/>
       <Option value="true" name="parameters_collapsed" type="bool"/>
@@ -140,7 +140,7 @@
       <Option name="params" type="Map">
         <Option name="INPUT" type="List">
           <Option type="Map">
-            <Option value="fct:aggregatelines_1" name="child_id" type="QString"/>
+            <Option value="fct:aggregateundirectedlines_1" name="child_id" type="QString"/>
             <Option value="OUTPUT" name="output_name" type="QString"/>
             <Option value="1" name="source" type="int"/>
           </Option>
