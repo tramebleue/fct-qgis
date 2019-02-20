@@ -39,7 +39,7 @@ parameters:
     description: |
       Distance between points on the input polygon sides to compute the
       Voronoi polygons. The smaller the distance, the smoother the result will be.
-  valleycenterline:
+  Valley Centerline:
     type: LineString
     description:
       Resulting centerline.
