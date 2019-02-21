@@ -832,6 +832,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#see-also" title="See Also" class="md-nav__link">
+    See Also
+  </a>
+  
+</li>
+      
       
       
       
@@ -1242,6 +1249,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#see-also" title="See Also" class="md-nav__link">
+    See Also
+  </a>
+  
+</li>
+      
       
       
       
@@ -1263,10 +1277,22 @@
                 
                 <h1 id="mean-polygon-width-by-dgo">Mean polygon width by DGO<a class="headerlink" href="#mean-polygon-width-by-dgo" title="Permanent link">&para;</a></h1>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Tags:<br/><code>metric</code>, <code>width</code></p>
+<p>Calculate a poylgon width (ex. active channel width) with the VariableLengthTransects tool
+and resume the result by DGO. </p>
+<p>Tags:<br/><code>metric</code>, <code>width</code>, <code>dgo</code></p>
 
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<p>No Description Yet.</p>
+<p>Algorithm:</p>
+<ul>
+<li>Intersect medial axis and DGOs</li>
+<li>Measure approximative input polygon width on each DGO</li>
+<li>Create orthogonal transects from medial axis DGOs, spaced by the sampling interval and with a length of 5*approximative width</li>
+<li>Cut transects by input polygon and measure length of each one</li>
+<li>Calculate transects length&rsquo;s mean by DGO</li>
+</ul>
+<p>AGOs are used to accelerate the process on huge datasets. If you don&rsquo;t want to use them, you can
+set an AGO field which contain the same value for all the DGOs. </p>
+<p>To simply make transects on a medial axis, use directly the VariableLengthTransect tool.</p>
 <h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h2>
 <table>
     <thead>
@@ -1285,6 +1311,8 @@
 
             </td>
             <td>
+                Field containing AGOs ID. </br>
+Used to accelerate the process on huge datasets. If you don't want to use them, you can set an AGO field which contain the same value for all the DGOs.</br>
 
 
                 Default value: <code>ID_AGO</code>
@@ -1292,7 +1320,7 @@
 
             </td>
             <td>
-                QgsProcessingParameterField
+                Field
             </td>
         </tr>
 
@@ -1303,14 +1331,14 @@
 
             </td>
             <td>
-
+                Field containing DGOs ID.
 
                 Default value: <code>DGO_FID</code>
 
 
             </td>
             <td>
-                QgsProcessingParameterField
+                Field
             </td>
         </tr>
 
@@ -1321,12 +1349,12 @@
 
             </td>
             <td>
-
+                DGOs polygons made from the Disaggregate Polygon tool.
 
 
             </td>
             <td>
-                QgsProcessingParameterFeatureSource
+                Polygon
             </td>
         </tr>
 
@@ -1337,12 +1365,14 @@
 
             </td>
             <td>
+                Medial axis of te polygon you want to compute the width.</br>
+If it's not available, use the Valley centerline tool to create it.</br>
 
 
 
             </td>
             <td>
-                QgsProcessingParameterFeatureSource
+                LineString
             </td>
         </tr>
 
@@ -1353,12 +1383,12 @@
 
             </td>
             <td>
-
+                Polygon you want to compute the width (ex. active channel, ...)
 
 
             </td>
             <td>
-                QgsProcessingParameterFeatureSource
+                Polygon
             </td>
         </tr>
 
@@ -1369,20 +1399,64 @@
 
             </td>
             <td>
-
+                Interval between two width measures on the medial axis.
 
                 Default value: <code>20</code>
 
 
             </td>
             <td>
-                QgsProcessingParameterNumber
+                Number
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Transects</br>
+                <code>Transects</code>
+
+            </td>
+            <td>
+                Output transects created.
+
+
+            </td>
+            <td>
+                LineString
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                DGOs with width data</br>
+                <code>DGOs with width data</code>
+
+            </td>
+            <td>
+                Output DGOs with mean width of the input polygon calculated.
+
+
+            </td>
+            <td>
+                Polygon
             </td>
         </tr>
 
     </tbody>
 </table>
 
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p><a href="../../vector/VariableLengthTransects">Variable Length Transects</a></p>
+</li>
+<li>
+<p><a href="../../spatialcomponents/DisaggregatePolygon">Disaggregate Polygon</a></p>
+</li>
+<li>
+<p><a href="../../spatialcomponents/ValleyCenterLine">Valley Centerline</a></p>
+</li>
+</ul>
 <div class="references"></div>
                 
                   

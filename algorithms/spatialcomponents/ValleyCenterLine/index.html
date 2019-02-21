@@ -1285,7 +1285,9 @@ stream network.</p>
 <p>Compute the medial axis of a polygon. 
 Useful for computing centerlines of a valley bottom or any other 
 polygon for which you have a corresponding stream network.</p>
-<p>Algorithm</p>
+<p>If a stream network is not available for your polygon (ex. historical channel), it is possible to 
+use instead a created LineString which cut the polygon boundaries upstream and downstream.</p>
+<p>Algorithm:</p>
 <ul>
 <li>Intersect the input polygon boundaries with the stream network</li>
 <li>Keep the most distant resulting points (upstream and downstream points)</li>
@@ -1351,6 +1353,22 @@ Voronoi polygons. The smaller the distance, the smoother the result will be.</br
                 Stream network to compute the upstream and downstream points.</br>
 ex. french BDCarthage.</br>
 
+
+
+            </td>
+            <td>
+                LineString
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Valley Centerline</br>
+                <code>Valley Centerline</code>
+
+            </td>
+            <td>
+                Resulting centerline.
 
 
             </td>
