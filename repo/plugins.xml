@@ -1,19 +1,19 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <?xml-stylesheet type="text/xsl" href="plugins.xsl" ?>
 <plugins>
-    <pyqgis_plugin name="Fluvial Corridor Toolbox" version="1.0.0" plugin_id="1">
+    <pyqgis_plugin name="Fluvial Corridor Toolbox" version="1.0.1" plugin_id="1">
         <description><![CDATA[Fluvial Corridor Toolbox]]></description>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
         <qgis_minimum_version>3.4.0</qgis_minimum_version>
         <qgis_maximum_version>3.99.0</qgis_maximum_version>
         <homepage><![CDATA[https://github.com/tramebleue/fct]]></homepage>
-        <file_name>FluvialCorridorToolbox.1.0.0.zip</file_name>
+        <file_name>FluvialCorridorToolbox.1.0.1.zip</file_name>
         <icon>https://github.com/tramebleue/fct/raw/master/plugin/icon.png</icon>
         <author_name><![CDATA[Geopeka]]></author_name>
-        <download_url>https://github.com/tramebleue/fct/raw/master/release/FluvialCorridorToolbox.1.0.0.zip</download_url>
+        <download_url>https://github.com/tramebleue/fct/raw/master/release/FluvialCorridorToolbox.1.0.1.zip</download_url>
         <uploaded_by><![CDATA[sdunesme]]></uploaded_by>
-        <create_date>2019-02-19T19:52:13.505814</create_date>
-        <update_date>2019-02-19T19:52:13.505814</update_date>
+        <create_date>2019-02-19</create_date>
+        <update_date>2019-02-21</update_date>
         <experimental>True</experimental>
         <deprecated>False</deprecated>
         <tracker><![CDATA[]]></tracker>
