@@ -21,7 +21,7 @@ from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QCoreApplication
 )
 
-DOC_URL = 'https://tramebleue.github.io/fct/algorithms/%s'
+DOC_URL = 'https://tramebleue.github.io/fct/algorithms/%s/%s'
 
 class AlgorithmMetadata(object):
     """
@@ -67,7 +67,7 @@ class AlgorithmMetadata(object):
         return self.METADATA.get('description')
 
     def helpUrl(self):
-        return self.METADATA.get('helpUrl', DOC_URL % type(self).__name__)
+        return self.METADATA.get('helpUrl', DOC_URL % (self.METADATA['group'], type(self).__name__))
 
     def shortDescription(self):
         return self.renderHelpText(self.METADATA.get('summary', self.__doc__))
