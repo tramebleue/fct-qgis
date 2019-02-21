@@ -2,6 +2,7 @@ QGIS_PREFIX=/usr
 QGIS_USER_DIR=$(HOME)/.local/share/QGIS/QGIS3/profiles/default
 PLUGIN_DIR=$(QGIS_USER_DIR)/python/plugins
 TARGET=$(PLUGIN_DIR)/FluvialCorridorToolbox
+VERSION=$(shell grep 'version=' plugin/metadata.txt | cut -d'=' -f2)
 
 default: install
 
@@ -41,3 +42,10 @@ doc-clean:
 
 clean:
 	make -C cython clean
+
+zip:
+	mkdir -p FluvialCorridorToolbox
+	cp -r plugin/* FluvialCorridorToolbox
+	rm -f release/FluvialCorridorToolbox.$(VERSION).zip
+	zip -r release/FluvialCorridorToolbox.$(VERSION).zip FluvialCorridorToolbox
+	rm -rf FluvialCorridorToolbox
