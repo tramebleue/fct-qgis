@@ -8,7 +8,10 @@ description: |
   Useful for computing centerlines of a valley bottom or any other 
   polygon for which you have a corresponding stream network.
 
-  Algorithm
+  If a stream network is not available for your polygon (ex. historical channel), it is possible to 
+  use instead a created LineString which cut the polygon boundaries upstream and downstream.
+
+  Algorithm:
   
   - Intersect the input polygon boundaries with the stream network
   - Keep the most distant resulting points (upstream and downstream points)

@@ -1,8 +1,57 @@
 displayName: Mean polygon width by DGO
 group: metrics
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
+summary: |
+  Calculate a poylgon width (ex. active channel width) with the VariableLengthTransects tool
+  and resume the result by DGO. 
+description: |
+  Algorithm:
+
+  - Intersect medial axis and DGOs
+  - Measure approximative input polygon width on each DGO
+  - Create orthogonal transects from medial axis DGOs, spaced by the sampling interval and with a length of 5*approximative width
+  - Cut transects by input polygon and measure length of each one
+  - Calculate transects length's mean by DGO
+
+  AGOs are used to accelerate the process on huge datasets. If you don't want to use them, you can
+  set an AGO field which contain the same value for all the DGOs. 
+
+  To simply make transects on a medial axis, use directly the VariableLengthTransect tool.
 tags:
   - metric
   - width
+  - dgo
+parameters:
+  dgos:
+    type: Polygon
+    description:
+      DGOs polygons made from the Disaggregate Polygon tool.
+  dgofidfield:
+    type: Field
+    description: Field containing DGOs ID.
+  agofield:
+    type: Field
+    description: |
+      Field containing AGOs ID. 
+      Used to accelerate the process on huge datasets. If you don't want to use them, you can set an AGO field which contain the same value for all the DGOs.
+  polygon:
+    type: Polygon
+    description:
+      Polygon you want to compute the width (ex. active channel, ...)
+  medialaxis:
+    type: LineString
+    description: |
+      Medial axis of te polygon you want to compute the width.
+      If it's not available, use the Valley centerline tool to create it.
+  samplinginterval:
+    type: Number
+    description: Interval between two width measures on the medial axis.
+  Transects:
+    type: LineString
+    description: Output transects created.
+  DGOs with width data:
+    type: Polygon
+    description: Output DGOs with mean width of the input polygon calculated.
+seealso:
+  - VariableLengthTransects
+  - DisaggregatePolygon
+  - ValleyCenterLine
