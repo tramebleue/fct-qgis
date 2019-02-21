@@ -12,14 +12,18 @@ plugin/resources.py: plugin/resources.qrc plugin/icon.png
 install: plugin/resources.py
 	mkdir -p $(TARGET)
 	cp -R plugin/* $(TARGET)
-	echo Installed to $(TARGET)
+	@echo
+	@echo ----------------------
+	@echo Installed to $(TARGET)
 
 extensions:
 	make -C cython TARGET=$(TARGET) install
 
 uninstall:
-	echo Remove directory $(TARGET) ...
 	rm -rf $(TARGET)
+	@echo
+	@echo ----------------------
+	@echo Removed directory: $(TARGET)
 
 doc: install doc-clean
 	QGIS_PREFIX=$(QGIS_PREFIX) PLUGIN_DIR=$(PLUGIN_DIR) python3 -m cli.__init__ autodoc
@@ -43,9 +47,13 @@ doc-clean:
 clean:
 	make -C cython clean
 
-zip:
+zip: plugin/resources.py
 	mkdir -p FluvialCorridorToolbox
-	cp -r plugin/* FluvialCorridorToolbox
+	cp -R plugin/* FluvialCorridorToolbox
 	rm -f release/FluvialCorridorToolbox.$(VERSION).zip
 	zip -r release/FluvialCorridorToolbox.$(VERSION).zip FluvialCorridorToolbox
 	rm -rf FluvialCorridorToolbox
+	@echo
+	@echo ----------------------
+	@echo Zipped to release/FluvialCorridorToolbox.$(VERSION).zip. 
+	@echo To release this package, you need to update repo/plugins.xml with the new version.

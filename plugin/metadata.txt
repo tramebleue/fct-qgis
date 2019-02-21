@@ -23,7 +23,7 @@ email=contact@geopeka.fr
 category=Vector
 changelog=
   1.0.1
-    - Actual dev version
+    - Current dev version
   1.0.0
     - First version released in fct repository
 
