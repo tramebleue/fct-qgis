@@ -16,6 +16,7 @@ The documentation is generated in directory `docs/algorithms`.
 ***************************************************************************
 """
 
+import sys
 import os
 from collections import defaultdict
 from itertools import chain
@@ -31,7 +32,7 @@ from qgis.core import (
     QgsProcessingModelAlgorithm
 )
 
-from plugin.FluvialCorridorToolbox import FluvialCorridorToolboxProvider
+from fct.FluvialCorridorToolbox import FluvialCorridorToolboxProvider
 
 def link_algorithm(item):
 
@@ -331,7 +332,7 @@ def toc():
 @click.option(
     '--watch-dir',
     type=click.Path(exists=True, file_okay=False),
-    default='plugin',
+    default='fct',
     help='Directory to watch for modification')
 def build(names, destination=None, watch=False, watch_dir=None):
     """
@@ -397,3 +398,6 @@ def parameters(algorithm):
                 click.echo('  ' + parameter.name() + ':')
                 click.echo('    type: ' + type(parameter).__name__)
                 click.echo('    description: ' + parameter.description())
+
+if __name__ == '__main__':
+    autodoc()

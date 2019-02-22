@@ -3,8 +3,10 @@
 *.c
 *.o
 *.so
+*.dll
+*.egg-info
 python3/
-docs/algorithms
+docs/algorithms/
 site/
 cython/terrain/*.cpp
 tests/testdata/*.aux.xml

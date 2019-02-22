@@ -223,8 +223,6 @@ def cli():
     # with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
-    sys.path.append(os.path.expandvars('$QGIS_PREFIX/share/qgis/python/plugins'))
-
     from fct.FluvialCorridorToolbox import FluvialCorridorToolboxProvider
 
     provider = FluvialCorridorToolboxProvider()
