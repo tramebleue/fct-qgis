@@ -278,22 +278,42 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quick-install" title="Quick install" class="md-nav__link">
+    Quick install
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-the-plugin-from-source" title="Install the plugin from source" class="md-nav__link">
+    Install the plugin from source
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#on-windows" title="On Windows" class="md-nav__link">
+    On Windows
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-linux-or-mac-os" title="On Linux or Mac OS" class="md-nav__link">
+    On Linux or Mac OS
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-dependencies" title="Install Dependencies" class="md-nav__link">
     Install Dependencies
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install-plugin-on-windows" title="Install Plugin On Windows" class="md-nav__link">
-    Install Plugin On Windows
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install-on-linux-or-mac-os" title="Install on Linux or Mac OS" class="md-nav__link">
-    Install on Linux or Mac OS
   </a>
   
 </li>
@@ -1225,22 +1245,42 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quick-install" title="Quick install" class="md-nav__link">
+    Quick install
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-the-plugin-from-source" title="Install the plugin from source" class="md-nav__link">
+    Install the plugin from source
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#on-windows" title="On Windows" class="md-nav__link">
+    On Windows
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-linux-or-mac-os" title="On Linux or Mac OS" class="md-nav__link">
+    On Linux or Mac OS
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-dependencies" title="Install Dependencies" class="md-nav__link">
     Install Dependencies
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install-plugin-on-windows" title="Install Plugin On Windows" class="md-nav__link">
-    Install Plugin On Windows
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install-on-linux-or-mac-os" title="Install on Linux or Mac OS" class="md-nav__link">
-    Install on Linux or Mac OS
   </a>
   
 </li>
@@ -1272,17 +1312,19 @@
                 
                 
                 <h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
-<h2 id="install-dependencies">Install Dependencies<a class="headerlink" href="#install-dependencies" title="Permanent link">&para;</a></h2>
-<p>The recommended way to install dependencies is using  <code>pip</code>.
-<code>pip</code> is installed by default in recent versions of Python.</p>
-<div class="codehilite"><pre><span></span>pip3 install -r requirements.txt
+<h2 id="quick-install">Quick install<a class="headerlink" href="#quick-install" title="Permanent link">&para;</a></h2>
+<p>To quickly install the latest released version, add the following repository to your QGIS plugin repositories :</p>
+<div class="codehilite"><pre><span></span>https://raw.githubusercontent.com/tramebleue/fct/master/repo/plugins.xml
 </pre></div>
 
 
-<h2 id="install-plugin-on-windows">Install Plugin On Windows<a class="headerlink" href="#install-plugin-on-windows" title="Permanent link">&para;</a></h2>
+<p>Then check the <code>Show experimental plugins</code> box, and install the Fluvial Corridor Toolbox plugin with the QGIS plugin manager. </p>
+<p>This package does not contain optional dependencies and cython extensions. If you want to use them, you need to follow the instruction below.</p>
+<h2 id="install-the-plugin-from-source">Install the plugin from source<a class="headerlink" href="#install-the-plugin-from-source" title="Permanent link">&para;</a></h2>
+<h3 id="on-windows">On Windows<a class="headerlink" href="#on-windows" title="Permanent link">&para;</a></h3>
 <p>On Windows, copy the directory <code>plugin</code> to your local plugin folder,
 and rename it to <code>FluvialCorridorToolbox</code>.</p>
-<h2 id="install-on-linux-or-mac-os">Install on Linux or Mac OS<a class="headerlink" href="#install-on-linux-or-mac-os" title="Permanent link">&para;</a></h2>
+<h3 id="on-linux-or-mac-os">On Linux or Mac OS<a class="headerlink" href="#on-linux-or-mac-os" title="Permanent link">&para;</a></h3>
 <p>On Linux or Mac OS, you can use the provided Makefile.</p>
 <p>The following command will install the plugin in your local plugin folder :</p>
 <div class="codehilite"><pre><span></span>make
@@ -1296,6 +1338,13 @@ to point to your local folder where QGis stores installed plugins.</p>
 
 
 <p>On Linux, the default is <code>$(HOME)/.local/share/QGIS/QGIS3/profiles/default</code>.</p>
+<h2 id="install-dependencies">Install Dependencies<a class="headerlink" href="#install-dependencies" title="Permanent link">&para;</a></h2>
+<p>The recommended way to install dependencies is using  <code>pip</code>.
+<code>pip</code> is installed by default in recent versions of Python.</p>
+<div class="codehilite"><pre><span></span>pip3 install -r requirements.txt
+</pre></div>
+
+
 <h2 id="building-cython-extensions">Building Cython Extensions<a class="headerlink" href="#building-cython-extensions" title="Permanent link">&para;</a></h2>
 <p>You can build and install the Cython extension for Terrain Analysis algorithms
 with the following command :</p>
