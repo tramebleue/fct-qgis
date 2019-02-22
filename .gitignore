@@ -3,6 +3,7 @@
 *.c
 *.o
 *.so
+python3/
 docs/algorithms
 site/
 cython/terrain/*.cpp

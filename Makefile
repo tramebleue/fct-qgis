@@ -21,10 +21,10 @@ uninstall:
 	rm -rf $(TARGET)
 
 doc: install doc-clean
-	QGIS_PREFIX=$(QGIS_PREFIX) PLUGIN_DIR=$(PLUGIN_DIR) python3 -m cli.__init__ autodoc
+	QGIS_PREFIX=$(QGIS_PREFIX) python3 -m cli.autodoc
 
 doc-toc:
-	QGIS_PREFIX=$(QGIS_PREFIX) PLUGIN_DIR=$(PLUGIN_DIR) python3 -m cli.__init__ toc
+	QGIS_PREFIX=$(QGIS_PREFIX) python3 -m cli.__init__ toc
 
 doc-build: doc
 	python3 -m mkdocs build

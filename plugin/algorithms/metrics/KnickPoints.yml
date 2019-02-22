@@ -10,7 +10,7 @@ description: |
   the slope is inversely proportional to the distance to the source,
   which can be written :
 
-  $$ H = k . \ln(L) $$
+  $$ H = k . \ln L $$
 
   where
   \\(H\\) is the height relative to the source,

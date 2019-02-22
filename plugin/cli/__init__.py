@@ -12,20 +12,3 @@ Command Line Interface
 *                                                                         *
 ***************************************************************************
 """
-
-import sys
-import os
-
-if __name__ == '__main__':
-
-    sys.path.append(os.path.expandvars('$QGIS_PREFIX/share/qgis/python/plugins'))
-    sys.path.append(os.path.expandvars('$PLUGIN_DIR'))
-
-    from FluvialCorridorToolbox.FluvialCorridorToolbox import FluvialCorridorToolboxProvider
-    from .commands import AlgorithmProviderCommands
-
-    provider = FluvialCorridorToolboxProvider()
-    provider.loadAlgorithms()
-
-    cli = AlgorithmProviderCommands('fct', provider)
-    cli()

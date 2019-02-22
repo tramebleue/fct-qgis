@@ -31,7 +31,7 @@ from qgis.core import (
     QgsProcessingModelAlgorithm
 )
 
-from FluvialCorridorToolbox.FluvialCorridorToolbox import FluvialCorridorToolboxProvider
+from plugin.FluvialCorridorToolbox import FluvialCorridorToolboxProvider
 
 def link_algorithm(item):
 
@@ -133,7 +133,7 @@ def generate_alg(alg, destination):
     key = alg.__class__.__name__
     filename = os.path.join(directory, key + '.md')
 
-    click.echo('Generating file %s' % filename)
+    click.echo(click.style('Generating file %s' % filename, fg='green'))
 
     if not os.path.isdir(directory) and not os.path.exists(directory):
         os.mkdir(directory)
@@ -225,7 +225,6 @@ def generate_doc(provider, destination='docs/algorithms'):
 
     groups = defaultdict(list)
     algs = {a.name(): a for a in provider.algorithms()}
-    link_algorithm.algs = algs
 
     if not os.path.isdir(destination) and not os.path.exists(destination):
         os.mkdir(destination)
@@ -245,7 +244,55 @@ def generate_doc(provider, destination='docs/algorithms'):
                 'algorithms': groups[group]
             }))
 
-@click.command()
+def watch_directory(directory, destination):
+    """
+    Watch `directory` for file modification,
+    and regenerate documentation as needed.
+    """
+
+    try:
+        import pyinotify
+        import asyncio
+    except ImportError:
+        return
+
+    def handle_event(event):
+        """
+        Handle file modification event
+        -> regenerate algorithm doc
+        """
+
+        name, ext = os.path.splitext(event.name)
+
+        if ext == '.yml' or ext == '.py':
+            provider = FluvialCorridorToolboxProvider()
+            provider.loadAlgorithms()
+            algs = {a.name(): a for a in provider.algorithms()}
+            link_algorithm.algs = algs
+            alg = provider.algorithm(name.lower())
+
+            if alg:
+                generate_alg(alg, destination=destination)
+
+    manager = pyinotify.WatchManager()
+    flag = pyinotify.IN_CREATE | pyinotify.IN_DELETE | pyinotify.IN_MODIFY
+    manager.add_watch(directory, flag, rec=True, do_glob=True, auto_add=True)
+
+    loop = asyncio.get_event_loop()
+    notifier = pyinotify.AsyncioNotifier(manager, loop, default_proc_fun=handle_event)
+
+    try:
+        loop.run_forever()
+    except:
+        pass
+    finally:
+        notifier.stop()
+
+@click.group()
+def autodoc():
+    pass
+
+@autodoc.command()
 def toc():
     """
     Print YAML Table of Content
@@ -270,14 +317,23 @@ def toc():
         for link, algorithm in sorted(groups[group]):
             click.echo('  - algorithms/%s/%s.md' % (group, link))
 
-@click.command()
+@autodoc.command()
 @click.argument('names', nargs=-1)
 @click.option(
     '--destination',
     type=click.Path(exists=False, file_okay=False),
     default='docs/algorithms',
     help='Output Folder')
-def autodoc(names, destination=None):
+@click.option(
+    '--watch/--no-watch',
+    default=False,
+    help='Watch for file modification')
+@click.option(
+    '--watch-dir',
+    type=click.Path(exists=True, file_okay=False),
+    default='plugin',
+    help='Directory to watch for modification')
+def build(names, destination=None, watch=False, watch_dir=None):
     """
     Generate Markdown documentation for each algorithms.
     The documentation is generated in directory `docs/algorithms`.
@@ -285,6 +341,9 @@ def autodoc(names, destination=None):
 
     provider = FluvialCorridorToolboxProvider()
     provider.loadAlgorithms()
+
+    algs = {a.name(): a for a in provider.algorithms()}
+    link_algorithm.algs = algs
 
     if names:
 
@@ -297,7 +356,12 @@ def autodoc(names, destination=None):
 
         generate_doc(provider, destination)
 
-@click.command()
+    if watch and watch_dir:
+        click.echo(click.style('Start watching %s for modification ...' % watch_dir, fg='yellow'))
+        watch_directory(watch_dir, destination)
+        click.echo('\nDone.')
+
+@autodoc.command()
 @click.argument('algorithm')
 def parameters(algorithm):
     """
