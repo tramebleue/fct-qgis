@@ -1,18 +1,23 @@
 # Getting started
 
-## Install Dependencies
+## Quick install
 
-The recommended way to install dependencies is using  `pip`.
-`pip` is installed by default in recent versions of Python.
+To quickly install the latest released version, add the following repository to your QGIS plugin repositories :
 
-    pip3 install -r requirements.txt
+    https://raw.githubusercontent.com/tramebleue/fct/master/repo/plugins.xml
 
-## Install Plugin On Windows
+Then check the ```Show experimental plugins``` box, and install the Fluvial Corridor Toolbox plugin with the QGIS plugin manager. 
+
+This package does not contain optional dependencies and cython extensions. If you want to use them, you need to follow the instruction below.
+
+## Install the plugin from source
+
+### On Windows
 
 On Windows, copy the directory `plugin` to your local plugin folder,
 and rename it to `FluvialCorridorToolbox`.
 
-## Install on Linux or Mac OS
+### On Linux or Mac OS
 
 On Linux or Mac OS, you can use the provided Makefile.
 
@@ -26,6 +31,13 @@ to point to your local folder where QGis stores installed plugins.
 	make QGIS_USER_DIR=/path/to/qgis/plugin/folder
 
 On Linux, the default is `$(HOME)/.local/share/QGIS/QGIS3/profiles/default`.
+
+## Install Dependencies
+
+The recommended way to install dependencies is using  `pip`.
+`pip` is installed by default in recent versions of Python.
+
+    pip3 install -r requirements.txt
 
 ## Building Cython Extensions
 
