@@ -27,8 +27,8 @@
         * [x] RemoveSmallPolygonalObjects
         * [ ] SafePolygonIntersection
         * [ ] ~~SegmentEndpoints~~ (replaced by qgis:extractspecificvertices)
-        * [ ] SelectByDistance
-        * [ ] SelectNearestFeature
+        * [x] SelectByDistance
+        * [x] SelectNearestFeature
         * [ ] ~~SplitLine~~ (replaced by native:explodelines)
         * [ ] ~~SplitLineIntoSegments~~ (replaced by native:explodelines)
         * [x] UniquePoints
@@ -75,10 +75,11 @@
         * [x] ~~LocalFeatureSize~~ (replaced by PolygonWidth)
         * [x] OrthogonalTransects (possible alternative is native:transect)
         * [x] PlanformMetrics
+            * [ ] Add summary by DGO
         * [ ] SegmentMeanSlope
         * [ ] SegmentMeanValue
         * [ ] SegmentPlanarSlope
-        * [ ] Sinuosity
+        * [ ] ~~Sinuosity~~
         * [ ] Sum
         * [ ] WeightedMean
 
@@ -97,7 +98,7 @@
         * [ ] LeftRightDGO
         * [x] MedialAxis (replaced by ValleyCenterLine)
         * [x] PolygonSkeleton
-        * [ ] ValleyBottom
+        * [ ] ValleyBottom (need to be tested)
 
     * [ ] ~~Unstable~~ (unstable, must be fixed)
         * [ ] ~~CenterLine~~
