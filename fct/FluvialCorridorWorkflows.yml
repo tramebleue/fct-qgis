@@ -1,0 +1,9 @@
+groups:
+  - id: spatialcomponents
+    displayName: 1- Spatial Components
+  - id: disaggregation
+    displayName: 2- Disaggregation Processes
+  - id: metrics
+    displayName: 3- Metrics
+  - id: metrics
+    displayName: 4- Statistics
