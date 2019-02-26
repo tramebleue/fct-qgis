@@ -5,6 +5,7 @@
 *.so
 *.dll
 *.egg-info
+.doit.db
 python3/
 docs/algorithms/
 site/
