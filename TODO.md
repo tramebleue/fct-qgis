@@ -131,3 +131,38 @@
     * [x] ConnectLines
     * [x] Variable Length Transect By Interval
     * [x] Variable Length Transect By Point
+
+* Workflows
+    * [ ] Spatial Components
+        * [x] Oriented centerline
+            * ValleyCenterLine
+            * Identify Network Nodes
+            * Drape
+            * Check/Fix Link orientation
+        * [ ] Stream Network
+            * Topological stream burn
+            * Vectorize streams
+            * Orient streams ?
+        * [ ] Valley bottom
+            * RelativeDEM
+            * ValleyBottom
+    * [ ] Disaggregation Processes
+        * [x] Polyline disaggregation (=Planform metrics)
+        * [ ] Segmentation
+            * Disaggregate Polygon
+            * To complete with disaggregate line
+        * [ ] Sequencing
+            * Identifey network nodes
+            * Drape
+            * Check/Fix link orientation
+    * [ ] Metrics
+        * [ ] Contact length
+        * [ ] Discontinuities
+        * [ ] Elevation and slope
+            * Drape
+            * LineStringZ Slope
+        * [x] Morphometry (=Planform metrics)
+        * [ ] Watershed
+        * [x] Width (=MeanPolygonByDGO, could be simplyfied by only near feature detection)
+    * [x] Statistics
+        * [x] Hubert test (=Hubert-Kehagias Aggregation)

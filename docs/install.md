@@ -14,7 +14,7 @@ This package does not contain optional dependencies and cython extensions. If yo
 
 ### On Windows
 
-On Windows, copy the directory `plugin` to your local plugin folder,
+On Windows, copy the directory `fct` to your local plugin folder,
 and rename it to `FluvialCorridorToolbox`.
 
 ### On Linux or Mac OS
