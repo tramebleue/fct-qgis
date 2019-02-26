@@ -10,7 +10,7 @@ VIRUTALENV_LIBPYTHON=$(VIRTUALENV)/lib/python$(PYTHONVERSION)
 
 default: install
 
-fct/resources.py: fct/resources.qrc fct/icon.png
+fct/resources.py: fct/resources.qrc fct/images/icon.png
 	pyrcc5 -o fct/resources.py fct/resources.qrc
 
 install: fct/resources.py

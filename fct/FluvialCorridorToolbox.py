@@ -100,7 +100,7 @@ class FluvialCorridorToolboxProvider(QgsProcessingProvider):
         return self.groups[group]
 
     def icon(self):
-        return QIcon(os.path.join(os.path.dirname(__file__), 'icon.png'))
+        return QIcon(os.path.join(os.path.dirname(__file__), 'images/tbxIcon.png'))
 
     def loadAlgorithms(self):
 
@@ -153,7 +153,7 @@ class FluvialCorridorWorkflowsProvider(QgsProcessingProvider):
         return self.groups[group]
 
     def icon(self):
-        return QIcon(os.path.join(os.path.dirname(__file__), 'icon.png'))
+        return QIcon(os.path.join(os.path.dirname(__file__), 'images/wfIcon.png'))
 
     def loadAlgorithms(self):
 

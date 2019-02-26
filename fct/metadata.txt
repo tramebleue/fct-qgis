@@ -37,7 +37,7 @@ tags=fluvial, vector, analysis, processing
 homepage=https://github.com/tramebleue/fct
 tracker=
 repository=https://github.com/tramebleue/fct
-icon=icon.png
+icon=images/icon.png
 
 # experimental flag
 experimental=True
