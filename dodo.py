@@ -19,15 +19,47 @@ import shutil
 from configparser import ConfigParser
 from doit.tools import LongRunning
 
+DOIT_CONFIG = {
+    'default_tasks': ['install']
+}
+
 def qgis_user_dir():
+
+    if 'QGIS_USER_DIR' in os.environ:
+        return os.environ['QGIS_USER_DIR']
+
     home = os.path.expanduser('~')
-    return os.path.join(home, '.local', 'share', 'QGIS', 'QGIS3', 'profiles', 'default')
+
+    if platform.system() == 'Darwin':
+        return os.path.join(home, 'Library', 'Application Support',
+            'QGIS', 'QGIS3', 'profiles', 'default')
+    
+    return os.path.join(home, '.local', 'share',
+        'QGIS', 'QGIS3', 'profiles', 'default')
 
 def qgis_plugin_dir():
     return os.path.join(qgis_user_dir(), 'python', 'plugins')
 
 def fct_target_folder():
     return os.path.join(qgis_plugin_dir(), 'FluvialCorridorToolbox')
+
+def pyclean(root):
+    """
+    Delete __pycache__ dirs and *.pyc files
+    """
+
+    print('Delete *.pyc files')
+
+    for dirpath, dirnames, filenames in os.walk(root):
+        
+        for dirname in dirnames:
+            if dirname == '__pycache__':
+                shutil.rmtree(os.path.join(dirpath, dirname))
+        
+        for filename in filenames:
+            name, ext = os.path.splitext(filename)
+            if ext == '.pyc':
+                os.remove(os.path.join(dirpath, filename))
 
 def copyfiles(root, destination):
     """
@@ -89,7 +121,7 @@ def task_clean_build():
 
     return {
         'actions': [
-            'py3clean fct',
+            (pyclean, ('fct',)),
             (delete_folder, ('build',)),
             (delete_folder, (os.path.join('cython', 'build'),))
         ],
@@ -153,6 +185,7 @@ def task_doc_clean():
     return {
         'actions': [
             (delete_folder, (os.path.join('docs','algorithms'),)),
+            (delete_folder, (os.path.join('docs','workflows'),)),
             (delete_folder, ('site',))
         ],
         'verbosity': 2

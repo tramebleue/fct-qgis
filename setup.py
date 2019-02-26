@@ -29,6 +29,7 @@ setup(
     entry_points='''
 [console_scripts]
 autodoc=fct.cli.autodoc:autodoc
-fct=fct.cli.algorithms:cli
+fct=fct.cli.algorithms:fct
+fcw=fct.cli.algorithms:workflows
     ''',
 )

@@ -5,7 +5,7 @@
 *.so
 *.dll
 *.egg-info
-.doit.db
+.doit.*
 python3/
 docs/algorithms/
 docs/workflows/

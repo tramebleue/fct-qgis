@@ -12,8 +12,10 @@ Click Adapters for Qgis Processing Algorithms
 *                                                                         *
 ***************************************************************************
 """
+
 import sys
 import os
+import platform
 import warnings
 import click
 
@@ -25,7 +27,17 @@ from qgis.core import (
 )
 
 from processing.core.Processing import Processing
-from processing.tools.dataobjects import createContext
+
+from fct.FluvialCorridorToolbox import (
+    PROVIDERS,
+    FluvialCorridorToolboxProvider,
+    FluvialCorridorWorkflowsProvider
+)
+
+from .helpers import (
+    start_app,
+    execute_algorithm
+)
 
 def unindent(text):
     """
@@ -39,61 +51,6 @@ def isRequired(parameter):
     Return False if parameter `parameter` is optional.
     """
     return int(parameter.flags() & QgsProcessingParameterDefinition.FlagOptional) == 0
-
-def start_app(gui=True, cleanup=True):
-    """
-    Will start a QgsApplication and call all initialization code like
-    registering the providers and other infrastructure.
-    It will not load any plugins.
-    You can always get the reference to a running app by calling `QgsApplication.instance()`.
-    The initialization will only happen once, so it is safe to call this method repeatedly.
-
-    Parameters
-    ----------
-    cleanup: Do cleanup on exit. Defaults to true.
-
-    Returns
-    -------
-    QgsApplication
-    A QgsApplication singleton
-    """
-
-    global QGISAPP # pylint: disable=global-variable-undefined
-
-    try:
-        QGISAPP
-    except NameError:
-
-        # In python3 we need to convert to a bytes object (or should
-        # QgsApplication accept a QString instead of const char* ?)
-        try:
-            argvb = [os.fsencode(arg) for arg in sys.argv]
-        except AttributeError:
-            argvb = ['']
-
-        # Note: QGIS_PREFIX_PATH is evaluated in QgsApplication -
-        # no need to mess with it here.
-        QGISAPP = QgsApplication(argvb, gui)
-
-        QGISAPP.initQgis()
-        # click.echo(QGISAPP.showSettings())
-        Processing.initialize()
-
-        def debug_log_message(message, tag, level):
-            """ Print debug message on console """
-            click.echo(click.style('{}({}): {}'.format(tag, level, message), fg='yellow'))
-
-        QgsApplication.instance().messageLog().messageReceived.connect(debug_log_message)
-
-        if cleanup:
-            import atexit
-
-            @atexit.register
-            def exitQgis(): # pylint: disable=unused-variable
-                """ Exit Qgis Application """
-                QGISAPP.exitQgis()
-
-    return QGISAPP
 
 class AlgorithmHelp(click.Command):
 
@@ -109,10 +66,14 @@ class AlgorithmHelp(click.Command):
             Print algorithm's short description and parameters.
             """
             instance = provider.algorithm(algorithm)
-            command = AlgorithmCommand(provider, instance)
-            ctx.info_name = command.name
-            ctx.command = command
-            click.echo(ctx.get_help())
+            if instance:
+                command = AlgorithmCommand(provider, instance)
+                ctx.info_name = command.name
+                ctx.command = command
+                click.echo(ctx.get_help())
+            else:
+                click.secho('%s not found' % algorithm, fg='red')
+                click.echo(ctx.get_help())
 
         kwargs.update(
             name='help',
@@ -127,8 +88,12 @@ class AlgorithmCommand(click.Command):
 
     def __init__(self, provider, algorithm, **kwargs):
 
-        metadata = algorithm.METADATA
-        summary = unindent(metadata.get('summary', algorithm.__doc__ or ''))
+        if hasattr(algorithm, 'METADATA'):
+            metadata = algorithm.METADATA
+            summary = unindent(metadata.get('summary', algorithm.__doc__ or ''))
+        else:
+            summary = algorithm.shortDescription()
+
         params = []
 
         for param in algorithm.parameterDefinitions():
@@ -146,10 +111,10 @@ class AlgorithmCommand(click.Command):
             parameters = {key.upper(): kwargs[key] for key in kwargs}
 
             try:
-                results = AlgorithmCommand.execute(provider, algorithm.id(), **parameters)
+                results = AlgorithmCommand.execute(algorithm.id(), **parameters)
                 click.echo(results)
             except QgsProcessingException as error:
-                click.echo(click.style(str(error), fg='red'), err=True)
+                click.secho(str(error), fg='red', err=True)
 
         kwargs.update(
             name=algorithm.name(),
@@ -163,38 +128,47 @@ class AlgorithmCommand(click.Command):
         super().__init__(**kwargs)
 
     @staticmethod
-    def execute(provider, algorithm_id, **parameters):
+    def execute(algorithm_id, **parameters):
         """
         Execute `algorithm` with `parameters'.
         Raise QgsProcessingException on processing error.
         """
 
-        start_app()
-        QgsApplication.processingRegistry().addProvider(provider)
-        algorithm = QgsApplication.processingRegistry().createAlgorithmById(algorithm_id)
+        app = start_app(cleanup=False)
+        # We have to keep a reference to provider objects
+        providers = [cls() for cls in PROVIDERS]
+        for provider in providers:
+            QgsApplication.processingRegistry().addProvider(provider)
 
-        feedback = QgsProcessingFeedback()
-        context = createContext(feedback)
-
-        click.echo(click.style(f'Running <{algorithm.displayName()}>', fg='cyan'))
+        click.secho(f'Running <{algorithm_id}>', fg='cyan')
         for parameter in parameters:
             click.echo('{}\t{}'.format(parameter, parameters[parameter]))
 
-        parameters_ok, msg = algorithm.checkParameterValues(parameters, context)
-        if not parameters_ok:
-            raise QgsProcessingException(msg)
+        return execute_algorithm(algorithm_id, **parameters)
 
-        if not algorithm.validateInputCrs(parameters, context):
-            feedback.reportError(
-                Processing.tr('Warning: Not all input layers use the same CRS.\nThis can cause unexpected results.'))
+# @click.command()
+# @click.argument('toolbox')
+# @click.argument('groups', nargs=-1)
+# def list_algorithms(toolbox, groups):
 
-        results, execution_ok = algorithm.run(parameters, context, feedback)
+#     start_app()
+#     for provider_cls in PROVIDERS:
+#         QgsApplication.processingRegistry().addProvider(provider_cls())
 
-        if execution_ok:
-            return results
-        else:
-            msg = Processing.tr("There were errors executing the algorithm.")
-            raise QgsProcessingException(msg)
+#     provider = QgsApplication.processingRegistry().providerById(toolbox)
+
+#     for group in groups:
+
+#         for alg in provider.algorithms():
+#             if alg.groupId() == group:
+#                 click.echo(alg.name() + "\t" + alg.shortDescription())
+
+#     else:
+
+#         groups = {(alg.groupId(), alg.group()) for alg in provider.algorithms()}
+#         for group_id, group_name in groups:
+#             click.echo(group_id + "\t" + group_name)
+
 
 class AlgorithmProviderCommands(click.MultiCommand):
 
@@ -212,22 +186,38 @@ class AlgorithmProviderCommands(click.MultiCommand):
 
     def get_command(self, ctx, name):
 
+        # if name == 'list':
+        #     return list_algorithms
+
         if name == 'help':
             return AlgorithmHelp(self.provider)
 
         algorithm = self.provider.algorithm(name)
-        return AlgorithmCommand(self.provider, algorithm) if algorithm else None
+        if algorithm:
+            return AlgorithmCommand(self.provider, algorithm) if algorithm else None
 
-def cli():
+        return None
+
+def fct():
 
     # with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-
-    from fct.FluvialCorridorToolbox import FluvialCorridorToolboxProvider
 
     provider = FluvialCorridorToolboxProvider()
     provider.loadAlgorithms()
 
     commands = AlgorithmProviderCommands('fct', provider)
+
+    commands()
+
+def workflows():
+
+    # with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+
+    provider = FluvialCorridorWorkflowsProvider()
+    provider.loadAlgorithms()
+
+    commands = AlgorithmProviderCommands('fcw', provider)
 
     commands()
