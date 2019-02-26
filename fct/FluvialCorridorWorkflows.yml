@@ -5,5 +5,5 @@ groups:
     displayName: 2- Disaggregation Processes
   - id: metrics
     displayName: 3- Metrics
-  - id: metrics
+  - id: statistics
     displayName: 4- Statistics
