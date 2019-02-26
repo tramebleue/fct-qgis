@@ -26,6 +26,7 @@ from .RegularHexSamples import RegularHexSamples
 from .RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from .SciPyVoronoiPolygons import SciPyVoronoiPolygons
 from .SelectByDistance import SelectByDistance
+from .SelectNearestFeature import SelectNearestFeature
 from .SetMCoordFromMeasureField import SetMCoordFromMeasureField
 from .TransectByPoint import TransectByPoint
 from .TransformCoordinateByExpression import TransformCoordinateByExpression

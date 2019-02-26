@@ -1,0 +1,8 @@
+displayName: Select nearest feature
+group: vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - vector
+  - select
