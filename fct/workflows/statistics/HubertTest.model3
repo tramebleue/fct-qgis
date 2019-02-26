@@ -1,0 +1,124 @@
+<!DOCTYPE model>
+<Option type="Map">
+  <Option type="Map" name="children">
+    <Option type="Map" name="fct:aggregatefeatures_1">
+      <Option type="bool" value="true" name="active"/>
+      <Option name="alg_config"/>
+      <Option type="QString" value="fct:aggregatefeatures" name="alg_id"/>
+      <Option type="QString" value="Hubert-Kehagias Aggregation" name="component_description"/>
+      <Option type="double" value="514" name="component_pos_x"/>
+      <Option type="double" value="165" name="component_pos_y"/>
+      <Option name="dependencies"/>
+      <Option type="QString" value="fct:aggregatefeatures_1" name="id"/>
+      <Option type="Map" name="outputs">
+        <Option type="Map" name="Aggregated table">
+          <Option type="QString" value="fct:aggregatefeatures_1" name="child_id"/>
+          <Option type="QString" value="Aggregated table" name="component_description"/>
+          <Option type="double" value="714" name="component_pos_x"/>
+          <Option type="double" value="210" name="component_pos_y"/>
+          <Option type="invalid" name="default_value"/>
+          <Option type="bool" value="false" name="mandatory"/>
+          <Option type="QString" value="Aggregated table" name="name"/>
+          <Option type="QString" value="OUTPUT" name="output_name"/>
+        </Option>
+      </Option>
+      <Option type="bool" value="true" name="outputs_collapsed"/>
+      <Option type="bool" value="true" name="parameters_collapsed"/>
+      <Option type="Map" name="params">
+        <Option type="List" name="DISSOLVE">
+          <Option type="Map">
+            <Option type="int" value="2" name="source"/>
+            <Option type="bool" value="false" name="static_value"/>
+          </Option>
+        </Option>
+        <Option type="List" name="INPUT">
+          <Option type="Map">
+            <Option type="QString" value="inputtable" name="parameter_name"/>
+            <Option type="int" value="0" name="source"/>
+          </Option>
+        </Option>
+        <Option type="List" name="METRIC_FIELD">
+          <Option type="Map">
+            <Option type="QString" value="metric" name="parameter_name"/>
+            <Option type="int" value="0" name="source"/>
+          </Option>
+        </Option>
+        <Option type="List" name="ORDERING_FIELD">
+          <Option type="Map">
+            <Option type="QString" value="sortfield" name="parameter_name"/>
+            <Option type="int" value="0" name="source"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
+  </Option>
+  <Option name="help"/>
+  <Option type="QString" value="FCT Workflows" name="model_group"/>
+  <Option type="QString" value="HubertTest" name="model_name"/>
+  <Option type="Map" name="parameterDefinitions">
+    <Option type="Map" name="fct:aggregatefeatures_1:Aggregated table">
+      <Option type="bool" value="true" name="create_by_default"/>
+      <Option type="int" value="-1" name="data_type"/>
+      <Option type="invalid" name="default"/>
+      <Option type="QString" value="Aggregated table" name="description"/>
+      <Option type="int" value="0" name="flags"/>
+      <Option name="metadata"/>
+      <Option type="QString" value="fct:aggregatefeatures_1:Aggregated table" name="name"/>
+      <Option type="QString" value="sink" name="parameter_type"/>
+      <Option type="bool" value="true" name="supports_non_file_outputs"/>
+    </Option>
+    <Option type="Map" name="inputtable">
+      <Option type="List" name="data_types">
+        <Option type="int" value="5"/>
+      </Option>
+      <Option type="invalid" name="default"/>
+      <Option type="QString" value="Input table" name="description"/>
+      <Option type="int" value="0" name="flags"/>
+      <Option name="metadata"/>
+      <Option type="QString" value="inputtable" name="name"/>
+      <Option type="QString" value="source" name="parameter_type"/>
+    </Option>
+    <Option type="Map" name="metric">
+      <Option type="bool" value="false" name="allow_multiple"/>
+      <Option type="int" value="0" name="data_type"/>
+      <Option type="invalid" name="default"/>
+      <Option type="QString" value="Metric" name="description"/>
+      <Option type="int" value="0" name="flags"/>
+      <Option name="metadata"/>
+      <Option type="QString" value="metric" name="name"/>
+      <Option type="QString" value="field" name="parameter_type"/>
+      <Option type="QString" value="inputtable" name="parent_layer"/>
+    </Option>
+    <Option type="Map" name="sortfield">
+      <Option type="bool" value="false" name="allow_multiple"/>
+      <Option type="int" value="0" name="data_type"/>
+      <Option type="invalid" name="default"/>
+      <Option type="QString" value="Ordering property" name="description"/>
+      <Option type="int" value="0" name="flags"/>
+      <Option name="metadata"/>
+      <Option type="QString" value="sortfield" name="name"/>
+      <Option type="QString" value="field" name="parameter_type"/>
+      <Option type="QString" value="inputtable" name="parent_layer"/>
+    </Option>
+  </Option>
+  <Option type="Map" name="parameters">
+    <Option type="Map" name="inputtable">
+      <Option type="QString" value="inputtable" name="component_description"/>
+      <Option type="double" value="161" name="component_pos_x"/>
+      <Option type="double" value="64" name="component_pos_y"/>
+      <Option type="QString" value="inputtable" name="name"/>
+    </Option>
+    <Option type="Map" name="metric">
+      <Option type="QString" value="metric" name="component_description"/>
+      <Option type="double" value="381" name="component_pos_x"/>
+      <Option type="double" value="60" name="component_pos_y"/>
+      <Option type="QString" value="metric" name="name"/>
+    </Option>
+    <Option type="Map" name="sortfield">
+      <Option type="QString" value="sortfield" name="component_description"/>
+      <Option type="double" value="601" name="component_pos_x"/>
+      <Option type="double" value="60" name="component_pos_y"/>
+      <Option type="QString" value="sortfield" name="name"/>
+    </Option>
+  </Option>
+</Option>

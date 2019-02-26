@@ -9,8 +9,10 @@
 
 [general]
 name=Fluvial Corridor Toolbox
-qgisMinimumVersion=3.4
+qgisMinimumVersion=3.4.0
+qgisMaximumVersion=3.99.0
 description=Fluvial Corridor Toolbox
+about=The Fluvial Corridor Toolbox is a set of geoalgorithms intended to describe and measure fluvial features and processes.
 version=1.0.2
 author=Geopeka
 email=contact@geopeka.fr 
@@ -35,7 +37,7 @@ tags=fluvial, vector, analysis, processing
 homepage=https://github.com/tramebleue/fct
 tracker=
 repository=https://github.com/tramebleue/fct
-icon=icon.png
+icon=images/icon.png
 
 # experimental flag
 experimental=True
