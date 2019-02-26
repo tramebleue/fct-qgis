@@ -310,8 +310,9 @@ def toc():
     (index of doc generated pages)
     """
 
-    for folder, provider_cls in PROVIDERS:
+    for provider_cls in PROVIDERS:
 
+        folder = provider_cls.SOURCE_FOLDER
         provider = provider_cls()
         provider.loadAlgorithms()
 
@@ -352,8 +353,9 @@ def build(names, destination=None, watch=False, watch_dir=None):
     The documentation is generated in directory `docs/algorithms`.
     """
 
-    for folder, provider_cls in PROVIDERS:
-        
+    for provider_cls in PROVIDERS:
+
+        folder = provider_cls.SOURCE_FOLDER
         provider = provider_cls()
         provider.loadAlgorithms()
 
@@ -384,8 +386,9 @@ def parameters(algorithm):
     List parameters of algorithm with name `name`
     """
 
-    for folder, provider_cls in PROVIDERS:
+    for provider_cls in PROVIDERS:
 
+        folder = provider_cls.SOURCE_FOLDER
         provider = provider_cls()
         provider.loadAlgorithms()
         algs = {a.name(): a for a in provider.algorithms()}
