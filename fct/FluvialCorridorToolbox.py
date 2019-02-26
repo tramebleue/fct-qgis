@@ -178,3 +178,8 @@ class FluvialCorridorWorkflowsProvider(QgsProcessingProvider):
                     if isinstance(algorithm, QgsProcessingAlgorithm):
                         self.addAlgorithm(algorithm)
                         count += 1
+
+PROVIDERS = [
+    ('algorithms', FluvialCorridorToolboxProvider),
+    ('workflows', FluvialCorridorWorkflowsProvider)
+]

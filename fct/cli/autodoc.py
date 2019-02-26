@@ -32,7 +32,7 @@ from qgis.core import (
     QgsProcessingModelAlgorithm
 )
 
-from fct.FluvialCorridorToolbox import FluvialCorridorToolboxProvider
+from fct.FluvialCorridorToolbox import PROVIDERS
 
 def link_algorithm(item):
 
@@ -245,6 +245,15 @@ def generate_doc(provider, destination='docs/algorithms'):
                 'algorithms': groups[group]
             }))
 
+def get_provider(path):
+    """
+    Return AlgorithmProvider matchin `path`
+    """
+
+    for folder, provider_cls in PROVIDERS:
+        if path == folder:
+            return provider_cls()
+
 def watch_directory(directory, destination):
     """
     Watch `directory` for file modification,
@@ -264,16 +273,17 @@ def watch_directory(directory, destination):
         """
 
         name, ext = os.path.splitext(event.name)
+        folder, algname = os.path.split(name)
 
         if ext == '.yml' or ext == '.py':
-            provider = FluvialCorridorToolboxProvider()
+            provider = get_provider(folder)
             provider.loadAlgorithms()
             algs = {a.name(): a for a in provider.algorithms()}
             link_algorithm.algs = algs
             alg = provider.algorithm(name.lower())
 
             if alg:
-                generate_alg(alg, destination=destination)
+                generate_alg(alg, destination=os.path.join(destination, folder))
 
     manager = pyinotify.WatchManager()
     flag = pyinotify.IN_CREATE | pyinotify.IN_DELETE | pyinotify.IN_MODIFY
@@ -300,30 +310,32 @@ def toc():
     (index of doc generated pages)
     """
 
-    provider = FluvialCorridorToolboxProvider()
-    provider.loadAlgorithms()
+    for folder, provider_cls in PROVIDERS:
 
-    groups = defaultdict(list)
-    algs = {a.name(): a for a in provider.algorithms()}
-    for alg in algs.values():
-        groups[alg.groupId()].append((alg.__class__.__name__, alg.displayName()))
+        provider = provider_cls()
+        provider.loadAlgorithms()
 
-    for group in provider.groups:
+        groups = defaultdict(list)
+        algs = {a.name(): a for a in provider.algorithms()}
+        for alg in algs.values():
+            groups[alg.groupId()].append((alg.__class__.__name__, alg.displayName()))
 
-        name = provider.groups[group]
+        for group in provider.groups:
 
-        click.echo('- %s:' % name)
-        click.echo('  - Index: algorithm/%s/index.md' % group)
+            name = provider.groups[group]
 
-        for link, algorithm in sorted(groups[group]):
-            click.echo('  - algorithms/%s/%s.md' % (group, link))
+            click.echo('- %s:' % name)
+            click.echo('  - Index: %s/%s/index.md' % (folder, group))
+
+            for link, algorithm in sorted(groups[group]):
+                click.echo('  - %s/%s/%s.md' % (folder, group, link))
 
 @autodoc.command()
 @click.argument('names', nargs=-1)
 @click.option(
     '--destination',
     type=click.Path(exists=False, file_okay=False),
-    default='docs/algorithms',
+    default='docs',
     help='Output Folder')
 @click.option(
     '--watch/--no-watch',
@@ -340,24 +352,27 @@ def build(names, destination=None, watch=False, watch_dir=None):
     The documentation is generated in directory `docs/algorithms`.
     """
 
-    provider = FluvialCorridorToolboxProvider()
-    provider.loadAlgorithms()
+    for folder, provider_cls in PROVIDERS:
+        
+        provider = provider_cls()
+        provider.loadAlgorithms()
 
-    algs = {a.name(): a for a in provider.algorithms()}
-    link_algorithm.algs = algs
+        algs = {a.name(): a for a in provider.algorithms()}
+        link_algorithm.algs = algs
 
-    if names:
+        if names:
 
-        for name in names:
-            alg = provider.algorithm(name)
-            if alg:
-                generate_alg(alg, destination)
+            for name in names:
+                alg = provider.algorithm(name)
+                if alg:
+                    generate_alg(alg, os.path.join(destination, folder))
 
-    else:
+        else:
 
-        generate_doc(provider, destination)
+            generate_doc(provider, os.path.join(destination, folder))
 
     if watch and watch_dir:
+
         click.echo(click.style('Start watching %s for modification ...' % watch_dir, fg='yellow'))
         watch_directory(watch_dir, destination)
         click.echo('\nDone.')
@@ -369,35 +384,37 @@ def parameters(algorithm):
     List parameters of algorithm with name `name`
     """
 
-    provider = FluvialCorridorToolboxProvider()
-    provider.loadAlgorithms()
-    algs = {a.name(): a for a in provider.algorithms()}
+    for folder, provider_cls in PROVIDERS:
 
-    if algorithm.lower() in algs:
+        provider = provider_cls()
+        provider.loadAlgorithms()
+        algs = {a.name(): a for a in provider.algorithms()}
 
-        alg = algs[algorithm.lower()]
+        if algorithm.lower() in algs:
 
-        click.echo(algorithm)
-        click.echo('parameters:')
+            alg = algs[algorithm.lower()]
 
-        seen_parameters = set()
+            click.echo(algorithm)
+            click.echo('parameters:')
 
-        for parameter in chain(alg.parameterDefinitions(), alg.outputDefinitions()):
+            seen_parameters = set()
 
-            if parameter.name() in seen_parameters:
-                continue
+            for parameter in chain(alg.parameterDefinitions(), alg.outputDefinitions()):
 
-            click.echo('  ' + parameter.name() + ':')
-            click.echo('    type: ' + type(parameter).__name__)
-            click.echo('    description: ' + parameter.description())
+                if parameter.name() in seen_parameters:
+                    continue
 
-            seen_parameters.add(parameter.name())
-
-        if isinstance(alg, QgsProcessingModelAlgorithm):
-            for parameter in model_outputs(alg).values():
                 click.echo('  ' + parameter.name() + ':')
                 click.echo('    type: ' + type(parameter).__name__)
                 click.echo('    description: ' + parameter.description())
+
+                seen_parameters.add(parameter.name())
+
+            if isinstance(alg, QgsProcessingModelAlgorithm):
+                for parameter in model_outputs(alg).values():
+                    click.echo('  ' + parameter.name() + ':')
+                    click.echo('    type: ' + type(parameter).__name__)
+                    click.echo('    description: ' + parameter.description())
 
 if __name__ == '__main__':
     autodoc()

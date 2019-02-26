@@ -8,6 +8,7 @@
 .doit.db
 python3/
 docs/algorithms/
+docs/workflows/
 site/
 cython/terrain/*.cpp
 tests/testdata/*.aux.xml
