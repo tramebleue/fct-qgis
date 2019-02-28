@@ -12,12 +12,24 @@ This package does not contain optional dependencies and cython extensions. If yo
 
 ## Install the plugin from source
 
-### On Windows
+### Using `doit`
+
+On all platforms, you can install/update the plugin automatically with `doit` dependency. Install it with:
+
+    python -m pip install doit
+
+Then, the following command will install the plugin in your local plugin folder:
+
+    python -m doit install
+
+### Without `doit`
+
+#### On Windows
 
 On Windows, copy the directory `fct` to your local plugin folder,
 and rename it to `FluvialCorridorToolbox`.
 
-### On Linux or Mac OS
+#### On Linux or Mac OS
 
 On Linux or Mac OS, you can use the provided Makefile.
 

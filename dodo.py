@@ -33,9 +33,14 @@ def qgis_user_dir():
     if platform.system() == 'Darwin':
         return os.path.join(home, 'Library', 'Application Support',
             'QGIS', 'QGIS3', 'profiles', 'default')
+
+    elif platform.system() == 'Windows':
+        return os.path.join(home, 'AppData', 'Roaming',
+            'QGIS', 'QGIS3', 'profiles', 'default')
     
-    return os.path.join(home, '.local', 'share',
-        'QGIS', 'QGIS3', 'profiles', 'default')
+    else:
+        return os.path.join(home, '.local', 'share',
+            'QGIS', 'QGIS3', 'profiles', 'default')
 
 def qgis_plugin_dir():
     return os.path.join(qgis_user_dir(), 'python', 'plugins')
