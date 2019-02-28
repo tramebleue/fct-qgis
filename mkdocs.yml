@@ -66,6 +66,7 @@ nav:
     - Spatial Components:
       - Index: algorithms/spatialcomponents/index.md
       - algorithms/spatialcomponents/DisaggregatePolygon.md
+      - algorithms/spatialcomponents/PolygonCenterLine.md
       - algorithms/spatialcomponents/PolygonSkeleton.md
       - algorithms/spatialcomponents/ValleyBottom.md
       - algorithms/spatialcomponents/ValleyCenterLine.md
@@ -91,6 +92,7 @@ nav:
       - algorithms/vector/DistanceToOtherLayer.md
       - algorithms/vector/LineMidpoints.md
       - algorithms/vector/LineStringBufferByM.md
+      - algorithms/vector/LocatePointAlongLine.md
       - algorithms/vector/PointsAlongPolygon.md
       - algorithms/vector/PointsInPolygon.md
       - algorithms/vector/PointsMedialAxis.md
@@ -99,8 +101,23 @@ nav:
       - algorithms/vector/RegularHexSamples.md
       - algorithms/vector/RemoveSmallPolygonalObjects.md
       - algorithms/vector/SciPyVoronoiPolygons.md
+      - algorithms/vector/SelectByDistance.md
+      - algorithms/vector/SelectNearestFeature.md
       - algorithms/vector/SetMCoordFromMeasureField.md
       - algorithms/vector/TransectByPoint.md
       - algorithms/vector/TransformCoordinateByExpression.md
       - algorithms/vector/UniquePoints.md
       - algorithms/vector/VariableLengthTransects.md
+  - Workflows Reference:
+    - 1- Spatial Components:
+      - Index: workflows/spatialcomponents/index.md
+      - workflows/spatialcomponents/OrientedCenterline.md
+    - 2- Disaggregation Processes:
+      - Index: workflows/disaggregation/index.md
+      - workflows/disaggregation/PolylineDisaggregation.md
+    - 3- Metrics:
+      - Index: workflows/metrics/index.md
+      - workflows/metrics/Morphometry.md
+    - 4- Statistics:
+      - Index: workflows/statistics/index.md
+      - workflows/statistics/HubertTest.md
