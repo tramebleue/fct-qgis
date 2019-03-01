@@ -24,8 +24,11 @@ email=contact@geopeka.fr
 # Uncomment the following line and add your changelog entries:
 category=Vector
 changelog=
-  1.0.2
+  1.0.3
     - Current dev version
+  1.0.2
+    - Add workflows
+    - Bug fixes
   1.0.1
     - Bug fixes
   1.0.0
