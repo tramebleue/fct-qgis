@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Spatial Components Workflows
+ValleyBottom
 
 ***************************************************************************
 *                                                                         *
@@ -13,6 +13,21 @@ Spatial Components Workflows
 ***************************************************************************
 """
 
+import os
 
-from .OrientedCenterline import OrientedCenterline
-from .ValleyBottom import ValleyBottom
+from qgis.core import ( # pylint:disable=no-name-in-module
+    QgsProcessingModelAlgorithm
+)
+
+from ..metadata import AlgorithmMetadata
+
+class ValleyBottom(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+    """ 
+    Extract valley bottom over the studied area
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.METADATA = AlgorithmMetadata.read(__file__, type(self).__name__)
+        self.fromFile(os.path.join(os.path.dirname(__file__), type(self).__name__ + '.model3'))
