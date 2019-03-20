@@ -253,6 +253,8 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         # 3. traverse graph starting from node with lowest z
         #    and mark links not properly oriented
 
+        feedback.setProgressText(self.tr("Traverse graph ..."))
+
         junctions = set(node for node in node_index if degree[node] != 2)
 
         if self.parameters.outlets_def == self.OUTLETS_DEF_DANGLING:
@@ -303,6 +305,8 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         # Pick lowest-z node among remaining nodes,
         # and traverse graph until next junction
 
+        sinks = list()
+
         while queue:
 
             if feedback.isCanceled():
@@ -310,22 +314,33 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                 print(z, node)
                 break
 
+            still_sinks = list()
+
+            while sinks:
+                sink, z = sinks.pop()
+                if issink(sink):
+                    still_sinks.append((sink, z))
+                else:
+                    heappush(queue, (z, sink))
+
+            sinks = still_sinks
+
             z, node = heappop(queue)
             if node in seen_nodes:
                 continue
 
             if issink(node):
 
-                sink = node
+                sinks.append((node ,z))
 
-                # Shift node up in the queue
-                # ie. set Z to higher a value than Z of next node,
-                # and reinject into the queue
+                # # Shift node up in the queue
+                # # ie. set Z to higher a value than Z of next node,
+                # # and reinject into the queue
 
-                z, node = heappop(queue)
-                next_z, next_node = queue[0]
-                heappush(queue, (z+max(0.05, 0.5*(next_z - z)), sink))
-                heappush(queue, (z, node))
+                # z, node = heappop(queue)
+                # next_z, next_node = queue[0]
+                # heappush(queue, (z+max(0.05, 0.5*(next_z - z)), sink))
+                # heappush(queue, (z, node))
 
                 continue
 
