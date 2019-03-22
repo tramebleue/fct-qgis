@@ -43,16 +43,16 @@ def segment(x, Kmax=np.infty):
     Kmax = min(n, Kmax)
     C = np.zeros((Kmax, n+1), dtype=np.float32)
     T = np.zeros((Kmax, n+1), dtype=np.uint16)
-    C[0,:] = D[0,:]
+    C[0, :] = D[0, :]
 
     for k in np.arange(1, Kmax):
-    
+
         for s in np.arange(1, n+1):
 
-                costs = C[k-1, :s] + D[:s, s]
-                t = np.argmin(costs)
-                C[k, s] = costs[t]
-                T[k, s] = t
+            costs = C[k-1, :s] + D[:s, s]
+            t = np.argmin(costs)
+            C[k, s] = costs[t]
+            T[k, s] = t
 
         # test for termination
 

@@ -1,5 +1,17 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
+"""
+Priority Flood Depression Filling
+
+***************************************************************************
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+***************************************************************************
+"""
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -201,7 +213,7 @@ def fillsinks(
             ij = entry.second
             i = ij.first
             j = ij.second
-            z = elevations[i, j]
+            z = out[i, j]
 
             for x in range(8):
                 
@@ -229,7 +241,7 @@ def fillsinks(
     # progress.close()
     print(msg)
 
-    return np.asarray(out)
+    return out
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -238,7 +250,27 @@ def flowdir(
     float nodata,
     short[:, :] flow = None):
     """
-    Flow direction
+    Compute D8 flow direction.
+    Each cell is set to flow to its neighbor with lowest z.
+
+    Parameters
+    ----------
+
+    elevations: array-like
+        Digital elevation model (DEM) raster (ndim=2).
+        The input DEM should be pre-processed with a filling algorithm
+        in order to remove sinks and give a gentle slop to flat areas.
+
+    nodata: float
+        no-data value in `elevations`
+
+    flow: array-like
+        Same shape as elevations, dtype=np.int16, initialized to nodata = -1
+
+    Returns
+    -------
+
+    Flow Direction raster, dtype=np.int16, nodata = -1
     """
 
     cdef long width, height
@@ -275,6 +307,7 @@ def flowdir(
                         zx = elevations[ix, jx]
 
                         if zx == nodata:
+                            # we don't flow to nodata cells
                             continue
 
                         if zx < zmin:
@@ -293,4 +326,4 @@ def flowdir(
                 else:
                     flow[i, j] = pow2(xmin)
 
-    return np.asarray(flow)
+    return flow
