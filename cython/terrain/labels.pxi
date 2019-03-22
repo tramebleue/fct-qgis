@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Priority Flood Depression Filling - Flow Direction
+Watershed Labeling with Depression Filling
 
 ***************************************************************************
 *                                                                         *
@@ -114,8 +114,8 @@ cdef void grow_slope_region(
 def watershed_labels(
         float[:, :] elevations,
         float nodata,
-        float dx, float dy,
-        float minslope=1e-3,
+        # float dx, float dy,
+        # float minslope=1e-3,
         # float[:, :] out = None,
         unsigned int[:, :] labels = None):
     """
@@ -171,7 +171,7 @@ def watershed_labels(
         long width, height
         long i, j, x, xmin, ix, jx
         float z, zx, zmin
-        unsigned int label, next_label = 2
+        unsigned int label, next_label = 1
 
         Cell c
         QueueEntry entry
@@ -179,14 +179,14 @@ def watershed_labels(
         CellStack pit
         CellStack slope
 
-        np.ndarray[double, ndim=2] w
-        np.ndarray[float] mindiff
+        # np.ndarray[double, ndim=2] w
+        # np.ndarray[float] mindiff
 
     height = elevations.shape[0]
     width = elevations.shape[1]
 
-    w = np.array([ ci, cj ]).T * (dx, dy)
-    mindiff = np.float32(minslope*np.sqrt(np.sum(w*w, axis=1)))
+    # w = np.array([ ci, cj ]).T * (dx, dy)
+    # mindiff = np.float32(minslope*np.sqrt(np.sum(w*w, axis=1)))
 
     if labels is None:
         labels = np.zeros((height, width), dtype=np.uint32)
@@ -303,7 +303,7 @@ def watershed_labels(
 
             grow_slope_region(elevations, nodata, labels, height, width, label, slope, priority)
 
-    msg = f'Found {next_label-2} watersheds.'
+    msg = f'Found {next_label-1} watersheds.'
     print(msg)
 
     msg = 'Done.'

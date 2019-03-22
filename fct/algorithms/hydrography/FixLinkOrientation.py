@@ -307,27 +307,41 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
         sinks = list()
 
-        while queue:
+        while queue or sinks:
 
             if feedback.isCanceled():
-                z, node = heappop(queue)
-                print(z, node)
+                # z, node = heappop(queue)
+                # print(z, node)
                 break
 
-            still_sinks = list()
+            if sinks:
 
-            while sinks:
-                sink, z = sinks.pop()
-                if issink(sink):
-                    still_sinks.append((sink, z))
-                else:
-                    heappush(queue, (z, sink))
+                found = False
+                still_sinks = list()
 
-            sinks = still_sinks
+                while sinks:
+                    node, z = sinks.pop()
+                    if issink(node):
+                        still_sinks.append((node, z))
+                    else:
+                        found = True
+                        break
 
-            z, node = heappop(queue)
-            if node in seen_nodes:
-                continue
+                sinks.extend(still_sinks)
+
+                if not found:
+                    if queue:
+                        z, node = heappop(queue)
+                        if node in seen_nodes:
+                            continue
+                    else:
+                        break
+
+            else:
+
+                z, node = heappop(queue)
+                if node in seen_nodes:
+                    continue
 
             if issink(node):
 
