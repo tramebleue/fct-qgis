@@ -13,13 +13,19 @@ Watershed Labeling with Depression Filling
 ***************************************************************************
 """
 
+ctypedef unsigned int Label
+ctypedef pair[Label, Label] LabelPair
+ctypedef map[LabelPair, float] SpilloverGraph
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef void grow_pit_region(
     float[:, :] elevations,
     float nodata,
-    unsigned int[:, :] labels,
+    Label[:, :] labels,
     long height,
     long width,
-    unsigned int region_label,
+    Label region_label,
     CellStack& queue,
     CellStack& slope) nogil:
 
@@ -60,14 +66,15 @@ cdef void grow_pit_region(
 
                 slope.push(Cell(ix, jx))
 
-
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef void grow_slope_region(
     float[:, :] elevations,
     float nodata,
-    unsigned int[:, :] labels,
+    Label[:, :] labels,
     long height,
     long width,
-    unsigned int region_label,
+    Label region_label,
     CellStack& queue,
     CellQueue& priority) nogil:
 
@@ -117,7 +124,7 @@ def watershed_labels(
         # float dx, float dy,
         # float minslope=1e-3,
         # float[:, :] out = None,
-        unsigned int[:, :] labels = None):
+        Label[:, :] labels = None):
     """
     fillsinks(elevations, nodata, dx, dy, minslope, out=None)
 
@@ -170,14 +177,16 @@ def watershed_labels(
 
         long width, height
         long i, j, x, xmin, ix, jx
-        float z, zx, zmin
-        unsigned int label, next_label = 1
+        float z, zx, zmin, over_z
+        Label label, other_label, next_label = 1
 
         Cell c
         QueueEntry entry
         CellQueue priority
         CellStack pit
         CellStack slope
+        SpilloverGraph graph
+        LabelPair edge
 
         # np.ndarray[double, ndim=2] w
         # np.ndarray[float] mindiff
@@ -286,12 +295,29 @@ def watershed_labels(
                 if not ingrid(height, width, ix, jx) or elevations[ix, jx] == nodata:
                     continue
 
-                if labels[ix, jx] > 0:
+                other_label = labels[ix, jx]
+                zx = elevations[ix, jx]
+
+                if other_label > 0:
+
+                    if other_label != label:
+
+                        if label > other_label:
+                            swap(label, other_label)
+                        
+                        edge = LabelPair(label, other_label)
+                        over_z = max[float](z, zx)
+                        
+                        if graph.count(edge) == 0:
+                            graph[edge] = over_z
+                        elif over_z < graph[edge]:
+                            graph[edge] = over_z
+                    
                     continue
 
                 labels[ix, jx] = label
             
-                if elevations[ix, jx] < z:
+                if zx < z:
 
                     elevations[ix, jx] = z
                     pit.push(Cell(ix, jx))
@@ -309,4 +335,4 @@ def watershed_labels(
     msg = 'Done.'
     print(msg)
 
-    return labels
+    return labels, graph

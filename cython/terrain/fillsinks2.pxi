@@ -79,6 +79,7 @@ def fillsinks2(
         Cell ij
         QueueEntry entry
         CellQueue queue
+        unsigned char[:, :] seen
 
         np.ndarray[double, ndim=2] w
         np.ndarray[float] mindiff
@@ -99,6 +100,8 @@ def fillsinks2(
 
     if flow is None:
         flow = np.full((height, width), -1, dtype=np.int16)
+
+    seen = np.zeros((height, width), dtype=np.uint8)
     
     # progress = CppTermProgress(2*width*height)
     msg = 'Input is %d x %d' % (width, height)
@@ -113,7 +116,7 @@ def fillsinks2(
         for i in range(height):
             for j in range(width):
 
-                z = elevations[ i, j ]
+                z = elevations[i, j]
                 
                 if z != nodata:
                     
@@ -122,11 +125,12 @@ def fillsinks2(
                         ix = i + ci[x]
                         jx = j + cj[x]
                     
-                        if not ingrid(height, width, ix, jx) or (elevations[ ix, jx ] == nodata):
+                        if not ingrid(height, width, ix, jx) or (elevations[ix, jx] == nodata):
                             
                             # heapq.heappush(queue, (-z, x, y))
                             entry = QueueEntry(-z, Cell(i, j))
                             queue.push(entry)
+                            seen[i, j] = 1
 
                             break
 
@@ -161,7 +165,7 @@ def fillsinks2(
             j = ij.second
             # z = out[i, j]
 
-            assert flow[i, j] == -1
+            # assert flow[i, j] == -1
 
             if flow[i, j] == -1:
 
@@ -183,7 +187,7 @@ def fillsinks2(
 
                             zx = elevations[ix, jx]
 
-                            assert zx != nodata
+                            # assert zx != nodata
 
                             # should never happen ...
                             if zx == nodata:
@@ -216,10 +220,13 @@ def fillsinks2(
 
                     zx = elevations[ix, jx]
 
-                    if (zx != nodata) and (flow[ix, jx] == -1):
+                    if (zx != nodata) and (seen[ix, jx] == 0):
 
                         if zx < (z + mindiff[x]):
+
                             zx = z + mindiff[x]
+                            elevations[ix, jx] = zx
+                            flow[ix, jx] = pow2(reverse_direction(x))
 
                         # out[ix, jx] = zx
                         # flow[ix, jx] = pow2(reverse_direction(x))
@@ -227,6 +234,7 @@ def fillsinks2(
                         # heapq.heappush(queue, (-iz, ix, iy))
                         entry = QueueEntry(-zx, Cell(ix, jx))
                         queue.push(entry)
+                        seen[ix, jx] = 1
 
     msg = 'Done.'
     # progress.write(msg)

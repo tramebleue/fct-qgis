@@ -1,6 +1,11 @@
 import array
 from cpython cimport array
 from libc.math cimport sqrt, atan, atan2, pi, cos, sin, tan, acos
+from libcpp.map cimport map
+
+cdef extern from "<algorithm>" namespace "std":
+    T max[T](T a, T b) nogil
+    void swap[T](T a, T b) nogil
 
 #                                    0   1   2   3   4   5   6   7
 #                                    N  NE   E  SE   S  SW   W  NW
