@@ -166,3 +166,35 @@ def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, feedback=None
 
     return out
 
+ctypedef unsigned int ContributingArea
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def stream_contributing_area(ContributingArea[:, :] acc, float[:, :] streams):
+
+    cdef:
+
+        long height = acc.shape[0], width = acc.shape[1]
+        long i, j
+        float stream
+        ContributingArea area
+        map[float, ContributingArea] maxarea
+
+    assert(height == streams.shape[0])
+    assert(width == streams.shape[1])
+
+    with nogil:
+
+        for i in range(height):
+            for j in range(width):
+
+                stream = streams[i, j]
+
+                if stream != 0:
+                    area = acc[i, j]
+                    if maxarea.count(stream) == 0:
+                        maxarea[stream] = area
+                    else:
+                        maxarea[stream] = max[ContributingArea](area, maxarea[stream])
+
+    return maxarea
