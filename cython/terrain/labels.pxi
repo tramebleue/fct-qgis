@@ -303,7 +303,8 @@ def watershed_labels(
                     if other_label != label:
 
                         if label > other_label:
-                            swap(label, other_label)
+                            # swap(label, other_label)
+                            label, other_label = other_label, label
                         
                         edge = LabelPair(label, other_label)
                         over_z = max[float](z, zx)

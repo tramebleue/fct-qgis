@@ -36,10 +36,10 @@ cdef void connect(
         WatershedPair p
 
     if l1 > l2:
-        swap(l1, l2)
+        l1, l2 = l2, l1
 
     p = WatershedPair(l1, l2)
-    over_z = max(z1, z2)
+    over_z = max[float](z1, z2)
 
     if graph.count(p) == 0:
         graph[p] = over_z

@@ -96,32 +96,35 @@ def topo_stream_burn(
         GPL Licensed
     """
 
-    cdef long width, height
-    cdef float dx, dy, z, zx
-    cdef np.ndarray[double, ndim=2] w
-    cdef np.ndarray[float] mindiff
-    cdef long i, j, ix, jx, x, ncells, current
-    cdef unsigned char instream, instreamx
+    cdef:
 
-    cdef Cell cell
-    cdef TopoKey key
-    cdef TopoQueueEntry entry
-    cdef TopoQueue queue
+        long height = elevations.shape[0], width = elevations.shape[1]
+        float dx, dy, z, zx, zmin
+        long i, j, ix, jx, x, xmin, ncells, current
+        unsigned char instream, instreamx
+        unsigned char[:, :] seen
+        
+        Cell cell
+        TopoKey key
+        TopoQueueEntry entry
+        TopoQueue queue
 
-    cdef float total
-    cdef int progress0, progress1
+        float total
+        int progress0, progress1
+
+        np.ndarray[double, ndim=2] w
+        np.ndarray[float] mindiff
 
     if feedback is None:
         feedback = SilentFeedback()
-
-    height = elevations.shape[0]
-    width = elevations.shape[1]
 
     w = np.array([ ci, cj ]).T * (rx, ry)
     mindiff = np.float32(minslope*np.sqrt(np.sum(w*w, axis=1)))
 
     if out is None:
         out = np.full((height, width), -1, dtype=np.int16)
+
+    seen = np.zeros((height, width), dtype=np.uint8)
 
     # progress = TermProgressBar(2*width*height)
     feedback.setProgressText('Input is %d x %d' % (width, height))
@@ -154,6 +157,7 @@ def topo_stream_burn(
                         key = TopoKey(instream, -z)
                         entry = TopoQueueEntry(key, cell)
                         queue.push(entry)
+                        seen[i, j] = 0
 
                         break
 
@@ -171,7 +175,6 @@ def topo_stream_burn(
 
     while not queue.empty():
 
-        # instream, z, i, j = heappop(queue)
         entry = queue.top()
         queue.pop()
         key = entry.first
@@ -182,7 +185,47 @@ def topo_stream_burn(
         j = cell.second
 
         if out[i, j] == -1:
-            out[i, j] = 0
+
+            zmin = z
+            xmin = -1
+
+            for x in range(8):
+
+                ix = i + ci[x]
+                jx = j + cj[x]
+                
+                if ingrid(height, width, ix, jx):
+
+                    # consider only visited cells,
+                    # other cells either have elevation > z
+                    # or are sinks
+
+                    if out[ix, jx] != -1:
+
+                        zx = elevations[ix, jx]
+
+                        # assert zx != nodata
+
+                        # should never happen ...
+                        if zx == nodata:
+                            # we don't flow to nodata cells
+                            continue
+
+                        if zx < zmin:
+                            zmin = zx
+                            xmin = x
+
+                # else:
+
+                #     # flow outside dem
+                #     xmin = x
+                #     break
+
+            if xmin == -1:
+                # no flow
+                out[i, j] = 0
+            else:
+                out[i, j] = pow2(xmin)
 
         for x in range(8):
 
@@ -194,17 +237,20 @@ def topo_stream_burn(
                 zx = elevations[ix, jx]
                 instreamx = 1 if streams[ix, jx] > 0 else 0
 
-                if (zx != nodata) and (out[ix, jx] == -1):
+                if (zx != nodata) and (seen[ix, jx] == 0):
 
                     if zx < (z + mindiff[x]):
                         zx = z + mindiff[x]
+                        elevations[ix, jx] = zx
+                        out[ix, jx] = pow2(reverse_direction(x))
 
-                    out[ix, jx] = pow2(reverse_direction(x))
+                    # out[ix, jx] = pow2(reverse_direction(x))
                     # heappush(queue, (instreamx, zx, ix, jx))
                     cell = Cell(ix, jx)
                     key = TopoKey(instreamx, -zx)
                     entry = TopoQueueEntry(key, cell)
                     queue.push(entry)
+                    seen[ix, jx] = 1
 
         current += 1
         progress1 = int(current*total)

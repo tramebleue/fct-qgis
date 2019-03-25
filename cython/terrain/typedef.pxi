@@ -27,3 +27,49 @@ class SilentFeedback(object):
 
 	def isCanceled(self):
 		return False
+
+cdef class ConsoleFeedback(object):
+
+	cdef:
+		int _last
+
+	def __cinit__(self):
+		self._last = 0
+
+	@property
+	def progress(self):
+		return self._last
+	
+	cpdef void setProgress(self, int progress):
+		
+		if progress != self._last:
+		
+			self._last = progress
+			self.printProgress()
+
+	cdef void printProgress(self):
+
+		cdef int tick, i
+
+		tick = <int>(1.0 * self._last / 100.0 * 40.0)
+	
+		sys.stdout.write('\r\033[K')
+		
+		for i in range(tick+1):
+			if i % 4 == 0:
+				sys.stdout.write(str(i / 4 * 10))
+			else:
+				sys.stdout.write('.')
+
+		sys.stdout.flush()
+
+	cpdef void setProgressText(self, msg):
+		print('\r\033[K' + msg)
+		self.printProgress()
+
+	cpdef void pushInfo(self, msg):
+		print('\r\033[K' + msg)
+		self.printProgress()
+
+	cpdef bint isCanceled(self):
+		return False
