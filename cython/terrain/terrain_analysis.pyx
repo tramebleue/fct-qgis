@@ -25,7 +25,6 @@ cimport cython
 include "common.pxi"
 include "typedef.pxi"
 include "fillsinks.pxi"
-include "fillsinks2.pxi"
 # include "cflowdir.pxi"
 # include "cwatershed.pxi"
 # include "cstrahler.pxi"
