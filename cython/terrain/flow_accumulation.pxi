@@ -135,6 +135,7 @@ def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, feedback=None
             # check if we reached a confluence cell
 
             if inflow[ix, jx] > 0:
+                count += 1
                 break
 
             # otherwise accumulate downward
@@ -164,7 +165,7 @@ def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, feedback=None
 
         count += 1
 
-    return out
+    return np.uint32(out)
 
 ctypedef unsigned int ContributingArea
 

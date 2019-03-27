@@ -29,11 +29,11 @@ def topo_stream_burn(
     float[:,:] streams,
     float nodata,
     float rx, float ry,
-    float minslope=1e-3,
+    float minslope=1e-5,
     short[:,:] out=None,
     feedback=None):
     """ Flow accumulation algorithm
-        based on Lindsay (2016) `Topological Stream Burn algorithm,
+        based on Lindsay (2016) `Topological Stream Burn` algorithm,
         which is a variant of Wang and Liu (2006) `Fill Sinks` algorithm.
         The algorithm fills stream cells before other cells,
         starting from boundary cells with lowest z.

@@ -19,7 +19,7 @@ def fillsinks(
         float[:, :] elevations,
         float nodata,
         float dx, float dy,
-        float minslope=1e-3,
+        float minslope=1e-5,
         # float[:, :] out = None,
         short[:, :] flow = None):
     """
@@ -159,11 +159,11 @@ def fillsinks(
             entry = queue.top()
             queue.pop()
 
-            z = -entry.first
+            # z = -entry.first
             ij = entry.second
             i = ij.first
             j = ij.second
-            # z = out[i, j]
+            z = elevations[i, j]
 
             # assert flow[i, j] == -1
 

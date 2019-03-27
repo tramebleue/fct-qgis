@@ -16,7 +16,7 @@ Watershed Analysis
 cdef long propagate(
     short[:, :] flow, long height, long width,
     float[:, :] values,
-    float nodata,
+    unsigned char[:, :] seen,
     long i0, long j0):
     """
     Propagate data values upstream.
@@ -30,6 +30,7 @@ cdef long propagate(
 
     cell = Cell(i0, j0)
     stack.push(cell)
+    seen[i0, j0] = 1
     count = 0
 
     while not stack.empty():
@@ -38,6 +39,7 @@ cdef long propagate(
         stack.pop()
         i = cell.first
         j = cell.second
+
         count += 1
 
         for x in range(8):
@@ -47,11 +49,13 @@ cdef long propagate(
 
             if ingrid(height, width, i+di, j+dj) and flow[i+di, j+dj] == upward[x]:
 
-                if values[i+di, j+dj] == nodata:
+                if values[i+di, j+dj] == 0:
                     values[i+di, j+dj] = values[i, j]
 
-                cell = Cell(i+di, j+dj)
-                stack.push(cell)
+                if seen[i+di, j+dj] == 0:
+                    cell = Cell(i+di, j+dj)
+                    stack.push(cell)
+                    seen[i+di, j+dj] = 1
 
     return count
 
@@ -88,10 +92,13 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
         or None to disable feedback
     """
 
-    cdef long height, width, i, j
-    cdef short direction
-    cdef int x, di, dj, current, progress0, progress1
-    cdef float total
+    cdef:
+
+        long height, width, i, j, ix, jx
+        short direction
+        int x, di, dj, current, progress0, progress1
+        float total
+        unsigned char[:, :] seen, seen2
 
     height = flow.shape[0]
     width = flow.shape[1]
@@ -102,6 +109,9 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
     if feedback is None:
         feedback = SilentFeedback()
 
+    seen = np.zeros((height, width), dtype=np.uint8)
+    seen2 = np.zeros((height, width), dtype=np.uint8)
+
     # Lookup for outlets
 
     for i in range(height):
@@ -111,12 +121,17 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
 
         for j in range(width):
 
-            direction = flow[i, j]
+            if flow[i, j] == -1:
+                current = current + 1
+                continue
 
-            if direction == 0:
+            if seen[i, j] == 1:
+                continue
 
-                current += propagate(
-                    flow, height, width, values, nodata,
+            if flow[i, j] == 0:
+
+                current = current + propagate(
+                    flow, height, width, values, seen,
                     i, j)
 
                 progress1 = int(current*total)
@@ -124,21 +139,75 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
                     feedback.setProgress(progress1)
                     progress0 = progress1
 
-            elif direction > 0:
+            else:
 
-                x = ilog2(direction)
+                ix = i
+                jx = j
+                x = ilog2(flow[ix, jx])
                 di = ci[x]
                 dj = cj[x]
 
-                # Check if (i,j) flows in nodata or outside grid
+                while ingrid(height, width, ix+di, jx+dj) and flow[ix+di, jx+dj] != -1 and seen[ix+di, jx+dj] == 0:
 
-                if not ingrid(height, width, i+di, j+dj) or flow[i+di, j+dj] == -1:
+                    ix = ix + di
+                    jx = jx + dj
+                    
+                    if flow[ix, jx] == 0:
+                        break
 
-                    current += propagate(
-                        flow, height, width, values, nodata,
-                        i, j)
+                    x = ilog2(flow[ix, jx])
+                    di = ci[x]
+                    dj = cj[x]
 
-                    progress1 = int(current*total)
-                    if progress1 > progress0:
-                        feedback.setProgress(progress1)
-                        progress0 = progress1
+                    if seen2[ix, jx] == 1:
+                        print('loop....')
+                        break
+
+                    seen2[ix, jx] = 1
+
+                # feedback.pushInfo('Propagate values from cell(%d, %d)' % (ix, jx))
+
+                current = current + propagate(
+                    flow, height, width,
+                    values,
+                    seen,
+                    ix, jx)
+
+            progress1 = int(current*total)
+            if progress1 > progress0:
+                feedback.setProgress(progress1)
+                progress0 = progress1
+
+
+
+    #         direction = flow[i, j]
+
+    #         if direction == 0:
+
+    #             current += propagate(
+    #                 flow, height, width, values, nodata,
+    #                 i, j)
+
+    #             progress1 = int(current*total)
+    #             if progress1 > progress0:
+    #                 feedback.setProgress(progress1)
+    #                 progress0 = progress1
+
+    #         elif direction > 0:
+
+    #             x = ilog2(direction)
+    #             di = ci[x]
+    #             dj = cj[x]
+
+    #             # Check if (i,j) flows in nodata or outside grid
+
+    #             if not ingrid(height, width, i+di, j+dj) or flow[i+di, j+dj] == -1:
+
+    #                 current += propagate(
+    #                     flow, height, width, values, nodata,
+    #                     i, j)
+
+    #                 progress1 = int(current*total)
+    #                 if progress1 > progress0:
+    #                     feedback.setProgress(progress1)
+    #                     progress0 = progress1
