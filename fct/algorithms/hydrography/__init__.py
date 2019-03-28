@@ -22,6 +22,7 @@ from .IdentifyNetworkNodes import IdentifyNetworkNodes
 from .LengthOrder import LengthOrder
 from .LongestPathInDirectedGraph import LongestPathInDirectedGraph
 from .MeasureNetworkFromOutlet import MeasureNetworkFromOutlet
+from .MergeShortLinks import MergeShortLinks
 from .NetworkNodes import NetworkNodes
 from .RasterizeStreamNetwork import RasterizeStreamNetwork
 from .ReverseFlowDirection import ReverseFlowDirection

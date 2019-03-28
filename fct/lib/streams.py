@@ -122,8 +122,7 @@ def stream_to_feature(streams, flow, feedback):
 
                 break
 
-        segments.append((np.array(segment), head))
         current += 1
         feedback.setProgress(int(current*total))
 
-    return segments
+        yield np.array(segment), head

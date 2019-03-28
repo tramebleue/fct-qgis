@@ -1,0 +1,11 @@
+displayName: Merge Short Links
+group: hydrography
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - hydrography
+  - graph
+  - unit geographic object
+  - ugo
+  - aggregate

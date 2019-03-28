@@ -84,20 +84,11 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         streams_lyr = self.parameterAsRasterLayer(parameters, self.STREAMS, context)
 
-        flow_ds = gdal.Open(flow_lyr.dataProvider().dataSourceUri())
+        flow_ds = gdal.OpenEx(flow_lyr.dataProvider().dataSourceUri(), gdal.GA_ReadOnly)
         flow = flow_ds.GetRasterBand(1).ReadAsArray()
 
-        streams_ds = gdal.Open(streams_lyr.dataProvider().dataSourceUri())
+        streams_ds = gdal.OpenEx(streams_lyr.dataProvider().dataSourceUri(), gdal.GA_ReadOnly)
         streams = streams_ds.GetRasterBand(1).ReadAsArray()
-
-        segments = stream_to_feature(streams, flow, feedback=feedback)
-
-        if feedback.isCanceled():
-            feedback.reportError(self.tr('Aborted'), True)
-            return {}
-
-        feedback.setProgress(100)
-        feedback.pushInfo(self.tr('Output Features ...'))
 
         fields = QgsFields()
         fields.append(QgsField('GID', QVariant.Int, len=10))
@@ -111,19 +102,19 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
             QgsWkbTypes.LineString,
             streams_lyr.crs())
 
-        total = 100.0 / len(segments) if segments else 0
+        transform = streams_ds.GetGeoTransform()
 
         def pixeltoworld(sequence):
             """ Transform raster pixel coordinates (px, py)
                 into real world coordinates (x, y)
             """
-            tranform = streams_ds.GetGeoTransform()
-            return (sequence + 0.5)*[tranform[1], tranform[5]] + [tranform[0], tranform[3]]
+            return (sequence + 0.5)*[transform[1], transform[5]] + [transform[0], transform[3]]
 
-        for current, (segment, head) in enumerate(segments):
+        for current, (segment, head) in enumerate(stream_to_feature(streams, flow, feedback=feedback)):
 
             if feedback.isCanceled():
-                break
+                feedback.reportError(self.tr('Aborted'), True)
+                return {}
 
             if head and segment.shape[0] <= 2:
                 continue
@@ -139,8 +130,6 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
             ])
             feature.setGeometry(linestring)
             sink.addFeature(feature)
-
-            feedback.setProgress(int(current*total))
 
         # Properly close GDAL resources
         flow_ds = None
