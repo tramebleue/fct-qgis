@@ -13,6 +13,8 @@ Vectorize Stream Features
 ***************************************************************************
 """
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def stream_to_feature(
     short[:, :] streams,
     short[:, :] flow,
@@ -53,7 +55,7 @@ def stream_to_feature(
 
         CellStack stack
         Cell c
-        # list[Cell] segment
+        list segment
 
     inflow = np.zeros((height, width), dtype=np.int8)
 
