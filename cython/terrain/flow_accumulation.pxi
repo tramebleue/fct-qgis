@@ -15,7 +15,7 @@ Flow Accumulation - Cython implementation
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, feedback=None):
+def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, unsigned int increment=1, feedback=None):
     """ Flow accumulation from D8 flow direction.
 
     Parameters
@@ -76,7 +76,7 @@ def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, feedback=None
 
             if direction != nodata:
 
-                out[i, j] = 1
+                out[i, j] = out[i, j] + increment
                 inflowij = 0
 
                 for x in range(8):
