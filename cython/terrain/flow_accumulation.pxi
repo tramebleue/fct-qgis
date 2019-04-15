@@ -165,6 +165,8 @@ def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, unsigned int 
 
         count += 1
 
+    feedback.setProgress(100)
+
     return np.uint32(out)
 
 ctypedef unsigned int ContributingArea

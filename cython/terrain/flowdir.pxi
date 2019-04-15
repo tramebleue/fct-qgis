@@ -27,10 +27,11 @@ def flowdir(
 
     """
 
-    cdef long width, height
+    cdef:
 
-    cdef long i, j, x, xmin, ix, jx
-    cdef float z, zx, zmin
+        long width, height
+        long i, j, x, xmin, ix, jx
+        float z, zx, zmin
 
     height = elevations.shape[0]
     width = elevations.shape[1]
@@ -56,22 +57,17 @@ def flowdir(
                     ix = i + ci[x]
                     jx = j + cj[x]
                     
-                    if ingrid(height, width, ix, jx):
+                    if not ingrid(height, width, ix, jx):
+                        continue
 
-                        zx = elevations[ix, jx]
+                    zx = elevations[ix, jx]
 
-                        if zx == nodata:
-                            continue
+                    if zx == nodata:
+                        continue
 
-                        if zx < zmin:
-                            zmin = zx
-                            xmin = x
-
-                    else:
-
-                        # flow outside dem
+                    if zx < zmin:
+                        zmin = zx
                         xmin = x
-                        break
 
                 if xmin == -1:
                     # no flow

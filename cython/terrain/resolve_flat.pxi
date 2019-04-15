@@ -13,11 +13,12 @@ Drainage (flow) direction for DEM flats
 ***************************************************************************
 """
 
-import numpy as np
-from collections import defaultdict
-from itertools import count
-
-def resolve_flat(elevations, flow, feedback=None):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def resolve_flat(
+        float[:, :] elevations,
+        short[:, :] flow,
+        feedback=None):
     """
     Create a pseudo-height raster for DEM flats,
     suitable to calculate a realistic drainage direction raster.
@@ -25,13 +26,14 @@ def resolve_flat(elevations, flow, feedback=None):
     Parameters
     ----------
 
-    elevations: array-like, ndims=2, dtype=float32 or float64
+    elevations: array-like, ndims=2, dtype=float32
         Elevation raster,
         preprocessed for depression filling.
         Flats must have constant elevation.
 
-    flow: array-like, ndims=2, dtype=int16, same shape as `elevations`
-        D8 Flow (Drainage) direction raster
+    flow: array-like, ndims=2, dtype=int16,
+        D8 Flow (Drainage) direction raster,
+        with same shape as `elevations`
 
     feedback: QgsFeedback-like object
 
@@ -49,26 +51,38 @@ def resolve_flat(elevations, flow, feedback=None):
         nodata = 0
     """
 
+    cdef:
+
+        list low_queue, high_queue, edge_queue, queue
+        dict flat_heights
+        long i, j, xi, xj, current
+        int x, increment
+        float z
+        short direction
+        double total
+
+        int[:, :] flat_mask
+        unsigned int[:, :] labels
+        unsigned int label, next_label
+        unsigned char[:, :] seen
+        bint is_edge_outlet, is_receiving_flow
+
     low_queue = list()
     high_queue = list()
     edge_queue = list()
     # flat_labels = np.unique(labels[labels > 0])
-    height, width = elevations.shape
-
-    def ingrid(i, j):
-        return i >= 0 and i < height and j >= 0 and j < width
-
-    D8_SEARCH = np.array([
-        [-1, -1,  0,  1,  1,  1,  0, -1],
-        [ 0,  1,  1,  1,  0, -1, -1, -1]
-    ]).T
+    height = elevations.shape[0]
+    width = elevations.shape[1]
 
     # Find flats boundary cells
 
-    feedback.setProgressText('Find flat boundary cells')
+    feedback.setProgressText('Find flat boundary cells ...')
     total = 100.0 / (height*width)
     FLOW_NODATA = -1
     NO_FLOW = 0
+
+    if feedback is None:
+        feedback = SilentFeedback()
 
     for i in range(height):
         for j in range(width):
@@ -79,41 +93,43 @@ def resolve_flat(elevations, flow, feedback=None):
             if direction == FLOW_NODATA:
                 continue
 
-            is_edge_flow = False
+            is_edge_outlet = False
             is_receiving_flow = False
 
             for x in range(8):
 
-                ci, cj = D8_SEARCH[x]
-                xi = i + ci
-                xj = j + cj
+                xi = i + ci[x]
+                xj = j + cj[x]
 
-                if not ingrid(xi, xj):
+                if not ingrid(height, width, xi, xj):
                     if direction == NO_FLOW:
-                        is_edge_flow = True
+                        is_edge_outlet = True
                     continue
 
                 if flow[xi, xj] == FLOW_NODATA:
                     if direction == NO_FLOW:
-                        is_edge_flow = True
+                        is_edge_outlet = True
                     continue
 
                 if direction != NO_FLOW and flow[xi, xj] == NO_FLOW and z == elevations[xi, xj]:
                     # cell (i, j) is part of a flat (same elevation as neighbor)
                     # but flows outside the flat : it is a flat outlet
                     low_queue.append((i, j))
-                    is_edge_flow = False
+                    is_edge_outlet = False
                     break
 
                 elif direction == NO_FLOW and z < elevations[xi, xj]:
                     # cell (i, j) is part of a flat
                     # and has a higher neighbor that flows into this flat
                     is_receiving_flow = True
+                    # do not reset is_edge_outlet flag :
+                    # cell can also be an edge outlet
+                    # is_edge_outlet = False
 
             if is_receiving_flow:
                 high_queue.append((i, j))
 
-            if is_edge_flow:
+            if is_edge_outlet:
                 edge_queue.append((i, j))
 
         feedback.setProgress(int(total * i * width))
@@ -124,7 +140,7 @@ def resolve_flat(elevations, flow, feedback=None):
 
     feedback.setProgressText('Label flats ...')
     labels = np.zeros((height, width), dtype=np.uint32)
-    label_generator = count(1)
+    next_label = 1
     total = 100.0 / (len(low_queue) + len(high_queue) + len(edge_queue))
 
     for current, (i, j) in enumerate(low_queue + high_queue + edge_queue):
@@ -136,13 +152,14 @@ def resolve_flat(elevations, flow, feedback=None):
         label = labels[i, j]
 
         if label == 0:
-            label = next(label_generator)
+            label = next_label
+            next_label += 1
 
         while queue:
 
             xi, xj = queue.pop(0)
 
-            if not ingrid(xi, xj):
+            if not ingrid(height, width, xi, xj):
                 continue
             if elevations[xi, xj] != z:
                 continue
@@ -152,10 +169,9 @@ def resolve_flat(elevations, flow, feedback=None):
             labels[xi, xj] = label
 
             for x in range(8):
-                ci, cj = D8_SEARCH[x]
-                queue.append((xi+ci, xj+cj))
+                queue.append((xi+ci[x], xj+cj[x]))
 
-    feedback.setProgressText('Found %d flats' % (next(label_generator) -1))
+    feedback.setProgressText('Found %d flats' % (next_label-1))
 
     # For each flat,
     # combine flow from high terrain and flow to low_terrain
@@ -170,10 +186,10 @@ def resolve_flat(elevations, flow, feedback=None):
         
     high_queue.append(increment_marker)
     increment = 1
-    seen = np.zeros((height, width), dtype=np.bool)
+    seen = np.zeros((height, width), dtype=np.uint8)
 
     for i, j in high_queue:
-        seen[i, j] = True
+        seen[i, j] = 1
 
     while high_queue:
 
@@ -195,26 +211,29 @@ def resolve_flat(elevations, flow, feedback=None):
 
         for x in range(8):
 
-            ci, cj = D8_SEARCH[x]
-            xi = i + ci
-            xj = j + cj
+            xi = i + ci[x]
+            xj = j + cj[x]
 
-            if ingrid(xi, xj) and labels[xi, xj] == label and flat_mask[xi, xj] == 0 and not seen[xi, xj]:
-                seen[xi, xj] = True
+            if ingrid(height, width, xi, xj) \
+                and labels[xi, xj] == label \
+                and flat_mask[xi, xj] == 0 \
+                and seen[xi, xj] == 0:
+
+                seen[xi, xj] = 1
                 high_queue.append((xi, xj))
 
-    flat_mask = -flat_mask
+    flat_mask = -np.int32(flat_mask)
 
-    # Process flow away toward lower terrain
+    # Process flow toward lower terrain
 
-    feedback.setProgressText('Process flow away toward lower terrain')
+    feedback.setProgressText('Process flow toward lower terrain')
         
     low_queue.append(increment_marker)
     increment = 1
-    seen = np.zeros((height, width), dtype=np.bool)
+    seen = np.zeros((height, width), dtype=np.uint8)
 
     for i, j in (low_queue + edge_queue):
-        seen[i, j] = True
+        seen[i, j] = 1
 
     while low_queue:
 
@@ -238,12 +257,15 @@ def resolve_flat(elevations, flow, feedback=None):
 
         for x in range(8):
 
-            ci, cj = D8_SEARCH[x]
-            xi = i + ci
-            xj = j + cj
+            xi = i + ci[x]
+            xj = j + cj[x]
 
-            if ingrid(xi, xj) and labels[xi, xj] == label and flat_mask[xi, xj] <= 0 and not seen[xi, xj]:
-                seen[xi, xj] = True
+            if ingrid(height, width, xi, xj) \
+                and labels[xi, xj] == label \
+                and flat_mask[xi, xj] <= 0 \
+                and seen[xi, xj] == 0:
+                
+                seen[xi, xj] = 1
                 low_queue.append((xi, xj))
 
     # Process flow toward nodata edges
@@ -275,18 +297,96 @@ def resolve_flat(elevations, flow, feedback=None):
 
         for x in range(8):
 
-            ci, cj = D8_SEARCH[x]
-            xi = i + ci
-            xj = j + cj
+            xi = i + ci[x]
+            xj = j + cj[x]
 
-            if ingrid(xi, xj) \
+            if ingrid(height, width, xi, xj) \
                 and labels[xi, xj] == label \
                 and flat_mask[xi, xj] <= 0 \
-                and not seen[xi, xj]:
+                and seen[xi, xj] == 0:
                 
-                seen[xi, xj] = True
+                seen[xi, xj] = 1
                 edge_queue.append((xi, xj))
 
     feedback.setProgress(100)
 
-    return np.float32(flat_mask), labels
+    return np.float32(flat_mask), np.uint32(labels)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def flat_mask_flowdir(
+    float[:, :] mask,
+    short[:, :] flow,
+    unsigned int[:, :] labels):
+    """
+    Flow direction from elevation data.
+
+    Assign flow direction toward the lower neighbouring cell.
+
+    Parameters
+    ----------
+
+    elevations: array-like, ndims=2, dtype=float32
+        Elevation raster
+
+    nodata: float
+        No data value for elevation
+
+    Returns
+    -------
+
+    int16 D8 Flow Direction NumPy array, nodata = -1
+
+    """
+
+    cdef:
+
+        long width, height
+        long i, j, x, xmin, ix, jx
+        float z, zx, zmin
+        unsigned int label
+
+    height = mask.shape[0]
+    width = mask.shape[1]
+
+    with nogil:
+
+        for i in range(height):
+            for j in range(width):
+
+                # if flow[i, j] == -1: # FLOW_NODATA
+                #     continue
+
+                if flow[i, j] != 0: # NO_FLOW
+                    continue
+
+                label = labels[i, j]
+                z = mask[i, j]
+                zmin = z
+                xmin = -1 # NO_FLOW
+
+                for x in range(8):
+
+                    ix = i + ci[x]
+                    jx = j + cj[x]
+                    
+                    if not ingrid(height, width, ix, jx):
+                        # if xmin == -1:
+                        #     xmin = x
+                        continue
+
+                    if labels[ix, jx] != label:
+                        continue
+
+                    zx = mask[ix, jx]
+
+                    if zx < zmin:
+                        zmin = zx
+                        xmin = x
+
+                if xmin == -1:
+                    flow[i, j] = 0 # NO_FLOW
+                else:
+                    flow[i, j] = pow2(xmin)
+
+    return np.int16(flow)
