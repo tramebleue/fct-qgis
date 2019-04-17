@@ -260,4 +260,4 @@ def topo_stream_burn(
             if feedback.isCanceled():
                 break
 
-    return out
+    return np.int16(out)

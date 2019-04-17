@@ -203,10 +203,10 @@ class MeasureNetworkFromOutlet(AlgorithmMetadata, QgsProcessingAlgorithm):
             measure = origin + geometry.length()
             previous = None
 
-            for point in geometry.asPolyline():
+            for point in geometry.vertices():
                 if previous:
                     measure -= previous.distance(point)
-                points.append(QgsPoint(point.x(), point.y(), m=measure))
+                points.append(QgsPoint(point.x(), point.y(), point.z(), m=measure))
                 previous = point
 
             return QgsGeometry.fromPolyline(points)

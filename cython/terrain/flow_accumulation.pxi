@@ -15,7 +15,7 @@ Flow Accumulation - Cython implementation
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, feedback=None):
+def flow_accumulation(short[:,:] flow, unsigned int[:, :] out=None, feedback=None):
     """ Flow accumulation from D8 flow direction.
 
     Parameters
@@ -33,19 +33,21 @@ def flow_accumulation(short[:,:] flow, unsigned int[:,:] out=None, feedback=None
     Returns
     -------
 
-    Flow accumulation raster, dtype=np.uint32, nodata=-1
+    Flow accumulation raster, dtype=np.uint32, nodata=0
     """
 
-    cdef long width, height
-    cdef float nodata, total
-    cdef long i, j, ix, jx, count
-    cdef int x, progress0, progress1
-    cdef signed char[:,:] inflow
-    cdef signed char inflowij
-    cdef short direction
-    cdef long ncells = 0
-    cdef Cell cell
-    cdef CellStack stack
+    cdef:
+
+        long width, height
+        float nodata, total
+        long i, j, ix, jx, count
+        int x, progress0, progress1
+        signed char[:, :] inflow
+        signed char inflowij
+        short direction
+        long ncells = 0
+        Cell cell
+        CellStack stack
 
     if feedback is None:
         feedback = SilentFeedback()

@@ -1,5 +1,5 @@
 Click>=7.0
-scipy>=1.2.0
+scipy>=1.2.1
 plotly>=3.3
 cython
 doit
@@ -7,7 +7,7 @@ pylint>=1.9.4
 mkdocs>=1.0.4
 mkdocs-material>=3.3.0
 python-markdown-math>=0.6
-Jinja2==2.10
+Jinja2==2.10.1
 bleach>=3.1.0
 pybtex==0.22.2
 git+https://github.com/tramebleue/mdx_bib#egg=mdx_bib

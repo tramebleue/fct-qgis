@@ -23,7 +23,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'Click>=7.0',
-        'scipy>=1.2.0',
+        'scipy>=1.2.1',
         'plotly>=3.3'
     ],
     entry_points='''
