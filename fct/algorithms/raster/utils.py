@@ -176,6 +176,8 @@ class RasterDataAccess(object):
         points = linestring.asPolyline()
         m0 = 0.0
         for a, b in zip(points[:-1], points[1:]):
+            if a == b:
+                continue
             for x, y, z, m in self.segment(a, b):
                 yield x, y, z, m0 + m
             m0 = m0 + QgsGeometry.fromPointXY(a).distance(QgsGeometry.fromPointXY(b))
