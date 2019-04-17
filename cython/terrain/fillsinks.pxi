@@ -241,4 +241,4 @@ def fillsinks(
     # progress.close()
     print(msg)
 
-    return flow
+    return np.int16(flow)

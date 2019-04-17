@@ -336,4 +336,4 @@ def watershed_labels(
     msg = 'Done.'
     print(msg)
 
-    return labels, graph
+    return np.uint32(labels), graph

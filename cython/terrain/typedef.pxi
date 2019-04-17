@@ -47,6 +47,11 @@ cdef class ConsoleFeedback(object):
 			self._last = progress
 			self.printProgress()
 
+			if progress == 100:
+				msg = 'Done.'
+				print('\r\033[K' + msg)
+
+
 	cdef void printProgress(self):
 
 		cdef int tick, i
