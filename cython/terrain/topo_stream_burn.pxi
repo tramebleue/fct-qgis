@@ -75,7 +75,7 @@ def topo_stream_burn(
     Returns
     -------
 
-    D8 Flow Direction raster, dtype:np.int16, nodata=-1
+    D8 Flow Direction raster, dtype=int16, nodata=-1
 
     Notes
     -----

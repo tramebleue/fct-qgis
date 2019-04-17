@@ -119,9 +119,8 @@ class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
         def transform(geometry):
             """
-            Transform Z into Slope.
-            Opposite to mathematical convention,
-            slope is oriented in reverse line direction.
+            Adjust Z so that it decreases downward,
+            and slope is always positive.
             """
 
             z = np.array([v.z() for v in geometry.vertices()])
@@ -134,21 +133,21 @@ class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                 z = signal.wiener(z, smooth_window, noise_power)
 
             adjusted = np.zeros_like(z)
-            z0 = float('inf')
+            zmax = float('inf')
 
             for i in range(z.shape[0]):
 
                 if skip[i]:
                     continue
 
-                if z[i] > z0:
+                if z[i] > zmax:
 
-                    adjusted[i] = z0
-                    z0 = z0 - z_delta
+                    adjusted[i] = zmax
+                    zmax = zmax - z_delta
 
                 else:
 
-                    z0 = adjusted[i] = z[i]   
+                    zmax = adjusted[i] = z[i]
 
             points = list()
 
