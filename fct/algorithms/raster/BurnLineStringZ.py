@@ -34,7 +34,7 @@ class BurnLineStringZ(AlgorithmMetadata, QgsProcessingAlgorithm):
     Burn raster with linestring Z values.
 
     This algorithm does not interpolate values between linestring vertices,
-    input vertices are expected to match raster cells,
+    ie. input vertices are expected to match raster cells,
     as produced by the `DrapeVectors` algorithm.
 
     Input raster will be converted to float32.
@@ -132,7 +132,12 @@ class BurnLineStringZ(AlgorithmMetadata, QgsProcessingAlgorithm):
                     continue
 
                 row, col = worldtopixel(vertex.x(), vertex.y())
-                data[row, col] = z + offset
+
+                if row >= 0 and row < datasource.RasterYSize and \
+                    col >= 0 and col < datasource.RasterXSize:
+
+                    # pylint:disable=unsupported-assignment-operation
+                    data[row, col] = z + offset
 
         feedback.setProgressText(self.tr('Write output raster'))
 
