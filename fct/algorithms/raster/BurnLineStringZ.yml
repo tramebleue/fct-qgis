@@ -1,0 +1,8 @@
+displayName: Burn LineString Z
+group: raster
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - z
+  - preprocess

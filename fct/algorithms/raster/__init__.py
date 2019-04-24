@@ -15,6 +15,7 @@ Raster General Algorithms
 
 from .ApplyMask import ApplyMask
 from .BinaryClosing import BinaryClosing
+from .BurnLineStringZ import BurnLineStringZ
 from .DrapeVectors import DrapeVectors
 from .DifferentialRasterThreshold import DifferentialRasterThreshold
 from .FocalMean import FocalMean

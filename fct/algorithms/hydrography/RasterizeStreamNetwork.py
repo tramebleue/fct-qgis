@@ -26,7 +26,7 @@ class RasterizeStreamNetwork(AlgorithmMetadata, QgsProcessingModelAlgorithm):
     Create a new raster having the same dimension as the input raster template,
     and assign the stream id to matching stream cells.
     You must specify an ID field with values > 0.
-    No stream cells will be assigned 0, the no-data value of the returned raster.
+    Non-stream cells will be assigned 0, the no-data value of the returned raster.
     """
 
     def __init__(self, *args, **kwargs):
