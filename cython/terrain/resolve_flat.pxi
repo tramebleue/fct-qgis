@@ -184,12 +184,13 @@ def resolve_flat(
 
     feedback.setProgressText('Process flow away from higher terrain')
         
-    high_queue.append(increment_marker)
-    increment = 1
     seen = np.zeros((height, width), dtype=np.uint8)
 
     for i, j in high_queue:
         seen[i, j] = 1
+
+    high_queue.append(increment_marker)
+    increment = 1
 
     while high_queue:
 
@@ -228,12 +229,13 @@ def resolve_flat(
 
     feedback.setProgressText('Process flow toward lower terrain')
         
-    low_queue.append(increment_marker)
-    increment = 1
     seen = np.zeros((height, width), dtype=np.uint8)
 
     for i, j in (low_queue + edge_queue):
         seen[i, j] = 1
+
+    low_queue.append(increment_marker)
+    increment = 1
 
     while low_queue:
 

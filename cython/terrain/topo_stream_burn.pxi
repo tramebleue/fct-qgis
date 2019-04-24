@@ -157,7 +157,7 @@ def topo_stream_burn(
                         key = TopoKey(instream, -z)
                         entry = TopoQueueEntry(key, cell)
                         queue.push(entry)
-                        seen[i, j] = 0
+                        seen[i, j] = 1
 
                         break
 
