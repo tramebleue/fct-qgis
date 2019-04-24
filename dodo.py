@@ -136,6 +136,17 @@ def task_install():
         'verbosity': 2
     }
 
+def task_clean_install():
+    """
+    Clean build files before installing
+    """
+
+    return {
+        'actions': [],
+        'task_dep': ['clean_build', 'install'],
+        'verbosity': 1
+    }
+
 def task_uninstall():
     """
     Delete plugin folder in user's QGis plugin directory

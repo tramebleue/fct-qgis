@@ -100,7 +100,7 @@ def topo_stream_burn(
 
         long height = elevations.shape[0], width = elevations.shape[1]
         float dx, dy, z, zx, zmin
-        long i, j, ix, jx, x, xmin, ncells, current
+        long i, j, ix, jx, x, xmin, ncells, current, leaks = 0
         unsigned char instream, instreamx
         unsigned char[:, :] seen
         
@@ -226,6 +226,11 @@ def topo_stream_burn(
                 out[i, j] = 0
             else:
                 out[i, j] = pow2(xmin)
+                ix = i + ci[xmin]
+                jx = j + cj[xmin]
+                instreamx = 1 if streams[ix, jx] > 0 else 0
+                if instream == 1 and instreamx == 0:
+                    leaks += 1
 
         for x in range(8):
 
@@ -240,8 +245,11 @@ def topo_stream_burn(
                 if (zx != nodata) and (seen[ix, jx] == 0):
 
                     if zx < (z + mindiff[x]):
-                        zx = z + mindiff[x]
-                        elevations[ix, jx] = zx
+                        if instream == 0:
+                            zx = z + mindiff[x]
+                            elevations[ix, jx] = zx
+                            if instreamx == 1:
+                                leaks += 1
                         out[ix, jx] = pow2(reverse_direction(x))
 
                     # out[ix, jx] = pow2(reverse_direction(x))
@@ -259,5 +267,8 @@ def topo_stream_burn(
             progress0 = progress1
             if feedback.isCanceled():
                 break
+
+    feedback.setProgress(100)
+    feedback.setProgressText('Found %d cells where flow leaks out of stream' % leaks)
 
     return np.int16(out)
