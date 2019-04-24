@@ -94,16 +94,45 @@ def delete_folder(folder):
         print(f'Remove directory {folder}')
         shutil.rmtree(folder)
 
+def task_extension():
+    """
+    Build Cython extension
+    """
+
+    return {
+        'actions': [
+            'pip install -e .'
+        ],
+        'verbosity': 2
+    }
+
 def task_install():
     """
     Install plugin to user's QGis plugin directory
     """
 
+    def copy_extension():
+        """
+        Copy extension to FluvialCorridorToolbox/lib
+        """
+
+        try:
+
+            from fct.lib import terrain_analysis as ta
+            src = ta.__file__
+            destination = os.path.join(fct_target_folder(), 'lib')
+            print('Copy %s to %s' % (src, destination))
+            shutil.copy2(src, destination)
+
+        except ImportError as error:
+            print(str(error))
+
     return {
         'actions': [
-            (copyfiles, ('fct', fct_target_folder()))
+            (copyfiles, ('fct', fct_target_folder())),
+            copy_extension
         ],
-        'task_dep': ['uninstall'],
+        'task_dep': ['uninstall', 'extension'],
         'verbosity': 2
     }
 
