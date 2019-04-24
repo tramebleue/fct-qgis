@@ -29,12 +29,13 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 
 from ..metadata import AlgorithmMetadata
 
-class ExportMainDrain(AlgorithmMetadata, QgsProcessingAlgorithm):
+class PrincipalStem(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
-    Export Main Drain
+    Filter stream network with multiple flow path
+    in order to retain only the principal stem.
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'ExportMainDrain')
+    METADATA = AlgorithmMetadata.read(__file__, 'PrincipalStem')
 
     INPUT = 'INPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
@@ -78,7 +79,7 @@ class ExportMainDrain(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
-            self.tr('Main Drain'),
+            self.tr('Principal Stem'),
             QgsProcessing.TypeVectorLine))
 
 

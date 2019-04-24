@@ -1,8 +1,9 @@
-displayName: Export Main Drain
+displayName: Total Upstream Channel Length
 group: hydrography
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL
 tags:
   - hydrography
-  - network
+  - graph
+  - metric

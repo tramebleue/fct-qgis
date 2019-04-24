@@ -36,12 +36,13 @@ from ..util import asQgsFields
 
 Link = namedtuple('Link', ('a', 'b', 'edge_id', 'length'))
 
-class UpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
-    """ Compute a new `UCL` attribute
-        as the total upstream channel length of each link.
+class TotalUpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
+    """
+    Compute the total upstream channel length of each link;
+    and store the result in a new attribute named `TUCL`. 
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'UpstreamChannelLength')
+    METADATA = AlgorithmMetadata.read(__file__, 'TotalUpstreamChannelLength')
 
     INPUT = 'INPUT'
     OUTPUT = 'OUTPUT'
@@ -59,17 +60,19 @@ class UpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.FROM_NODE_FIELD,
             self.tr('From Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEA'))
 
         self.addParameter(QgsProcessingParameterField(
             self.TO_NODE_FIELD,
             self.tr('To Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEB'))
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
-            self.tr('Upstream Channel Length'),
+            self.tr('Total Upstream Channel Length'),
             QgsProcessing.TypeVectorLine))
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
@@ -79,7 +82,7 @@ class UpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
 
         fields = layer.fields().toList() + [
-            QgsField('UCL', QVariant.Double, len=10, prec=2)
+            QgsField('TUCL', QVariant.Double, len=10, prec=2)
         ]
 
         (sink, dest_id) = self.parameterAsSink(
@@ -161,8 +164,8 @@ class UpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
             if feedback.isCanceled():
                 break
 
-            b = edge.attribute(to_node_field)
-            ucl = distances.get(b, 0.0)
+            a = edge.attribute(from_node_field)
+            ucl = distances.get(a, 0.0) + edge.geometry().length()
 
             out_feature = QgsFeature()
             out_feature.setGeometry(edge.geometry())

@@ -14,19 +14,21 @@ LengthOrder
 """
 
 from heapq import heappush, heappop
-from functools import total_ordering
-from functools import partial, reduce
+from functools import (
+    partial,
+    reduce,
+    total_ordering
+)
 from collections import defaultdict
 
-from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
+from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module,import-error
     QVariant
 )
 
-from qgis.core import ( # pylint:disable=no-name-in-module
+from qgis.core import ( # pylint:disable=no-name-in-module,import-error
     QgsFeature,
     QgsFeatureRequest,
     QgsField,
-    QgsFields,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingParameterFeatureSink,
@@ -60,12 +62,12 @@ class SourceEntry(object):
         return self.distance == other.distance
 
 
-class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
+class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
-    Length-wise stream order of each link in a stream network
+    Length-wise stream order, aka. Hack order, of each link in a stream network
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'LengthOrder')
+    METADATA = AlgorithmMetadata.read(__file__, 'HackOrder')
 
     INPUT = 'INPUT'
     OUTPUT = 'OUTPUT'
@@ -84,23 +86,26 @@ class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.FROM_NODE_FIELD,
             self.tr('From Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEA'))
 
         self.addParameter(QgsProcessingParameterField(
             self.TO_NODE_FIELD,
             self.tr('To Node Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='NODEB'))
 
         self.addParameter(QgsProcessingParameterField(
             self.MEASURE_FIELD,
             self.tr('Measure Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric))
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='MEAS'))
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
-            self.tr('Length Order'),
+            self.tr('Hack Order'),
             QgsProcessing.TypeVectorLine))
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
@@ -157,9 +162,9 @@ class LengthOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgress(0)
 
         fields = layer.fields().toList() + [
-            QgsField('PATHID', QVariant.Int, len=5),
-            QgsField('PRANK', QVariant.Int, len=5),
-            QgsField('PLENGTH', QVariant.Double, len=10, prec=2)
+            QgsField('STEMID', QVariant.Int, len=5),
+            QgsField('HACK', QVariant.Int, len=5),
+            QgsField('STEMLENGTH', QVariant.Double, len=10, prec=2)
         ]
 
         (sink, dest_id) = self.parameterAsSink(

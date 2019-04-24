@@ -244,7 +244,10 @@ class MergeShortLinks(AlgorithmMetadata, QgsProcessingAlgorithm):
                     feature.attributes() + [group])
                 sink.addFeature(out_feature)
 
-                while merged_length < min_length:
+                # Also merge simple nodes with in-degree = 1
+                # TODO: make it an option
+
+                while merged_length < min_length or indegree[next_link.a] == 1:
 
                     if feedback.isCanceled():
                         break

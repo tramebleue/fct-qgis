@@ -32,7 +32,7 @@ class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
     Adjust Z values for each vertex,
     so that Z always decreases from upstream to downstream.
 
-    Input linestrings must properly oriented from upstream to downstream,
+    Input linestrings must be properly oriented from upstream to downstream,
     and should be aggregated by Hack order.
     """
 
@@ -133,7 +133,7 @@ class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             if smooth_window > 0:
                 z = signal.wiener(z, smooth_window, noise_power)
 
-            adjusted = np.zeros_like(z)
+            adjusted = np.full_like(z, nodata)
             z0 = float('inf')
 
             for i in range(z.shape[0]):
