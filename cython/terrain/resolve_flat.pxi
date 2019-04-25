@@ -13,6 +13,8 @@ Drainage (flow) direction for DEM flats
 ***************************************************************************
 """
 
+from cython.operator cimport dereference, preincrement
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def resolve_flat(
@@ -53,9 +55,14 @@ def resolve_flat(
 
     cdef:
 
-        list low_queue, high_queue, edge_queue, queue
-        dict flat_heights
-        long i, j, xi, xj, current
+        Cell c
+        # list low_queue, high_queue, edge_queue, queue
+        deque[Cell] low_queue, high_queue, edge_queue
+        deque[Cell].iterator it
+        list queue, flatcells
+        # dict flat_heights
+        map[int, int] flat_heights
+        long i, j, xi, xj, current, n_flats = 0
         int x, increment
         float z
         short direction
@@ -65,11 +72,11 @@ def resolve_flat(
         unsigned int[:, :] labels
         unsigned int label, next_label
         unsigned char[:, :] seen
-        bint is_edge_outlet, is_receiving_flow
+        bint is_edge_outlet, is_receiving_flow, is_flat
 
-    low_queue = list()
-    high_queue = list()
-    edge_queue = list()
+    # low_queue = list()
+    # high_queue = list()
+    # edge_queue = list()
     # flat_labels = np.unique(labels[labels > 0])
     height = elevations.shape[0]
     width = elevations.shape[1]
@@ -95,6 +102,7 @@ def resolve_flat(
 
             is_edge_outlet = False
             is_receiving_flow = False
+            is_flat = False
 
             for x in range(8):
 
@@ -111,10 +119,14 @@ def resolve_flat(
                         is_edge_outlet = True
                     continue
 
+                if z == elevations[xi, xj]:
+                    is_flat = True
+
                 if direction != NO_FLOW and flow[xi, xj] == NO_FLOW and z == elevations[xi, xj]:
                     # cell (i, j) is part of a flat (same elevation as neighbor)
                     # but flows outside the flat : it is a flat outlet
-                    low_queue.append((i, j))
+                    # low_queue.append((i, j))
+                    low_queue.push_back(Cell(i, j))
                     is_edge_outlet = False
                     break
 
@@ -127,23 +139,48 @@ def resolve_flat(
                     # is_edge_outlet = False
 
             if is_receiving_flow:
-                high_queue.append((i, j))
+                # high_queue.append((i, j))
+                high_queue.push_back(Cell(i, j))
 
             if is_edge_outlet:
-                edge_queue.append((i, j))
+                # edge_queue.append((i, j))
+                edge_queue.push_back(Cell(i, j))
+
+            if is_flat:
+                n_flats += 1
 
         feedback.setProgress(int(total * i * width))
 
-    feedback.setProgressText('Low queue : %d, High queue : %d' % (len(low_queue), len(high_queue)))
+    feedback.setProgressText('Low queue : %d, High queue : %d' % (low_queue.size(), high_queue.size()))
 
     # Label flats
 
     feedback.setProgressText('Label flats ...')
     labels = np.zeros((height, width), dtype=np.uint32)
     next_label = 1
-    total = 100.0 / (len(low_queue) + len(high_queue) + len(edge_queue))
+    total = 100.0 / (low_queue.size() + high_queue.size() + edge_queue.size())
 
-    for current, (i, j) in enumerate(low_queue + high_queue + edge_queue):
+    flatcells = list()
+
+    it = low_queue.begin()
+    while it != low_queue.end():
+        c = dereference(it)
+        flatcells.append((c.first, c.second))
+        preincrement(it)
+
+    it = edge_queue.begin()
+    while it != edge_queue.end():
+        c = dereference(it)
+        flatcells.append((c.first, c.second))
+        preincrement(it)
+
+    it = high_queue.begin()
+    while it != high_queue.end():
+        c = dereference(it)
+        flatcells.append((c.first, c.second))
+        preincrement(it)
+
+    for current, (i, j) in enumerate(flatcells):
 
         feedback.setProgress(int(current * total))
 
@@ -171,14 +208,16 @@ def resolve_flat(
             for x in range(8):
                 queue.append((xi+ci[x], xj+cj[x]))
 
-    feedback.setProgressText('Found %d flats' % (next_label-1))
+    del flatcells
+    feedback.setProgressText('Found %d flats, %d flat cells' % (next_label-1, n_flats))
 
     # For each flat,
     # combine flow from high terrain and flow to low_terrain
 
-    flat_heights = dict()
+    # flat_heights = dict()
     flat_mask = np.zeros((height, width), dtype=np.int32)
     increment_marker = (-1, -1)
+    total = 100.0 / n_flats if n_flats > 0 else 0.0
 
     # Process flow away from higher terrain
 
@@ -186,23 +225,39 @@ def resolve_flat(
         
     seen = np.zeros((height, width), dtype=np.uint8)
 
-    for i, j in high_queue:
-        seen[i, j] = 1
+    it = high_queue.begin()
+    # for i, j in high_queue:
+    while it != high_queue.end():
+        c = dereference(it)
+        # seen[i, j] = 1
+        seen[c.first, c.second] = 1
+        preincrement(it)
 
-    high_queue.append(increment_marker)
+    # high_queue.append(increment_marker)
+    high_queue.push_back(Cell(-1, -1))
     increment = 1
+    current = 0
 
-    while high_queue:
+    while not high_queue.empty():
 
-        i, j = high_queue.pop(0)
+        # i, j = high_queue.pop(0)
+        c = high_queue.front()
+        high_queue.pop_front()
+        i = c.first
+        j = c.second
 
-        if (i, j) == increment_marker:
-            if high_queue:
+        if i == -1 and j == -1:
+            if not high_queue.empty():
                 increment += 1
-                high_queue.append(increment_marker)
+                # high_queue.append(increment_marker)
+                high_queue.push_back(Cell(-1, -1))
                 continue
             else:
                 break
+
+        current += 1
+        # feedback.setProgressText('%d, (%d, %d)' % (current, i, j))
+        feedback.setProgress(int(total*current))
 
         label = labels[i, j]
         assert(label > 0)
@@ -221,7 +276,8 @@ def resolve_flat(
                 and seen[xi, xj] == 0:
 
                 seen[xi, xj] = 1
-                high_queue.append((xi, xj))
+                # high_queue.append((xi, xj))
+                high_queue.push_back(Cell(xi, xj))
 
     flat_mask = -np.int32(flat_mask)
 
@@ -231,20 +287,41 @@ def resolve_flat(
         
     seen = np.zeros((height, width), dtype=np.uint8)
 
-    for i, j in (low_queue + edge_queue):
-        seen[i, j] = 1
+    # for i, j in (low_queue + edge_queue):
+    #     seen[i, j] = 1
 
-    low_queue.append(increment_marker)
+    it = low_queue.begin()
+    while it != low_queue.end():
+        c = dereference(it)
+        # seen[i, j] = 1
+        seen[c.first, c.second] = 1
+        preincrement(it)
+
+    it = edge_queue.begin()
+    while it != edge_queue.end():
+        c = dereference(it)
+        # seen[i, j] = 1
+        seen[c.first, c.second] = 1
+        preincrement(it)
+
+    # low_queue.append(increment_marker)
+    low_queue.push_back(Cell(-1, -1))
     increment = 1
 
-    while low_queue:
+    while not low_queue.empty():
 
-        i, j = low_queue.pop(0)
+        # i, j = low_queue.pop(0)
 
-        if (i, j) == increment_marker:
-            if low_queue:
+        c = low_queue.front()
+        low_queue.pop_front()
+        i = c.first
+        j = c.second
+
+        if i == -1 and j == -1:
+            if not low_queue.empty():
                 increment += 1
-                low_queue.append(increment_marker)
+                # low_queue.append(increment_marker)
+                low_queue.push_back(Cell(-1, -1))
                 continue
             else:
                 break
@@ -268,23 +345,31 @@ def resolve_flat(
                 and seen[xi, xj] == 0:
                 
                 seen[xi, xj] = 1
-                low_queue.append((xi, xj))
+                # low_queue.append((xi, xj))
+                low_queue.push_back(Cell(xi, xj))
 
     # Process flow toward nodata edges
 
     feedback.setProgressText('Process flow toward no-data edges')
 
-    edge_queue.append(increment_marker)
+    # edge_queue.append(increment_marker)
+    edge_queue.push_back(Cell(-1, -1))
     increment = 1
 
-    while edge_queue:
+    while not edge_queue.empty():
 
-        i, j = edge_queue.pop(0)
+        # i, j = edge_queue.pop(0)
 
-        if (i, j) == increment_marker:
-            if edge_queue:
+        c = edge_queue.front()
+        edge_queue.pop_front()
+        i = c.first
+        j = c.second
+
+        if i == -1 and j == -1:
+            if not edge_queue.empty():
                 increment += 1
-                edge_queue.append(increment_marker)
+                # edge_queue.append(increment_marker)
+                edge_queue.push_back(Cell(-1, -1))
                 continue
             else:
                 break
@@ -308,7 +393,8 @@ def resolve_flat(
                 and seen[xi, xj] == 0:
                 
                 seen[xi, xj] = 1
-                edge_queue.append((xi, xj))
+                # edge_queue.append((xi, xj))
+                edge_queue.push_back(Cell(xi, xj))
 
     feedback.setProgress(100)
 
@@ -321,23 +407,27 @@ def flat_mask_flowdir(
     short[:, :] flow,
     unsigned int[:, :] labels):
     """
-    Flow direction from elevation data.
+    Assign drainage directon to flat areas, according to pseudo-height in `mask`.
+    Input `flow` raster is modified in place.
 
-    Assign flow direction toward the lower neighbouring cell.
+    See also resolve_flat()
 
     Parameters
     ----------
 
-    elevations: array-like, ndims=2, dtype=float32
-        Elevation raster
+    mask: float32 2d-array
+        Pseudo-height raster
 
-    nodata: float
-        No data value for elevation
+    flow: int16 2d-array
+        D8 Flow Direction raster
+
+    labels: uint32 2d-array
+        Flat labels
 
     Returns
     -------
 
-    int16 D8 Flow Direction NumPy array, nodata = -1
+    Modified D8 Flow Direction NumPy array, nodata = -1
 
     """
 
