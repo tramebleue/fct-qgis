@@ -160,7 +160,7 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
                     dj = cj[x]
 
                     if seen2[ix, jx] == 1:
-                        print('loop....')
+                        # print('loop....')
                         break
 
                     seen2[ix, jx] = 1

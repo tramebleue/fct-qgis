@@ -176,6 +176,25 @@ ctypedef unsigned int ContributingArea
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def stream_contributing_area(ContributingArea[:, :] acc, float[:, :] streams):
+    """
+    Maximum contributing area for each reach id.
+
+    Parameters
+    ----------
+
+    acc: 2d-array
+        Flow accumulation raster, dtype=uint32, nodata=0
+
+    streams: 2d-array
+        Rasterized stream network, dtype=float32, nodata=0
+        Cell streams contain reach id.
+
+    Returns
+    -------
+
+    maxarea: dict
+        reach id -> contributing area, in number of pixels from flow accumulation
+    """
 
     cdef:
 
@@ -185,8 +204,7 @@ def stream_contributing_area(ContributingArea[:, :] acc, float[:, :] streams):
         ContributingArea area
         map[float, ContributingArea] maxarea
 
-    assert(height == streams.shape[0])
-    assert(width == streams.shape[1])
+    assert(height == streams.shape[0] and width == streams.shape[1]), "Input arrays have different sizes"
 
     with nogil:
 

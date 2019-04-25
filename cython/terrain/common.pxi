@@ -3,6 +3,7 @@ import sys
 from cpython cimport array
 from libc.math cimport sqrt, atan, atan2, pi, cos, sin, tan, acos
 from libcpp.map cimport map
+from libcpp.deque cimport deque
 
 cdef extern from "<algorithm>" namespace "std":
     cdef T max[T](T a, T b) nogil
