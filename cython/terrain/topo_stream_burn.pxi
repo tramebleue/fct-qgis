@@ -244,12 +244,16 @@ def topo_stream_burn(
 
                 if (zx != nodata) and (seen[ix, jx] == 0):
 
-                    if zx < (z + mindiff[x]):
-                        if instream == 0:
-                            zx = z + mindiff[x]
+                    if instream == 1:
+                        if zx < z:
+                            zx = z
                             elevations[ix, jx] = zx
-                            if instreamx == 1:
-                                leaks += 1
+                            out[ix, jx] = pow2(reverse_direction(x))
+                    elif zx < (z + mindiff[x]):
+                        zx = z + mindiff[x]
+                        elevations[ix, jx] = zx
+                        if instreamx == 1:
+                            leaks += 1
                         out[ix, jx] = pow2(reverse_direction(x))
 
                     # out[ix, jx] = pow2(reverse_direction(x))
