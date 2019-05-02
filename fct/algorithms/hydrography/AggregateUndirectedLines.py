@@ -29,6 +29,7 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsFeature,
     QgsFeatureRequest,
     QgsField,
+    QgsGeometry,
     QgsMultiLineString,
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -217,6 +218,8 @@ class AggregateUndirectedLines(AlgorithmMetadata, QgsProcessingAlgorithm):
                     current = current + 1
                     feedback.setProgress(int(current * total))
 
+                    next_link = None
+
                     while degree[link.other] == 2:
 
                         if feedback.isCanceled():
@@ -240,7 +243,7 @@ class AggregateUndirectedLines(AlgorithmMetadata, QgsProcessingAlgorithm):
                         seen_links.add(next_link.feature_id)
                         link = next_link
 
-                    for part in geometry.mergeLines().asGeometryCollection():
+                    for part in QgsGeometry(geometry).mergeLines().asGeometryCollection():
 
                         feature = QgsFeature()
                         feature.setGeometry(part)
@@ -251,7 +254,8 @@ class AggregateUndirectedLines(AlgorithmMetadata, QgsProcessingAlgorithm):
                         ])
                         sink.addFeature(feature)
 
-                    process_stack.append(next_link.other)
+                    if next_link:
+                        process_stack.append(next_link.other)
 
 
         if category_field:

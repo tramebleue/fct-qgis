@@ -84,7 +84,7 @@ class LineMidpoints(AlgorithmMetadata, QgsProcessingAlgorithm):
               break
             
             geom = feature.geometry()
-            midpoint = geom.interpolate( 0.5 * geom.length() )
+            midpoint = geom.interpolate(0.5 * geom.length())
             outfeature = QgsFeature()
             outfeature.setGeometry(midpoint)
             outfeature.setAttributes(feature.attributes())

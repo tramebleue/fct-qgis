@@ -16,7 +16,8 @@ Watershed Analysis
 cdef long propagate(
     short[:, :] flow, long height, long width,
     float[:, :] values,
-    unsigned char[:, :] seen,
+    unsigned char[:, :] distance,
+    unsigned char max_distance,
     long i0, long j0):
     """
     Propagate data values upstream.
@@ -30,7 +31,7 @@ cdef long propagate(
 
     cell = Cell(i0, j0)
     stack.push(cell)
-    seen[i0, j0] = 1
+    distance[i0, j0] = 1
     count = 0
 
     while not stack.empty():
@@ -39,6 +40,9 @@ cdef long propagate(
         stack.pop()
         i = cell.first
         j = cell.second
+
+        if max_distance > 0 and distance[i, j] > (max_distance+1):
+            continue
 
         count += 1
 
@@ -49,19 +53,20 @@ cdef long propagate(
 
             if ingrid(height, width, i+di, j+dj) and flow[i+di, j+dj] == upward[x]:
 
-                if values[i+di, j+dj] == 0:
-                    values[i+di, j+dj] = values[i, j]
-
-                if seen[i+di, j+dj] == 0:
+                if distance[i+di, j+dj] == 0:
+                    distance[i+di, j+dj] = 1
                     cell = Cell(i+di, j+dj)
                     stack.push(cell)
-                    seen[i+di, j+dj] = 1
+
+                if values[i+di, j+dj] == 0:
+                    values[i+di, j+dj] = values[i, j]
+                    distance[i+di, j+dj] = distance[i, j] + 1
 
     return count
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None):
+def watershed(short[:, :] flow, float[:, :] values, unsigned char max_distance=0, feedback=None):
     """
     Watershed analysis
 
@@ -85,8 +90,9 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
     values: array-like
         Values to propagate upstream, same shape as `flow`, any data
 
-    nodata: number
-        No-data value in `values`
+    max_distance: int
+        Maximum number of pixels to wind-up along flow.
+        0 disables any limit.
 
     feedback: QgsProcessingFeedback-like object
         or None to disable feedback
@@ -98,7 +104,7 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
         short direction
         int x, di, dj, current, progress0, progress1
         float total
-        unsigned char[:, :] seen, seen2
+        unsigned char[:, :] distance, seen2
 
     height = flow.shape[0]
     width = flow.shape[1]
@@ -109,7 +115,7 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
     if feedback is None:
         feedback = SilentFeedback()
 
-    seen = np.zeros((height, width), dtype=np.uint8)
+    distance = np.zeros((height, width), dtype=np.uint8)
     seen2 = np.zeros((height, width), dtype=np.uint8)
 
     # Lookup for outlets
@@ -125,13 +131,13 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
                 current = current + 1
                 continue
 
-            if seen[i, j] == 1:
+            if distance[i, j] > 0:
                 continue
 
             if flow[i, j] == 0:
 
                 current = current + propagate(
-                    flow, height, width, values, seen,
+                    flow, height, width, values, distance, max_distance,
                     i, j)
 
                 progress1 = int(current*total)
@@ -147,7 +153,7 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
                 di = ci[x]
                 dj = cj[x]
 
-                while ingrid(height, width, ix+di, jx+dj) and flow[ix+di, jx+dj] != -1 and seen[ix+di, jx+dj] == 0:
+                while ingrid(height, width, ix+di, jx+dj) and flow[ix+di, jx+dj] != -1 and distance[ix+di, jx+dj] == 0:
 
                     ix = ix + di
                     jx = jx + dj
@@ -170,7 +176,7 @@ def watershed(short[:, :] flow, float[:, :] values, float nodata, feedback=None)
                 current = current + propagate(
                     flow, height, width,
                     values,
-                    seen,
+                    distance, max_distance,
                     ix, jx)
 
             progress1 = int(current*total)
