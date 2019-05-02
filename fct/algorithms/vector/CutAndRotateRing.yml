@@ -1,0 +1,11 @@
+displayName: Cut Polygon Rings
+group: vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - polygon
+  - rings
+  - cut
+  - split
+  - rotate

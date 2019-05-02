@@ -13,6 +13,7 @@ Vector General Algorithms
 ***************************************************************************
 """
 
+from .CutAndRotateRing import CutAndRotateRing
 from .DistanceToOtherLayer import DistanceToOtherLayer
 from .LineMidpoints import LineMidpoints
 from .LineStringBufferByM import LineStringBufferByM
