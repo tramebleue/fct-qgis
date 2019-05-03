@@ -16,6 +16,7 @@ Terrain Analysis Algorithms
 from .DetrendDEM import DetrendDEM
 from .FlowAccumulation import FlowAccumulation
 from .MonotonicZ import MonotonicZ
+from .RelativeDEM import RelativeDEM
 from .StreamToFeature import StreamToFeature
 from .TopologicalStreamBurn import TopologicalStreamBurn
 from .Watershed import Watershed
