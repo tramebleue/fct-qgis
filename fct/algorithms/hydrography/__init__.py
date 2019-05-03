@@ -20,7 +20,6 @@ from .FixLinkOrientation import FixLinkOrientation
 from .HackOrder import HackOrder
 from .IdentifyNetworkNodes import IdentifyNetworkNodes
 from .LongestPathInDirectedGraph import LongestPathInDirectedGraph
-from .MeasureNetworkFromOutlet import MeasureNetworkFromOutlet
 from .MergeShortLinks import MergeShortLinks
 from .NetworkNodes import NetworkNodes
 from .PrincipalStem import PrincipalStem

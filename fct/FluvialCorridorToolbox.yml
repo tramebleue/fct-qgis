@@ -7,6 +7,8 @@ groups:
     displayName: Spatial Components
   - id: metrics
     displayName: Metrics
+  - id: referencing
+    displayName: Spatial Reference
   - id: raster
     displayName: Tools for Rasters
   - id: vector
