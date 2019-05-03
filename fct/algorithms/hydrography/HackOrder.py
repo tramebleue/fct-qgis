@@ -31,6 +31,7 @@ from qgis.core import ( # pylint:disable=no-name-in-module,import-error
     QgsField,
     QgsProcessing,
     QgsProcessingAlgorithm,
+    QgsProcessingParameterBoolean,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField
@@ -72,6 +73,7 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
     INPUT = 'INPUT'
     OUTPUT = 'OUTPUT'
     MEASURE_FIELD = 'MEASURE_FIELD'
+    IS_DOWNSTREAM_MEAS = 'IS_DOWNSTREAM_MEAS'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
 
@@ -103,6 +105,11 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             type=QgsProcessingParameterField.Numeric,
             defaultValue='MEAS'))
 
+        self.addParameter(QgsProcessingParameterBoolean(
+            self.IS_DOWNSTREAM_MEAS,
+            self.tr('Add Feature Length To Downstream Measure'),
+            defaultValue=True))
+
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
             self.tr('Hack Order'),
@@ -114,6 +121,7 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
         distance_field = self.parameterAsString(parameters, self.MEASURE_FIELD, context)
+        is_downstream = self.parameterAsBool(parameters, self.IS_DOWNSTREAM_MEAS, context)
 
         # Step 1 - Find sources and build djacency index
 
@@ -122,6 +130,22 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
         adjacency = list()
 
+        if is_downstream:
+
+            def measure(edge):
+                """
+                Return upstream measure (ie. add geometry length)
+                """
+                return edge.attribute(distance_field) + edge.geometry().length()
+
+        else:
+
+            def measure(edge):
+                """
+                Return measure field
+                """
+                return edge.attribute(distance_field)
+
         for current, edge in enumerate(layer.getFeatures()):
 
             if feedback.isCanceled():
@@ -129,7 +153,7 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             a = edge.attribute(from_node_field)
             b = edge.attribute(to_node_field)
-            adjacency.append((a, b, edge.id(), edge.attribute(distance_field)))
+            adjacency.append((a, b, edge.id(), measure(edge)))
 
             feedback.setProgress(int(current * total))
 

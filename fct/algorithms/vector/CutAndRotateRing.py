@@ -33,7 +33,7 @@ from ..metadata import AlgorithmMetadata
 class CutAndRotateRing(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
     Cut polygon rings at given points, and return splitted linestrings.
-    Rotate rings if necessary to avoid an extra split point at ring start/end.
+    Rotate rings in order to avoid an extra split point at ring start/end.
     """
 
     METADATA = AlgorithmMetadata.read(__file__, 'CutAndRotateRing')
@@ -127,21 +127,33 @@ class CutAndRotateRing(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr('Cut/Rotate rings'))
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
 
-        def nearest_segment(ring, point, vertex):
+        def nearest_point_on_ring(ring, point, vertex):
             """
-            Return nearest ring segment, as pair of vertex indices (before, after),
-            and nearest point on this segment
+            Search for nearest point on ring,
+            given nearest vertex index.
+            
+            Returns
+            -------
+
+            before: int
+                before vertex index
+
+            distance: float
+                distance from before vertex on nearest segment
+
+            nearest: QgsPointXY
+                nearest point on segment
             """
 
             point_geometry = QgsGeometry.fromPointXY(point)
 
             if vertex == 0:
                 nearest_segment = QgsGeometry.fromPolylineXY(ring[vertex:vertex+2])
-                before, after = (vertex, vertex+1)
+                before = vertex
 
             elif vertex == len(ring) - 1:
                 nearest_segment = QgsGeometry.fromPolylineXY(ring[vertex-1:vertex+1])
-                before, after = (vertex-1, vertex)
+                before = vertex-1
 
             else:
 
@@ -149,16 +161,18 @@ class CutAndRotateRing(AlgorithmMetadata, QgsProcessingAlgorithm):
                 segment_after = QgsGeometry.fromPolylineXY(ring[vertex:vertex+2])
 
                 if point_geometry.distance(segment_before) < point_geometry.distance(segment_after):
-                    
+
                     nearest_segment = segment_before
-                    before, after = (vertex-1, vertex)
+                    before = vertex-1
 
                 else:
 
                     nearest_segment = segment_after
-                    before, after = (vertex, vertex+1)
+                    before = vertex
 
-            return (before, after), nearest_segment.nearestPoint(point_geometry).asPoint()
+            nearest_point = nearest_segment.nearestPoint(point_geometry)
+
+            return before, point_geometry.distance(nearest_point), nearest_point.asPoint()
 
         for current_polygon, feature in enumerate(layer.getFeatures()):
 
@@ -169,46 +183,54 @@ class CutAndRotateRing(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             for current_ring, ring in enumerate(feature.geometry().asPolygon()):
 
-                cut_points = match_index[(current_polygon, current_ring)]
+                cut_points = [
+                    nearest_point_on_ring(ring, point, vertex)
+                    for vertex, point
+                    in match_index[(current_polygon, current_ring)]
+                ]
 
                 if cut_points:
 
-                    # sort by vertex order
-                    cut_points = sorted(cut_points, key=lambda x: x[0])
+                    # sort by location on ring
+                    # using tuple (before vertex, distance on segment)
 
-                    vertex, point = cut_points[0]
-                    (v1, v2), nearest_point = nearest_segment(ring, point, vertex)
-                    new_ring = [nearest_point]
+                    cut_points = [
+                        (before+1, nearest_point)
+                        for before, distance, nearest_point
+                        in sorted(cut_points, key=lambda t: t[:2])
+                    ]
 
-                    for vertex, point in cut_points[1:]:
+                    vertex_after_a, nearest_point = cut_points[0]
+                    linestring = [nearest_point]
 
-                        (v3, v4), nearest_point = nearest_segment(ring, point, vertex)
-                        new_ring.extend(ring[v2:v4])
-                        new_ring.append(nearest_point)
+                    for vertex_after_b, nearest_point in cut_points[1:]:
+
+                        linestring.extend(ring[vertex_after_a:vertex_after_b])
+                        linestring.append(nearest_point)
 
                         new_feature = QgsFeature()
-                        new_feature.setGeometry(QgsGeometry.fromPolylineXY(new_ring))
+                        new_feature.setGeometry(QgsGeometry.fromPolylineXY(linestring))
                         new_feature.setAttributes(feature.attributes())
                         sink.addFeature(new_feature)
 
-                        v1, v2 = v3, v4
-                        new_ring = [nearest_point]
+                        vertex_after_a = vertex_after_b
+                        linestring = [nearest_point]
 
-                    # Rotate ring, make it starts and stops at first point
-                    vertex, point = cut_points[0]
-                    (v1, v2), nearest_point = nearest_segment(ring, point, vertex)
-                    # Don't forget to skip last original point,
-                    new_ring.extend(ring[v4:-1])
-                    new_ring.extend(ring[:v2])
+                    # Rotate ring, make it starts and stops at first cut point
+                    vertex_after_b, nearest_point = cut_points[0]
+                    # Don't forget to skip last original point, which is a duplicate
+                    linestring.extend(ring[vertex_after_a:-1])
+                    linestring.extend(ring[:vertex_after_b])
                     # and repeat first point as end of sequence
-                    new_ring.append(nearest_point)
+                    linestring.append(nearest_point)
 
                     new_feature = QgsFeature()
-                    new_feature.setGeometry(QgsGeometry.fromPolylineXY(new_ring))
+                    new_feature.setGeometry(QgsGeometry.fromPolylineXY(linestring))
                     new_feature.setAttributes(feature.attributes())
                     sink.addFeature(new_feature)
 
-                    # new_ring = [point] + new_ring[v2+1:-1] + new_ring[:v2] + [point]
+                    # linestring = [point] + linestring[vertex_after_a+1:-1]
+                    #              + linestring[:vertex_after_a] + [point]
 
                 else:
 

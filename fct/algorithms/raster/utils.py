@@ -282,11 +282,13 @@ class RasterDataAccess(object):
 
 
     def segment2(self, a, b):
-        """ Returns projected segment
-            as a sequence of (x, y, z, m) coordinates
+        """
+        Returns projected segment
+        as a sequence of (x, y, z, m) coordinates
 
         Parameters
         ----------
+
         a, b: QgsPointXY
             end points of segment [AB]
 
@@ -296,10 +298,15 @@ class RasterDataAccess(object):
 
         Returns
         -------
+
         Generator of (x, y, z, m) coordinates
         corresponding to the intersection of raster cells with segment [AB],
         yielding one data point per intersected cell.
 
+        See
+        ---
+
+        https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
         """
 
         dx = abs(b.x() - a.x())
