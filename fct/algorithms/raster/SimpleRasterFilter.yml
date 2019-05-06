@@ -1,0 +1,13 @@
+displayName: Simple Raster Filter
+group: raster
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - scipy
+  - ndimage
+  - filter
+  - mean
+  - median
+  - minimum
+  - maximum

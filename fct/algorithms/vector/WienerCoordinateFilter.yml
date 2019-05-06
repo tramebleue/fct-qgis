@@ -1,0 +1,11 @@
+displayName: Wiener Coordinate Filter
+group: vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - z
+  - m
+  - filter
+  - smoothing
+  - scipy

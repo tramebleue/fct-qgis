@@ -13,6 +13,7 @@ Raster General Algorithms
 ***************************************************************************
 """
 
+from .AnisotropicDiffusionFilter import AnisotropicDiffusionFilter
 from .ApplyMask import ApplyMask
 from .BinaryClosing import BinaryClosing
 from .BurnLineStringZ import BurnLineStringZ
@@ -21,3 +22,5 @@ from .DifferentialRasterThreshold import DifferentialRasterThreshold
 from .FocalMean import FocalMean
 from .RasterDifference import RasterDifference
 from .RasterInfo import RasterInfo
+# from .SimpleRasterFilter import SimpleRasterFilter
+from .WienerRasterFilter import WienerRasterFilter

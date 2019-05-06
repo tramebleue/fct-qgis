@@ -21,29 +21,35 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     # QgsMultiLineString,
     QgsProcessing,
     QgsProcessingFeatureBasedAlgorithm,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterNumber,
     QgsWkbTypes
 )
 
 from ..metadata import AlgorithmMetadata
 
-class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
+class WienerCoordinateFilter(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
     """
-    Adjust Z values for each vertex,
-    so that Z always decreases from upstream to downstream.
-
-    Input linestrings must be properly oriented from upstream to downstream,
-    and should be aggregated by Hack order.
+    Smooth Z or M coordinate along linestring using a Wiener filter.
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'MonotonicZ')
+    METADATA = AlgorithmMetadata.read(__file__, 'WienerCoordinateFilter')
 
+    COORDINATE = 'COORDINATE'
     NODATA = 'NODATA'
-    MIN_Z_DELTA = 'MIN_Z_DELTA'
     SMOOTH_WINDOW = 'SMOOTH_WINDOW'
     NOISE_POWER = 'NOISE_POWER'
 
+    Z_COORDINATE = 0
+    M_COORDINATE = 1
+
     def initParameters(self, configuration=None): #pylint: disable=unused-argument,missing-docstring
+
+        self.addParameter(QgsProcessingParameterEnum(
+            self.COORDINATE,
+            self.tr('Coordinate To Filter'),
+            options=['Z', 'M'],
+            defaultValue=self.Z_COORDINATE))
 
         self.addParameter(QgsProcessingParameterNumber(
             self.NODATA,
@@ -52,22 +58,19 @@ class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             defaultValue=-99999))
 
         self.addParameter(QgsProcessingParameterNumber(
-            self.MIN_Z_DELTA,
-            self.tr('Minimum Z Delta'),
-            type=QgsProcessingParameterNumber.Double,
-            defaultValue=.0001))
-
-        self.addParameter(QgsProcessingParameterNumber(
             self.SMOOTH_WINDOW,
             self.tr('Smooth Window'),
             type=QgsProcessingParameterNumber.Integer,
+            minValue=1,
             defaultValue=20))
 
         self.addParameter(QgsProcessingParameterNumber(
             self.NOISE_POWER,
             self.tr('Noise Power'),
             type=QgsProcessingParameterNumber.Double,
-            defaultValue=1.0))
+            minValue=0.0,
+            defaultValue=1.0,
+            optional=True))
 
     def inputLayerTypes(self): #pylint: disable=no-self-use,missing-docstring
         return [QgsProcessing.TypeVectorLine]
@@ -92,17 +95,26 @@ class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
     def prepareAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         layer = self.parameterAsSource(parameters, 'INPUT', context)
+        coordinate = self.parameterAsInt(parameters, self.COORDINATE, context)
 
-        if not QgsWkbTypes.hasZ(layer.wkbType()):
+        if not coordinate in [self.Z_COORDINATE, self.M_COORDINATE]:
+            feedback.reportError(self.tr('Invalide option for COORDINATE : %d' % coordinate))
+            return False
+
+        if coordinate == self.Z_COORDINATE and not QgsWkbTypes.hasZ(layer.wkbType()):
             feedback.reportError(self.tr('Input must have Z coordinate.'), True)
+            return False
+
+        if coordinate == self.M_COORDINATE and not QgsWkbTypes.hasM(layer.wkbType()):
+            feedback.reportError(self.tr('Input must have M coordinate.'), True)
             return False
 
         if QgsWkbTypes.isMultiType(layer.wkbType()):
             feedback.reportError(self.tr('Multipart geometries are not currently supported'), True)
             return False
 
+        self.coordinate = coordinate
         self.nodata = self.parameterAsDouble(parameters, self.NODATA, context) or None
-        self.z_delta = self.parameterAsDouble(parameters, self.MIN_Z_DELTA, context)
         self.smooth_window = self.parameterAsInt(parameters, self.SMOOTH_WINDOW, context)
         self.noise_power = self.parameterAsDouble(parameters, self.NOISE_POWER, context) or None
 
@@ -112,50 +124,62 @@ class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
         from scipy import signal
 
-        z_delta = self.z_delta
         smooth_window = self.smooth_window
         noise_power = self.noise_power
         nodata = self.nodata
 
-        def transform(geometry):
-            """
-            Adjust Z so that it decreases downward,
-            and slope is always positive.
-            """
+        if noise_power is not None and noise_power <= 0:
+            feedback.reportError(
+                self.tr('Noise power shoud be a positive double value or None'),
+                False)
+            noise_power = None
 
-            z = np.array([v.z() for v in geometry.vertices()])
-            skip = (z == nodata)
+        if self.coordinate == self.Z_COORDINATE:
 
-            if z.shape[0] == 0:
-                return geometry
+            def transform(geometry):
+                """
+                Filter Zs using a Wiener filter
+                """
 
-            if smooth_window > 0:
-                z = signal.wiener(z, smooth_window, noise_power)
+                z = np.array([v.z() for v in geometry.vertices()])
 
-            adjusted = np.full_like(z, nodata)
-            zmax = float('inf')
+                if z.shape[0] == 0:
+                    return geometry
 
-            for i in range(z.shape[0]):
+                z[z != nodata] = signal.wiener(z[z != nodata], smooth_window, noise_power)
 
-                if skip[i]:
-                    continue
+                points = list()
 
-                if z[i] > zmax:
+                for i, vertex in enumerate(geometry.vertices()):
+                    vertex.setZ(float(z[i]))
+                    points.append(vertex)
 
-                    adjusted[i] = zmax
-                    zmax = zmax - z_delta
+                return QgsLineString(points)
 
-                else:
+        elif self.coordinate == self.M_COORDINATE:
 
-                    zmax = adjusted[i] = z[i]
+            def transform(geometry):
+                """
+                Filter Ms using a Wiener filter
+                """
 
-            points = list()
+                m = np.array([v.m() for v in geometry.vertices()])
 
-            for i, vertex in enumerate(geometry.vertices()):
-                vertex.setZ(float(adjusted[i]))
-                points.append(vertex)
+                if m.shape[0] == 0:
+                    return geometry
 
-            return QgsLineString(points)
+                m[m != nodata] = signal.wiener(m[m != nodata], smooth_window, noise_power)
+
+                points = list()
+
+                for i, vertex in enumerate(geometry.vertices()):
+                    vertex.setM(float(m[i]))
+                    points.append(vertex)
+
+                return QgsLineString(points)
+
+        # else:
+        #   Never happens
 
         geometry = feature.geometry()
 

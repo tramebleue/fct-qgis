@@ -1,0 +1,8 @@
+displayName: Distance To Nearest Stream
+group: terrain
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - raster
+  - nearest

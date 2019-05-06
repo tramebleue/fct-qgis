@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Relative Digital Elevation Model (DEM)
+Distance To Nearest Stream Cell (Raster)
 
 ***************************************************************************
 *                                                                         *
@@ -20,6 +20,7 @@ from osgeo import gdal
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessing,
     QgsProcessingAlgorithm,
+    QgsProcessingParameterBoolean,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer
@@ -92,10 +93,10 @@ def rasterize_linestring(a, b):
 
 def pixeltoworld(sequence, transform):
     """
-    Transform raster pixel coordinates (px, py)
+    Transform raster pixel coordinates (py, px)
     into real world coordinates (x, y)
     """
-    return (sequence + 0.5)*[transform[1], transform[5]] + [transform[0], transform[3]]
+    return (np.fliplr(sequence) + 0.5)*[transform[1], transform[5]] + [transform[0], transform[3]]
 
 def worldtopixel(sequence, transform):
     """
@@ -112,44 +113,49 @@ def remove_duplicates(points):
     if points:
 
         new_points = list()
-        x, y, z = points[0]
-        new_points.append((x, y, z))
+        x, y = points[0]
+        new_points.append((x, y))
 
-        for nx, ny, nz in points[1:]:
+        for nx, ny in points[1:]:
             if nx != x or ny != y:
-                new_points.append((nx, ny, nz))
+                new_points.append((nx, ny))
                 x, y = nx, ny
 
         return new_points
 
     return []
 
-class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
+class DistanceToStream(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
-    Calculate elevations relative to stream cells
-    (aka. detrended DEM)
+    Calculate distance to the nearest stream cell (Raster).
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'RelativeDEM')
+    METADATA = AlgorithmMetadata.read(__file__, 'DistanceToStream')
 
     INPUT = 'INPUT'
     STREAM = 'STREAM'
+    SIGNED_DISTANCE = 'SIGNED_DISTANCE'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
         self.addParameter(QgsProcessingParameterRasterLayer(
             self.INPUT,
-            self.tr('Digital Elevation Model (DEM)')))
+            self.tr('Template Raster')))
 
         self.addParameter(QgsProcessingParameterFeatureSource(
             self.STREAM,
             self.tr('Stream LineString'),
             [QgsProcessing.TypeVectorLine]))
 
+        self.addParameter(QgsProcessingParameterBoolean(
+            self.SIGNED_DISTANCE,
+            self.tr('Calculate Signed Distance ?'),
+            defaultValue=False))
+
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.OUTPUT,
-            self.tr('Relative DEM')))
+            self.tr('Distance To Stream')))
 
     def canExecute(self): #pylint: disable=unused-argument,missing-docstring
 
@@ -173,10 +179,11 @@ class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.INPUT, context)
         stream_layer = self.parameterAsSource(parameters, self.STREAM, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
+        signed = self.parameterAsBool(parameters, self.SIGNED_DISTANCE, context)
 
         feedback.setProgressText('Read elevations')
 
-        elevations_ds = gdal.Open(elevations_lyr.dataProvider().dataSourceUri())
+        elevations_ds = gdal.OpenEx(elevations_lyr.dataProvider().dataSourceUri(), gdal.GA_ReadOnly)
         elevations = elevations_ds.GetRasterBand(1).ReadAsArray()
         nodata = elevations_ds.GetRasterBand(1).GetNoDataValue()
         transform = elevations_ds.GetGeoTransform()
@@ -201,20 +208,120 @@ class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             for a, b in zip(linestring[:-1], linestring[1:]):
                 points.extend([
-                    (py, px, elevations[py, px]) for px, py
+                    (py, px) for px, py
                     in rasterize_linestring(a, b)
                     if elevations[py, px] != nodata
                 ])
 
             stream_points.extend(remove_duplicates(points))
 
-        stream_points = np.array(remove_duplicates(stream_points))
-        point_index = cKDTree(stream_points[:, :2], balanced_tree=False)
+            # Add a separator point at Infinity between linestrings
+            stream_points.append((np.infty, np.infty))
 
-        feedback.setProgressText('Calculate relative elevations')
+        stream_points = np.array(remove_duplicates(stream_points))
+        point_index = cKDTree(stream_points[:, 0:2], balanced_tree=False)
+
+        feedback.setProgressText('Calculate distance to nearest stream cell')
         out = np.zeros_like(elevations)
         height, width = elevations.shape
         total = 100.0 / height if height else 0.0
+
+        def distance_to_segment(a, b, c):
+            """
+            Distance from C to segment [AB].
+            a, b, c: array-like of pairs of (x, y) coordinates
+            """
+
+            segment_ab = b - a
+            segment_ac = c - a
+            length_ab = np.linalg.norm(segment_ab, axis=1)
+            # length_ac = np.linalg.norm(segment_ac, axis=1)
+
+            # dot = AB.AC / AB^2
+            #     = |AC| * cos(AB, AC) / |AB|
+            dot = np.sum(segment_ab*segment_ac, axis=1) / (length_ab**2)
+            dot[dot < 0.0] = 0.0
+            dot[dot > 1.0] = 1.0
+
+            nearest = np.array([
+                a[:, 0] + dot*segment_ab[:, 0],
+                a[:, 1] + dot*segment_ab[:, 1]]).T
+
+            return np.linalg.norm(nearest - c, axis=1)
+
+        # def cross_distance(a, b, c):
+        #     """
+        #     Signed distance from point C to (infinite) line (AB)
+        #     """
+
+        #     segment_ab = b - a
+        #     segment_ac = c - a
+        #     length_ab = np.linalg.norm(segment_ab, axis=1)
+
+        #     return np.cross(segment_ab, segment_ac) / length_ab
+
+        def signed_distance(
+                points, nearest_indices, reference_points,
+                transform=transform,
+                signed=True):
+            """
+            Calculate the distance of `points`
+            to the nearest segment defined by `reference_points`,
+            knowing the nearest point index in `reference_points`.
+            """
+
+            # A-----B-----C
+            #     ^
+            #     P (nearest point B)
+
+            # a = pixeltoworld(np.take(reference_points, nearest_indices-1, axis=0, mode='wrap'), transform)
+            # b = pixeltoworld(np.take(reference_points, nearest_indices, axis=0, mode='wrap'), transform)
+            # c = pixeltoworld(np.take(reference_points, nearest_indices+1, axis=0, mode='wrap'), transform)
+
+            a = np.take(reference_points, nearest_indices-1, axis=0, mode='wrap')
+            b = np.take(reference_points, nearest_indices, axis=0, mode='wrap')
+            c = np.take(reference_points, nearest_indices+1, axis=0, mode='wrap')
+
+            # cross_distance_before = cross_distance(a, b, points)
+            # cross_distance_after = cross_distance(b, c, points)
+            # nearest_is_after = np.abs(cross_distance_before) > np.abs(cross_distance_after)
+
+            # distance = np.copy(cross_distance_before)
+            # distance[nearest_is_after] = cross_distance_after[nearest_is_after]
+
+            # if signed:
+            #     return distance
+
+            # return np.abs(distance)
+
+            distance_before = distance_to_segment(a, b, points)
+            distance_after = distance_to_segment(b, c, points)
+
+            nearest_is_after = distance_before > distance_after
+            a[nearest_is_after] = b[nearest_is_after]
+            b[nearest_is_after] = c[nearest_is_after]
+            distance = np.copy(distance_before)
+            distance[nearest_is_after] = distance_after[nearest_is_after]
+
+            del c
+            # del distance_before
+            # del distance_after
+            del nearest_is_after
+
+            if signed:
+
+                dx = b[:, 0] - a[:, 0]
+                dy = b[:, 1] - a[:, 1]
+                nx = points[:, 0] - a[:, 0]
+                ny = points[:, 1] - a[:, 1]
+                cross = (dx * ny) - (dy * nx)
+
+                # TODO
+                # handle zeros in cross where distance > 0
+
+                return np.sign(cross) * distance * transform[1]
+
+            return distance * transform[1]
 
         for row in range(height):
 
@@ -225,8 +332,20 @@ class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             coords = np.int32([row*np.ones(width, dtype=np.int32), np.arange(width)]).T
             distance, nearest = point_index.query(coords)
-            nearest_z = np.array([stream_points[i][2] for i in nearest])
-            out[row, :] = elevations[row, :] - nearest_z
+
+            if signed:
+
+                out[row, :] = signed_distance(
+                    coords,
+                    nearest,
+                    stream_points[:, 0:2],
+                    transform=transform,
+                    signed=signed
+                )
+
+            else:
+
+                out[row, :] = distance*transform[1]
 
         out[elevations == nodata] = nodata
 

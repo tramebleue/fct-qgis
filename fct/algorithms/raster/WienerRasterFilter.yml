@@ -1,0 +1,11 @@
+displayName: Wiener Raster Filter
+group: raster
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - scipy
+  - signal
+  - filter
+  - wiener
+  - smoothing

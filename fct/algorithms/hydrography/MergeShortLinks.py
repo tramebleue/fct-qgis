@@ -313,9 +313,11 @@ class MergeShortLinks(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                 # Output merged segments
 
-                geometry = QgsGeometry.fromPolylineXY([
+                geometry = QgsGeometry.fromPolyline([
                     c for geom in reversed(merged_geometries)
-                    for c in geom.asPolyline()])
+                    for c in geom.vertices()
+                ])
+                
                 out_feature = QgsFeature()
                 out_feature.setGeometry(geometry)
                 out_feature.setAttributes([

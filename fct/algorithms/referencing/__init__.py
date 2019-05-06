@@ -13,6 +13,7 @@ Spatial Referencing Algorithms
 ***************************************************************************
 """
 
+from .AxisTransform import AxisTransform
 from .LocatePointAlongNetwork import LocatePointAlongNetwork
 from .LocatePolygonAlongNetwork import LocatePolygonAlongNetwork
 from .MeasureNetworkFromOutlet import MeasureNetworkFromOutlet

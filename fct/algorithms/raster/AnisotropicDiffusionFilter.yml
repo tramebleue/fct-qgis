@@ -1,0 +1,9 @@
+displayName: Anisotropic Diffusion Filter
+group: raster
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - perona-malik
+  - filter
+  - edge sharpening

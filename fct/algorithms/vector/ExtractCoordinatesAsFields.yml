@@ -1,0 +1,8 @@
+displayName: Extract Coordinates As Fields
+group: vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - vector
+  - coordinates

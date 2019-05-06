@@ -15,9 +15,11 @@ Vector General Algorithms
 
 from .CutAndRotateRing import CutAndRotateRing
 from .DistanceToOtherLayer import DistanceToOtherLayer
+from .ExtractCoordinatesAsFields import ExtractCoordinatesAsFields
 from .LineMidpoints import LineMidpoints
 from .LineStringBufferByM import LineStringBufferByM
 from .LocatePointAlongLine import LocatePointAlongLine
+from .MonotonicZ import MonotonicZ
 from .PointsAlongPolygon import PointsAlongPolygon
 from .PointsInPolygon import PointsInPolygon
 from .PointsMedialAxis import PointsMedialAxis
@@ -33,3 +35,4 @@ from .TransectByPoint import TransectByPoint
 from .TransformCoordinateByExpression import TransformCoordinateByExpression
 from .UniquePoints import UniquePoints
 from .VariableLengthTransects import VariableLengthTransects
+from .WienerCoordinateFilter import WienerCoordinateFilter
