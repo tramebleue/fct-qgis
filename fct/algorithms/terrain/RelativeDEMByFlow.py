@@ -104,36 +104,17 @@ def worldtopixel(sequence, transform):
     """
     return np.int32(np.round((sequence - [transform[0], transform[3]]) / [transform[1], transform[5]] - 0.5))
 
-def remove_duplicates(points):
+class RelativeDEMByFlow(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
-    Remove duplicate vertices in sequence.
-    """
-
-    if points:
-
-        new_points = list()
-        x, y, z = points[0]
-        new_points.append((x, y, z))
-
-        for nx, ny, nz in points[1:]:
-            if nx != x or ny != y:
-                new_points.append((nx, ny, nz))
-                x, y = nx, ny
-
-        return new_points
-
-    return []
-
-class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
-    """
-    Calculate elevations relative to stream cells
-    (aka. detrended DEM)
+    Calculate elevations relative to stream cells (aka. detrended DEM),
+    by propagating stream elevations according to flow direction.
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'RelativeDEM')
+    METADATA = AlgorithmMetadata.read(__file__, 'RelativeDEMByFlow')
 
     INPUT = 'INPUT'
     STREAM = 'STREAM'
+    FLOW = 'FLOW'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
@@ -147,6 +128,10 @@ class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Stream LineString'),
             [QgsProcessing.TypeVectorLine]))
 
+        self.addParameter(QgsProcessingParameterRasterLayer(
+            self.FLOW,
+            self.tr('Flow Direction (D8)')))
+
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.OUTPUT,
             self.tr('Relative DEM')))
@@ -155,15 +140,15 @@ class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         try:
             # pylint:disable=import-error,no-name-in-module,unused-variable
-            import scipy.spatial
+            from ...lib.terrain_analysis import watershed
             return True, ''
         except ImportError:
-            return False, self.tr('Missing dependency: scipy.spatial')
+            return False, self.tr('Missing dependency: FCT terrain_analysis')
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         # pylint:disable=import-error,no-name-in-module
-        from scipy.spatial import cKDTree
+        from ...lib.terrain_analysis import watershed
 
         # if CYTHON:
         #     feedback.pushInfo("Using Cython flow_accumulation() ...")
@@ -171,20 +156,27 @@ class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
         #     feedback.pushInfo("Pure python flow_accumulation() - this may take a while ...")
 
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.INPUT, context)
+        flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         stream_layer = self.parameterAsSource(parameters, self.STREAM, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
         feedback.setProgressText('Read elevations')
 
-        elevations_ds = gdal.Open(elevations_lyr.dataProvider().dataSourceUri())
+        elevations_ds = gdal.OpenEx(elevations_lyr.dataProvider().dataSourceUri())
         elevations = elevations_ds.GetRasterBand(1).ReadAsArray()
         nodata = elevations_ds.GetRasterBand(1).GetNoDataValue()
         transform = elevations_ds.GetGeoTransform()
         height, width = elevations.shape
 
-        feedback.setProgressText('Build stream point index')
-        stream_points = list()
+        feedback.setProgressText('Read flow direction')
+
+        flow_ds = gdal.OpenEx(flow_lyr.dataProvider().dataSourceUri())
+        flow = flow_ds.GetRasterBand(1).ReadAsArray()
+
+        feedback.setProgressText('Rasterize stream elevations')
         total = 100.0 / stream_layer.featureCount() if stream_layer.featureCount() else 0.0
+
+        relative = np.zeros_like(elevations)
 
         def isdata(px, py):
             """
@@ -209,38 +201,14 @@ class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
                 for point in feature.geometry().asPolyline()
             ]), transform)
 
-            points = list()
-
             for a, b in zip(linestring[:-1], linestring[1:]):
-                points.extend([
-                    (py, px, elevations[py, px]) for px, py
-                    in rasterize_linestring(a, b)
-                    if isdata(px, py)
-                ])
+                for col, row in rasterize_linestring(a, b):
+                    if isdata(col, row):
+                        relative[row, col] = elevations[row, col]
 
-            stream_points.extend(remove_duplicates(points))
-
-        stream_points = np.array(remove_duplicates(stream_points))
-        point_index = cKDTree(stream_points[:, :2], balanced_tree=True)
-
-        feedback.setProgressText('Calculate relative elevations')
-        out = np.zeros_like(elevations)
-        height, width = elevations.shape
-        total = 100.0 / height if height else 0.0
-
-        for row in range(height):
-
-            if feedback.isCanceled():
-                break
-
-            feedback.setProgress(int(row*total))
-
-            coords = np.int32([row*np.ones(width, dtype=np.int32), np.arange(width)]).T
-            distance, nearest = point_index.query(coords)
-            nearest_z = np.array([stream_points[i][2] for i in nearest])
-            out[row, :] = elevations[row, :] - nearest_z
-
-        out[elevations == nodata] = nodata
+        watershed(flow, relative, feedback=feedback)
+        relative = elevations - relative
+        relative[elevations == nodata] = nodata
 
         feedback.setProgress(100)
         feedback.setProgressText(self.tr('Write output ...'))
@@ -258,11 +226,12 @@ class RelativeDEM(AlgorithmMetadata, QgsProcessingAlgorithm):
         # dst.SetProjection(srs.exportToWkt())
         dst.SetProjection(elevations_lyr.crs().toWkt())
 
-        dst.GetRasterBand(1).WriteArray(np.asarray(out))
+        dst.GetRasterBand(1).WriteArray(relative)
         dst.GetRasterBand(1).SetNoDataValue(nodata)
 
         # Properly close GDAL resources
         elevations_ds = None
+        flow_ds = None
         dst = None
 
         return {self.OUTPUT: output}

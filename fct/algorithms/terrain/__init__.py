@@ -19,6 +19,7 @@ from .FillDepressions import FillDepressions
 from .FlowAccumulation import FlowAccumulation
 from .FlowDirection import FlowDirection
 from .RelativeDEM import RelativeDEM
+from .RelativeDEMByFlow import RelativeDEMByFlow
 from .ResolveFlats import ResolveFlats
 from .StreamToFeature import StreamToFeature
 from .TopologicalStreamBurn import TopologicalStreamBurn
