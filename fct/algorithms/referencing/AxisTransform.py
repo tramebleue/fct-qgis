@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Locate Point Along Linear Reference Network
+Axis Transform
 
 ***************************************************************************
 *                                                                         *

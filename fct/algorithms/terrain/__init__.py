@@ -15,8 +15,11 @@ Terrain Analysis Algorithms
 
 from .DetrendDEM import DetrendDEM
 from .DistanceToStream import DistanceToStream
+from .FillDepressions import FillDepressions
 from .FlowAccumulation import FlowAccumulation
+from .FlowDirection import FlowDirection
 from .RelativeDEM import RelativeDEM
+from .ResolveFlats import ResolveFlats
 from .StreamToFeature import StreamToFeature
 from .TopologicalStreamBurn import TopologicalStreamBurn
 from .Watershed import Watershed

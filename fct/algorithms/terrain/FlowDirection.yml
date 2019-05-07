@@ -1,8 +1,8 @@
-displayName: Distance To Stream Network
+displayName: Flow Direction (D8)
 group: terrain
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL
 tags:
-  - raster
-  - nearest
+  - hydrography
+  - dem

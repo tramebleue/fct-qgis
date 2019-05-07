@@ -1,8 +1,8 @@
-displayName: Distance To Stream Network
+displayName: Resolve Flats
 group: terrain
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL
 tags:
-  - raster
-  - nearest
+  - preprocessing
+  - flow direction
