@@ -1,9 +1,8 @@
-displayName: Topological Stream Burn
+displayName: Stream To Raster
 group: terrain
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL
 tags:
   - hydrography
-  - graph
-  - selection
+  - rasterization

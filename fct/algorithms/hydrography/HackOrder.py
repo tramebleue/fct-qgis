@@ -181,7 +181,7 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr("Sort subgraphs by descending source distance"))
 
         seen_edges = dict()
-        current = 0
+        current = 1
         total = 100.0 / len(sources) if sources else 0
         feedback.setProgress(0)
 

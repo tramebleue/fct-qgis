@@ -53,13 +53,13 @@ class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
             self.MIN_Z_DELTA,
             self.tr('Minimum Z Delta'),
             type=QgsProcessingParameterNumber.Double,
-            defaultValue=.0001))
+            defaultValue=.0005))
 
     def inputLayerTypes(self): #pylint: disable=no-self-use,missing-docstring
         return [QgsProcessing.TypeVectorLine]
 
     def outputName(self): #pylint: disable=missing-docstring
-        return self.tr('Adjusted Z Profile')
+        return self.tr('Adjusted Long Profile')
 
     def outputWkbType(self, inputWkbType): #pylint: disable=no-self-use,missing-docstring
         return inputWkbType
@@ -98,8 +98,6 @@ class MonotonicZ(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         from scipy import signal
 
         z_delta = self.z_delta
-        smooth_window = self.smooth_window
-        noise_power = self.noise_power
         nodata = self.nodata
 
         def transform(geometry):

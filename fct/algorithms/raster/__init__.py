@@ -17,6 +17,7 @@ from .AnisotropicDiffusionFilter import AnisotropicDiffusionFilter
 from .ApplyMask import ApplyMask
 from .BinaryClosing import BinaryClosing
 from .BurnLineStringZ import BurnLineStringZ
+from .BurnFlowDirection import BurnFlowDirection
 from .DrapeVectors import DrapeVectors
 from .DifferentialRasterThreshold import DifferentialRasterThreshold
 from .FocalMean import FocalMean

@@ -28,8 +28,7 @@ def topo_stream_burn(
     float[:,:] elevations,
     float[:,:] streams,
     float nodata,
-    float rx, float ry,
-    float minslope=1e-5,
+    float zdelta=0.0005,
     short[:,:] out=None,
     feedback=None):
     """ Flow accumulation algorithm
@@ -62,8 +61,8 @@ def topo_stream_burn(
         raster vertical resolution in `elevations`
         (positive value)
 
-    minslope: float
-        Minimum slope to preserve between cells
+    zdelta: float
+        Minimum delta in z to preserve between cells
         when filling up sinks.
 
     out: array-like
@@ -100,7 +99,7 @@ def topo_stream_burn(
 
         long height = elevations.shape[0], width = elevations.shape[1]
         float dx, dy, z, zx, zmin
-        long i, j, ix, jx, x, xmin, ncells, current, leaks = 0
+        long i, j, ix, jx, x, xmin, ncells, current
         unsigned char instream, instreamx
         unsigned char[:, :] seen
         
@@ -112,27 +111,24 @@ def topo_stream_burn(
         float total
         int progress0, progress1
 
-        np.ndarray[double, ndim=2] w
-        np.ndarray[float] mindiff
+        # np.ndarray[double, ndim=2] w
+        # np.ndarray[float] mindiff
 
     if feedback is None:
         feedback = SilentFeedback()
 
-    w = np.array([ ci, cj ]).T * (rx, ry)
-    mindiff = np.float32(minslope*np.sqrt(np.sum(w*w, axis=1)))
+    # w = np.array([ ci, cj ]).T * (rx, ry)
+    # mindiff = np.float32(minslope*np.sqrt(np.sum(w*w, axis=1)))
 
     if out is None:
         out = np.full((height, width), -1, dtype=np.int16)
 
     seen = np.zeros((height, width), dtype=np.uint8)
 
-    # progress = TermProgressBar(2*width*height)
     feedback.setProgressText('Input is %d x %d' % (width, height))
 
     total = 100.0 / (height*width)
     progress0 = progress1 = 0
-
-    # with nogil:
 
     for i in range(height):
         for j in range(width):
@@ -157,7 +153,7 @@ def topo_stream_burn(
                         key = TopoKey(instream, -z)
                         entry = TopoQueueEntry(key, cell)
                         queue.push(entry)
-                        seen[i, j] = 1
+                        # seen[i, j] = 1
 
                         break
 
@@ -180,57 +176,63 @@ def topo_stream_burn(
         key = entry.first
         cell = entry.second
         instream = key.first
-        z = -key.second
+        # z = -key.second
         i = cell.first
         j = cell.second
+        z = elevations[i, j]
 
-        if out[i, j] == -1:
+        if seen[i, j] == 1:
+            continue
 
-            zmin = z
-            xmin = -1
+        seen[i, j] = 1
 
-            for x in range(8):
+        # if out[i, j] == -1:
 
-                ix = i + ci[x]
-                jx = j + cj[x]
+        #     zmin = z
+        #     xmin = -1
+
+        #     for x in range(8):
+
+        #         ix = i + ci[x]
+        #         jx = j + cj[x]
                 
-                if ingrid(height, width, ix, jx):
+        #         if ingrid(height, width, ix, jx):
 
-                    # consider only visited cells,
-                    # other cells either have elevation > z
-                    # or are sinks
+        #             # consider only visited cells,
+        #             # other cells either have elevation > z
+        #             # or are sinks
 
-                    if out[ix, jx] != -1:
+        #             if out[ix, jx] != -1:
 
-                        zx = elevations[ix, jx]
+        #                 zx = elevations[ix, jx]
 
-                        # assert zx != nodata
+        #                 # assert zx != nodata
 
-                        # should never happen ...
-                        if zx == nodata:
-                            # we don't flow to nodata cells
-                            continue
+        #                 # should never happen ...
+        #                 if zx == nodata:
+        #                     # we don't flow to nodata cells
+        #                     continue
 
-                        if zx < zmin:
-                            zmin = zx
-                            xmin = x
+        #                 if zx < zmin:
+        #                     zmin = zx
+        #                     xmin = x
 
-                # else:
+        #         # else:
 
-                #     # flow outside dem
-                #     xmin = x
-                #     break
+        #         #     # flow outside dem
+        #         #     xmin = x
+        #         #     break
 
-            if xmin == -1:
-                # no flow
-                out[i, j] = 0
-            else:
-                out[i, j] = pow2(xmin)
-                ix = i + ci[xmin]
-                jx = j + cj[xmin]
-                instreamx = 1 if streams[ix, jx] > 0 else 0
-                if instream == 1 and instreamx == 0:
-                    leaks += 1
+        #     if xmin == -1:
+        #         # no flow
+        #         out[i, j] = 0
+        #     else:
+        #         out[i, j] = pow2(xmin)
+        #         ix = i + ci[xmin]
+        #         jx = j + cj[xmin]
+        #         instreamx = 1 if streams[ix, jx] > 0 else 0
+        #         if instream == 1 and instreamx == 0:
+        #             leaks += 1
 
         for x in range(8):
 
@@ -242,27 +244,61 @@ def topo_stream_burn(
                 zx = elevations[ix, jx]
                 instreamx = 1 if streams[ix, jx] > 0 else 0
 
-                if (zx != nodata) and (seen[ix, jx] == 0):
+                if (zx != nodata) and seen[ix, jx] == 0:
 
-                    if instream == 1:
-                        if zx < z:
-                            zx = z
+                    if streams[ix, jx] == 0:
+
+                        # Non-stream cell, process normally
+
+                        if instream == 1:
+
+                            # Don't raise elevations of cells
+                            # close to stream
+
+                            if zx < z:
+
+                                zx = z
+                                elevations[ix, jx] = zx
+                                out[ix, jx] = pow2(reverse_direction(x))
+
+                        elif zx < (z + zdelta):
+                      
+                            zx = z + zdelta
                             elevations[ix, jx] = zx
                             out[ix, jx] = pow2(reverse_direction(x))
-                    elif zx < (z + mindiff[x]):
-                        zx = z + mindiff[x]
-                        elevations[ix, jx] = zx
-                        if instreamx == 1:
-                            leaks += 1
-                        out[ix, jx] = pow2(reverse_direction(x))
 
-                    # out[ix, jx] = pow2(reverse_direction(x))
-                    # heappush(queue, (instreamx, zx, ix, jx))
+                    else:
+
+                        # Stream cell
+                        # We can connect only to another stream cell
+                        # on a link with same ID or lower
+
+                        if instream == 1 and streams[ix, jx] >= streams[i, j] and out[ix, jx] == -1:
+                            
+                            if zx < z:
+                                zx = z
+                                elevations[ix, jx] = zx
+                            
+                            out[ix, jx] = pow2(reverse_direction(x))
+
+                    # if instream == 1:
+                    #     if zx < z:
+                    #         zx = z
+                    #         elevations[ix, jx] = zx
+                    #         out[ix, jx] = pow2(reverse_direction(x))
+                    # elif zx < (z + zdelta):
+                    #     zx = z + zdelta
+                    #     elevations[ix, jx] = zx
+                    #     if instreamx == 1:
+                    #         leaks += 1
+                    #     out[ix, jx] = pow2(reverse_direction(x))
+
+                    # Discover neighbor cells
+
                     cell = Cell(ix, jx)
                     key = TopoKey(instreamx, -zx)
                     entry = TopoQueueEntry(key, cell)
                     queue.push(entry)
-                    seen[ix, jx] = 1
 
         current += 1
         progress1 = int(current*total)
@@ -272,7 +308,51 @@ def topo_stream_burn(
             if feedback.isCanceled():
                 break
 
+    for i in range(height):
+        for j in range(width):
+
+            z = elevations[i, j]
+            
+            if z == nodata:
+                continue
+
+            if out[i, j] != -1:
+                continue
+
+            zmin = z
+            xmin = -1
+
+            for x in range(8):
+
+                ix = i + ci[x]
+                jx = j + cj[x]
+                
+                if not ingrid(height, width, ix, jx):
+                    continue
+
+                zx = elevations[ix, jx]
+
+                if zx == nodata:
+                    continue
+
+                if zx < zmin:
+                    zmin = zx
+                    xmin = x
+
+            if xmin == -1:
+                # no flow
+                out[i, j] = 0
+            else:
+                out[i, j] = pow2(xmin)
+
+        progress1 = int((i*width+j)*total)
+        if progress1 > progress0:
+            feedback.setProgress(progress1)
+            progress0 = progress1
+            if feedback.isCanceled():
+                break
+
     feedback.setProgress(100)
-    feedback.setProgressText('Found %d cells where flow leaks out of stream' % leaks)
+    # feedback.setProgressText('Found %d cells where flow leaks out of stream' % leaks)
 
     return np.int16(out)

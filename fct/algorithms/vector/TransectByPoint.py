@@ -171,13 +171,14 @@ class TransectByPoint(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
 
             geometry = nearest_line.geometry()
             cursor = geometry.lineLocatePoint(point)
-            origin = geometry.interpolate(cursor)
+            # origin = geometry.interpolate(cursor)
             angle = geometry.interpolateAngle(cursor)
             direction = QgsVector(-math.cos(angle), math.sin(angle))
 
             new_feature = QgsFeature()
             new_feature.setAttributes(feature.attributes())
-            new_feature.setGeometry(transect(origin.asPoint(), direction, length))
+            # new_feature.setGeometry(transect(origin.asPoint(), direction, length))
+            new_feature.setGeometry(transect(point.asPoint(), direction, length))
             transects.append(new_feature)
 
         return transects

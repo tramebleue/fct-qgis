@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-TopologicalStreamBurn
+FlowAccumulation
 
 ***************************************************************************
 *                                                                         *
@@ -13,8 +13,9 @@ TopologicalStreamBurn
 ***************************************************************************
 """
 
-from osgeo import gdal
 import numpy as np
+from osgeo import gdal
+# import osr
 
 from qgis.core import ( # pylint:disable=no-name-in-module
     QgsProcessingAlgorithm,
@@ -24,19 +25,12 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 
 from ..metadata import AlgorithmMetadata
 
-try:
-    from ...lib.terrain_analysis import topo_stream_burn
-    CYTHON = True
-except ImportError:
-    from ...lib.topo_stream_burn import topo_stream_burn
-    CYTHON = False
-
-class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):
-    """ Compute flow direction raster,
-        using a variant of Wang and Liu fill sink algorithm
+class StreamFlowDirection(AlgorithmMetadata, QgsProcessingAlgorithm):
+    """
+    Compute D8 Flow Direction from Digital Elevation Model
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'TopologicalStreamBurn')
+    METADATA = AlgorithmMetadata.read(__file__, 'StreamFlowDirection')
 
     ELEVATIONS = 'ELEVATIONS'
     STREAMS = 'STREAMS'
@@ -46,29 +40,34 @@ class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterRasterLayer(
             self.ELEVATIONS,
-            self.tr('Elevations')))
+            self.tr('Digital Elevation Model')))
 
         self.addParameter(QgsProcessingParameterRasterLayer(
             self.STREAMS,
             self.tr('Rasterized Stream Network')))
 
-        # self.addParameter(ParameterString(self.NO_DATA,
-        #                                   self.tr('No data value'), '-9999'))
-
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.OUTPUT,
             self.tr('Flow Direction')))
 
+    def canExecute(self): #pylint: disable=unused-argument,missing-docstring
+
+        try:
+            # pylint: disable=import-error,unused-variable
+            from ...lib.terrain_analysis import stream_flow
+            return True, ''
+        except ImportError:
+            return False, self.tr('Missing dependency: FCT terrain_analysis')
+
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        if CYTHON:
-            feedback.pushInfo("Using Cython topo_stream_burn() ...")
-        else:
-            feedback.pushInfo("Pure python topo_stream_burn() - this may take a while ...")
+        from ...lib.terrain_analysis import stream_flow
 
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.ELEVATIONS, context)
         streams_lyr = self.parameterAsRasterLayer(parameters, self.STREAMS, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
+
+        driver = gdal.GetDriverByName('GTiff')
 
         elevations_ds = gdal.Open(elevations_lyr.dataProvider().dataSourceUri())
         elevations = elevations_ds.GetRasterBand(1).ReadAsArray()
@@ -77,28 +76,15 @@ class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):
         streams_ds = gdal.Open(streams_lyr.dataProvider().dataSourceUri())
         streams = streams_ds.GetRasterBand(1).ReadAsArray()
 
-        geotransform = elevations_ds.GetGeoTransform()
-        rx = geotransform[1]
-        ry = -geotransform[5]
-
-        out = topo_stream_burn(
-            elevations,
-            streams,
-            nodata,
-            rx,
-            ry,
-            minslope=1e-3,
-            feedback=feedback)
+        flow = stream_flow(elevations, streams, nodata, feedback=feedback)
 
         if feedback.isCanceled():
             feedback.reportError(self.tr('Aborted'), True)
             return {}
 
-        feedback.setProgress(100)
+        feedback.setProgress(50)
         feedback.pushInfo(self.tr('Write output ...'))
 
-        driver = gdal.GetDriverByName('GTiff')
-        # dst = driver.CreateCopy(output, flow_ds, strict=0, options=['TILED=YES', 'COMPRESS=DEFLATE'])
         dst = driver.Create(
             output,
             xsize=elevations_ds.RasterXSize,
@@ -106,12 +92,13 @@ class TopologicalStreamBurn(AlgorithmMetadata, QgsProcessingAlgorithm):
             bands=1,
             eType=gdal.GDT_Int16,
             options=['TILED=YES', 'COMPRESS=DEFLATE'])
-        dst.SetGeoTransform(elevations_ds.GetGeoTransform())
-        # dst.SetProjection(srs.exportToWkt())
-        dst.SetProjection(elevations_lyr.crs().toWkt())
 
-        dst.GetRasterBand(1).WriteArray(np.asarray(out))
+        dst.SetGeoTransform(elevations_ds.GetGeoTransform())
+        dst.SetProjection(elevations_lyr.crs().toWkt())
+        dst.GetRasterBand(1).WriteArray(flow)
         dst.GetRasterBand(1).SetNoDataValue(-1)
+
+        feedback.setProgress(100)
 
         # Properly close GDAL resources
         elevations_ds = None

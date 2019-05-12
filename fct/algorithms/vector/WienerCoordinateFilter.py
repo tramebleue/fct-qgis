@@ -76,7 +76,7 @@ class WienerCoordinateFilter(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorit
         return [QgsProcessing.TypeVectorLine]
 
     def outputName(self): #pylint: disable=missing-docstring
-        return self.tr('Adjusted Z Profile')
+        return self.tr('Smoothed Profile')
 
     def outputWkbType(self, inputWkbType): #pylint: disable=no-self-use,missing-docstring
         return inputWkbType

@@ -1,0 +1,11 @@
+displayName: BurnFill Depressions
+group: terrain
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - depression filling
+  - sink
+  - flat
+  - preprocessing
+  - dem

@@ -1,9 +1,8 @@
-displayName: Stream To Feature
+displayName: Stream Flow Direction
 group: terrain
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL
 tags:
   - hydrography
-  - raster
-  - feature extraction
+  - dem

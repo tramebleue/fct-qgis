@@ -1,8 +1,9 @@
-displayName: Monotonic Z Profile
+displayName: Monotonic Long Profile
 group: vector
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL
 tags:
   - z
-  - longitudinal profile
+  - long profile
+  - filter
