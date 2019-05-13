@@ -25,6 +25,8 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsField,
     QgsFields,
     QgsGeometry,
+    QgsLineString,
+    QgsPoint,
     QgsPointXY,
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -46,6 +48,7 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     FLOW = 'FLOW'
     FLOW_ACC = 'FLOW_ACC'
+    ELEVATIONS = 'ELEVATIONS'
     MIN_ACC = 'MIN_ACC'
     OUTPUT = 'OUTPUT'
 
@@ -58,6 +61,11 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterRasterLayer(
             self.FLOW,
             self.tr('Flow Direction')))
+
+        self.addParameter(QgsProcessingParameterRasterLayer(
+            self.ELEVATIONS,
+            self.tr('Elevations'),
+            optional=True))
 
         self.addParameter(QgsProcessingParameterNumber(
             self.MIN_ACC,
@@ -82,26 +90,11 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        # if ProcessingConfig.getSetting('FCT_ACTIVATE_CYTHON'):
-        #     try:
-        #         from ...lib.terrain_analysis import watershed
-        #         with_cython = True
-        #     except ImportError:
-        #         from ...lib.watershed import watershed
-        #         with_cython = False
-        # else:
-        #     from ...lib.watershed import watershed
-        #     with_cython = False
-
-        # if with_cython:
-        #     feedback.pushInfo("Using Cython watershed() ...")
-        # else:
-        #     feedback.pushInfo("Using pure python watershed() - this may take a while ...")
-
         from ...lib.terrain_analysis import stream_to_feature
 
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         flow_acc_lyr = self.parameterAsRasterLayer(parameters, self.FLOW_ACC, context)
+        elevations_lyr = self.parameterAsRasterLayer(parameters, self.ELEVATIONS, context)
         min_acc = self.parameterAsDouble(parameters, self.MIN_ACC, context)
 
         flow_ds = gdal.OpenEx(flow_lyr.dataProvider().dataSourceUri(), gdal.GA_ReadOnly)
@@ -109,6 +102,29 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         flow_acc_ds = gdal.OpenEx(flow_acc_lyr.dataProvider().dataSourceUri(), gdal.GA_ReadOnly)
         flow_acc = flow_acc_ds.GetRasterBand(1).ReadAsArray()
+
+        if elevations_lyr:
+
+            elevations_ds = gdal.OpenEx(elevations_lyr.dataProvider().dataSourceUri(), gdal.GA_ReadOnly)
+            elevations = elevations_ds.GetRasterBand(1).ReadAsArray()
+            nodata = elevations_ds.GetRasterBand(1).GetNoDataValue()
+            height, width = elevations.shape
+            wkbType = QgsWkbTypes.LineStringZ
+
+            def get_elevation(px, py):
+                """
+                Return elevation at pixel (px, py)
+                or nodata is (px, py) is out of range
+                """
+
+                if px < 0 or px >= width or py < 0 or py >= height:
+                    return nodata
+
+                return elevations[py, px]
+
+        else:
+
+            wkbType = QgsWkbTypes.LineString
 
         fields = QgsFields()
         fields.append(QgsField('GID', QVariant.Int))
@@ -120,7 +136,7 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.OUTPUT,
             context,
             fields,
-            QgsWkbTypes.LineString,
+            wkbType,
             flow_lyr.crs())
 
         transform = flow_ds.GetGeoTransform()
@@ -132,8 +148,9 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
         streams[flow == -1] = -1
 
         def pixeltoworld(sequence):
-            """ Transform raster pixel coordinates (px, py)
-                into real world coordinates (x, y)
+            """
+            Transform raster pixel coordinates (px, py)
+            into real world coordinates (x, y)
             """
             return (sequence + 0.5)*[transform[1], transform[5]] + [transform[0], transform[3]]
 
@@ -155,9 +172,18 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
             else:
                 ca2 = ca1
 
-            linestring = QgsGeometry.fromPolylineXY([
-                QgsPointXY(x, y) for x, y in pixeltoworld(segment)
-            ])
+            if elevations_lyr:
+                
+                z = [get_elevation(px, py) for px, py in segment]
+                points = (QgsPoint(x, y, z[i]) for i, (x, y) in enumerate(pixeltoworld(segment)))
+                linestring = QgsLineString(points)                
+                geometry = QgsGeometry(linestring.clone())
+
+            else:
+
+                geometry = QgsGeometry.fromPolylineXY([
+                    QgsPointXY(x, y) for x, y in pixeltoworld(segment)
+                ])
 
             feature = QgsFeature()
             feature.setAttributes([
@@ -165,7 +191,7 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
                 float(ca1),
                 float(ca2)
             ])
-            feature.setGeometry(linestring)
+            feature.setGeometry(geometry)
             sink.addFeature(feature)
 
         # Properly close GDAL resources

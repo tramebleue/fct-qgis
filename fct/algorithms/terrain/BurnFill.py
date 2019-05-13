@@ -17,25 +17,31 @@ from osgeo import gdal
 import numpy as np
 
 from qgis.core import ( # pylint:disable=no-name-in-module
+    QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingParameterNumber,
+    QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterField,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer
 )
 
+from .StreamToRaster import worldtopixel, rasterize_linestring
+
 from ..metadata import AlgorithmMetadata
 
-class BurnFillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
+class BurnFill(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
     Compute flow direction raster,
     using a variant of Wang and Liu priority flood algorithm
     that processes stream cell in before other cells.
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'BurnFillDepressions')
+    METADATA = AlgorithmMetadata.read(__file__, 'BurnFill')
 
     ELEVATIONS = 'ELEVATIONS'
     STREAMS = 'STREAMS'
+    PK_FIELD = 'PK_FIELD'
     ZDELTA = 'ZDELTA'
     OUTPUT = 'OUTPUT'
     BURNED = 'BURNED'
@@ -46,12 +52,16 @@ class BurnFillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.ELEVATIONS,
             self.tr('Elevations')))
 
-        self.addParameter(QgsProcessingParameterRasterLayer(
+        self.addParameter(QgsProcessingParameterFeatureSource(
             self.STREAMS,
-            self.tr('Rasterized Stream Network')))
+            self.tr('Stream LineString'),
+            [QgsProcessing.TypeVectorLine]))
 
-        # self.addParameter(ParameterString(self.NO_DATA,
-        #                                   self.tr('No data value'), '-9999'))
+        self.addParameter(QgsProcessingParameterField(
+            self.PK_FIELD,
+            self.tr('Stream Primary Key'),
+            parentLayerParameterName=self.STREAMS,
+            defaultValue='GID'))
 
         self.addParameter(QgsProcessingParameterNumber(
             self.ZDELTA,
@@ -66,24 +76,26 @@ class BurnFillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.BURNED,
-            self.tr('Burned DEM'),
-            optional=True))
+            self.tr('Depression-Filled DEM'),
+            optional=True,
+            createByDefault=False))
 
     def canExecute(self): #pylint: disable=unused-argument,missing-docstring
 
         try:
             # pylint: disable=import-error,unused-variable
-            from ...lib.terrain_analysis import topo_stream_burn
+            from ...lib.terrain_analysis import burnfill
             return True, ''
         except ImportError:
             return False, self.tr('Missing dependency: FCT terrain_analysis')
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        from ...lib.terrain_analysis import topo_stream_burn
+        from ...lib.terrain_analysis import burnfill
 
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.ELEVATIONS, context)
-        streams_lyr = self.parameterAsRasterLayer(parameters, self.STREAMS, context)
+        layer = self.parameterAsSource(parameters, self.STREAMS, context)
+        pk_field = self.parameterAsString(parameters, self.PK_FIELD, context)
         zdelta = self.parameterAsDouble(parameters, self.ZDELTA, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
         burned = self.parameterAsOutputLayer(parameters, self.BURNED, context)
@@ -92,16 +104,58 @@ class BurnFillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
         elevations = elevations_ds.GetRasterBand(1).ReadAsArray()
         nodata = elevations_ds.GetRasterBand(1).GetNoDataValue()
 
-        streams_ds = gdal.Open(streams_lyr.dataProvider().dataSourceUri())
-        streams = streams_ds.GetRasterBand(1).ReadAsArray()
+        transform = elevations_ds.GetGeoTransform()
+        width = elevations_ds.RasterXSize
+        height = elevations_ds.RasterYSize
+
+        feedback.setProgressText('Rasterize stream vectors')
+        total = 100.0 / layer.featureCount() if layer.featureCount() else 0.0
+
+        streams = np.zeros((height, width), dtype=np.float32)
+        junctions = np.zeros((height, width), dtype=np.uint8)
+
+        def isdata(px, py):
+            """
+            True if (py, px) is a valid pixel coordinate
+            """
+
+            return px >= 0 and py >= 0 and px < width and py < height
+
+        for current, feature in enumerate(layer.getFeatures()):
+
+            if feedback.isCanceled():
+                break
+
+            feedback.setProgress(int(current*total))
+
+            link_id = feature.attribute(pk_field)
+
+            linestring = worldtopixel(np.array([
+                (point.x(), point.y())
+                for point in feature.geometry().asPolyline()
+            ]), transform)
+
+            for a, b in zip(linestring[:-1], linestring[1:]):
+                for col, row in rasterize_linestring(a, b):
+                    if isdata(col, row):
+                        current_value = streams[row, col]
+                        if current_value == 0 or link_id < current_value:
+                            # Override with the smallest ID
+                            streams[row, col] = link_id
+
+            col, row = linestring[-1]
+            junctions[row, col] = 1
 
         # geotransform = elevations_ds.GetGeoTransform()
         # rx = geotransform[1]
         # ry = -geotransform[5]
 
-        flow = topo_stream_burn(
+        feedback.setProgressText('Rasterize stream vectors')
+
+        flow = burnfill(
             elevations,
             streams,
+            junctions,
             nodata,
             zdelta,
             feedback=feedback)
@@ -122,7 +176,7 @@ class BurnFillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
             bands=1,
             eType=gdal.GDT_Int16,
             options=['TILED=YES', 'COMPRESS=DEFLATE'])
-        dst.SetGeoTransform(elevations_ds.GetGeoTransform())
+        dst.SetGeoTransform(transform)
         # dst.SetProjection(srs.exportToWkt())
         dst.SetProjection(elevations_lyr.crs().toWkt())
 
@@ -143,7 +197,7 @@ class BurnFillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
                 bands=1,
                 eType=gdal.GDT_Float32,
                 options=['TILED=YES', 'COMPRESS=DEFLATE'])
-            dst.SetGeoTransform(elevations_ds.GetGeoTransform())
+            dst.SetGeoTransform(transform)
             # dst.SetProjection(srs.exportToWkt())
             dst.SetProjection(elevations_lyr.crs().toWkt())
 
