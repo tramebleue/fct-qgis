@@ -197,6 +197,7 @@ class StreamToFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
         # Properly close GDAL resources
         flow_ds = None
         flow_acc_ds = None
+        elevations_ds = None
 
         return {
             self.OUTPUT: dest_id

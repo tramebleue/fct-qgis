@@ -35,6 +35,17 @@ class BurnFill(AlgorithmMetadata, QgsProcessingAlgorithm):
     Compute flow direction raster,
     using a variant of Wang and Liu priority flood algorithm
     that processes stream cell in before other cells.
+
+    References
+    -----
+
+    [1] Lindsay, J. B. (2016).
+        The Practice of DEM Stream Burning Revisited.
+        Earth Surface Processes and Landforms, 41(5), 658‑668. 
+        https://doi.org/10.1002/esp.3888
+
+    [2] WhiteboxGAT Java implementation (Last modified 2 Oct 2017)
+        https://github.com/jblindsay/whitebox-geospatial-analysis-tools/blob/038b9c7/resources/plugins/Scripts/TopologicalBreachBurn.groovy
     """
 
     METADATA = AlgorithmMetadata.read(__file__, 'BurnFill')
@@ -44,7 +55,7 @@ class BurnFill(AlgorithmMetadata, QgsProcessingAlgorithm):
     PK_FIELD = 'PK_FIELD'
     ZDELTA = 'ZDELTA'
     OUTPUT = 'OUTPUT'
-    BURNED = 'BURNED'
+    FILLED = 'FILLED'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
@@ -75,7 +86,7 @@ class BurnFill(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Flow Direction')))
 
         self.addParameter(QgsProcessingParameterRasterDestination(
-            self.BURNED,
+            self.FILLED,
             self.tr('Depression-Filled DEM'),
             optional=True,
             createByDefault=False))
@@ -98,7 +109,7 @@ class BurnFill(AlgorithmMetadata, QgsProcessingAlgorithm):
         pk_field = self.parameterAsString(parameters, self.PK_FIELD, context)
         zdelta = self.parameterAsDouble(parameters, self.ZDELTA, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
-        burned = self.parameterAsOutputLayer(parameters, self.BURNED, context)
+        filled = self.parameterAsOutputLayer(parameters, self.FILLED, context)
 
         elevations_ds = gdal.Open(elevations_lyr.dataProvider().dataSourceUri())
         elevations = elevations_ds.GetRasterBand(1).ReadAsArray()
@@ -143,14 +154,40 @@ class BurnFill(AlgorithmMetadata, QgsProcessingAlgorithm):
                             # Override with the smallest ID
                             streams[row, col] = link_id
 
-            col, row = linestring[-1]
-            junctions[row, col] = 1
+            # col, row = linestring[-1]
+            # junctions[row, col] = 1
 
-        # geotransform = elevations_ds.GetGeoTransform()
-        # rx = geotransform[1]
-        # ry = -geotransform[5]
+        feedback.setProgressText('Mark junctions cells')
 
-        feedback.setProgressText('Rasterize stream vectors')
+        # We cannot just mark last points as junctions
+        # because there can be collisions between links.
+        # The solution is to iterate from the end of each link,
+        # and find the first cell which has not been erased
+        # by another link :
+        # this is the junction to the rest of the network
+
+        for current, feature in enumerate(layer.getFeatures()):
+
+            if feedback.isCanceled():
+                break
+
+            feedback.setProgress(int(current*total))
+
+            link_id = feature.attribute(pk_field)
+
+            linestring = worldtopixel(np.array([
+                (point.x(), point.y())
+                for point in feature.geometry().asPolyline()
+            ]), transform)
+
+            for i in range(linestring.shape[0]-1, -1, -1):
+
+                px, py = linestring[i]
+                if streams[py, px] == link_id:
+                    junctions[py, px] = 1
+                    break
+
+        feedback.setProgressText('Priority flood')
 
         flow = burnfill(
             elevations,
@@ -186,12 +223,12 @@ class BurnFill(AlgorithmMetadata, QgsProcessingAlgorithm):
         # Properly close GDAL resources
         dst = None
 
-        if burned:
+        if filled:
 
-            feedback.pushInfo(self.tr('Write burned elevations ...'))
+            feedback.pushInfo(self.tr('Write modified elevations ...'))
 
             dst = driver.Create(
-                burned,
+                filled,
                 xsize=elevations_ds.RasterXSize,
                 ysize=elevations_ds.RasterYSize,
                 bands=1,
@@ -213,5 +250,5 @@ class BurnFill(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         return {
             self.OUTPUT: output,
-            self.BURNED: burned
+            self.FILLED: filled
         }
