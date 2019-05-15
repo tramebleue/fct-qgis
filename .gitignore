@@ -9,6 +9,8 @@
 python3/
 docs/algorithms/
 docs/workflows/
+alien/
+release/
 site/
 cython/terrain/*.cpp
 tests/testdata/*.aux.xml

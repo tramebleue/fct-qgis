@@ -221,6 +221,7 @@ class LocatePointAlongNetwork(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
                 ])
 
             features.append(transformed)
+            
             # nearestNeighbor(point, 1) returns eventually more than one result (sic)
             break
 

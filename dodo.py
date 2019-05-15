@@ -262,6 +262,7 @@ def task_zip():
 
     return {
         'actions': [
+            (copyfiles, ('alien', os.path.join(fct_target_folder(), 'lib'))),
             make_plugin_zip
         ],
         'task_dep': ['clean_build', 'install'],

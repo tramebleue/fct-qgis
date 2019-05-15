@@ -26,6 +26,7 @@ category=Vector
 changelog=
   1.0.3
     - Current dev version
+    - Terrain Analysis algorithms
   1.0.2
     - Add workflows
     - Bug fixes
