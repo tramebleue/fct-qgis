@@ -87,7 +87,7 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
         # TODO check target dtype
         target = np.float32(target_ds.GetRasterBand(1).ReadAsArray())
 
-        watershed(flow, target, nodata, feedback=feedback)
+        watershed(flow, target, feedback=feedback)
         
         if feedback.isCanceled():
             feedback.reportError(self.tr('Aborted'), True)

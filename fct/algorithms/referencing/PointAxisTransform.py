@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Locate Point Along Linear Reference Network
+Axis Transform
 
 ***************************************************************************
 *                                                                         *
@@ -19,7 +19,9 @@ from qgis.PyQt.QtCore import (
 
 from qgis.core import (
     QgsApplication,
+    QgsCoordinateReferenceSystem,
     QgsExpression,
+    QgsLineString,
     QgsGeometry,
     QgsFeatureSink,
     QgsFeatureRequest,
@@ -94,13 +96,26 @@ def nearest_point_on_linestring(linestring, point, vertex):
 
     return before, point_geometry.distance(nearest_point), nearest_point.asPoint()
 
-class LocatePointAlongNetwork(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
+def signed_distance(a, b, c):
+    """
+    Return the signed distance from point C to segment [AB]
+
+    a, b, c: QgsPoint
+    """
+
+    ab = QgsPointXY(b) - QgsPointXY(a)
+    ac = QgsPointXY(c) - QgsPointXY(a)
+    length_ab = ab.length()
+
+    return ab.crossProduct(ac) / length_ab if length_ab > 0.0 else ac.length()
+
+class PointAxisTransform(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
     """
     Calculate linear referencing coordinate (axis, measure) for each input point
     using the given oriented and measured line network.
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'LocatePointAlongNetwork')
+    METADATA = AlgorithmMetadata.read(__file__, 'PointAxisTransform')
 
     LINEAR_REFERENCE = 'LINEAR_REFERENCE'
     AXIS_PK_FIELD = 'AXIS_ID_FIELD'
@@ -123,105 +138,79 @@ class LocatePointAlongNetwork(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
         return [QgsProcessing.TypeVectorPoint]
 
     def outputName(self): #pylint: disable=missing-docstring
-        return self.tr('Point Location')
+        return self.tr('Transformed')
 
     def outputWkbType(self, inputWkbType): #pylint: disable=no-self-use,missing-docstring
         return QgsWkbTypes.addM(inputWkbType)
 
     def outputFields(self, inputFields): #pylint: disable=no-self-use,missing-docstring
-        appendUniqueField(QgsField('AXIS', QVariant.Int), inputFields)
-        appendUniqueField(QgsField('MLOC', QVariant.Double), inputFields)
+        appendUniqueField(QgsField('RX', QVariant.Double), inputFields)
+        appendUniqueField(QgsField('RY', QVariant.Double), inputFields)
         return inputFields
+
+    # def outputCrs(self, inputCrs): #pylint: disable=no-self-use,missing-docstring,unused-argument
+    #     return QgsCoordinateReferenceSystem.fromEpsgId(6505)
 
     def supportInPlaceEdit(self, layer): #pylint: disable=no-self-use,missing-docstring,unused-argument
         return False
 
     def prepareAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        layer = self.parameterAsSource(parameters, 'INPUT', context)
         ref_layer = self.parameterAsSource(parameters, self.LINEAR_REFERENCE, context)
         axis_pk_field = self.parameterAsString(parameters, self.AXIS_PK_FIELD, context)
+
+        if QgsWkbTypes.isMultiType(layer.wkbType()):
+            feedback.reportError(self.tr('MultiLineString are not supported'), True)
+            return False
 
         if not QgsWkbTypes.hasM(ref_layer.wkbType()):
             feedback.reportError(self.tr('Linear reference must have M coordinate.'), True)
             return False
 
-        feedback.setProgressText('Build reference point index')
-        total = 100.0 / ref_layer.featureCount() if ref_layer.featureCount() else 0
-        temp_uri = "point?crs=%s&field=gid:integer&field=axis:integer&field=vertex:integer" % ref_layer.sourceCrs().authid().lower()
-        temp_layer = QgsVectorLayer(temp_uri, "RefPoints", "memory")
-        temp_layer.startEditing()
-        gid = 1
-
-        for current, feature in enumerate(ref_layer.getFeatures()):
-
-            if feedback.isCanceled():
-                return False
-
-            feedback.setProgress(int(current*total))
-
-            axis = feature.id()
-
-            for current_vertex, vertex in enumerate(feature.geometry().asPolyline()):
-                feature = QgsFeature()
-                feature.setGeometry(QgsGeometry.fromPointXY(vertex))
-                feature.setAttributes([
-                    gid,
-                    axis,
-                    current_vertex
-                ])
-                temp_layer.addFeature(feature)
-                gid += 1
-
-        temp_layer.commitChanges()
-
         self.ref_layer = ref_layer
         self.axis_pk_field = axis_pk_field
-        self.index_layer = temp_layer
-        self.nearest_index = QgsSpatialIndex(temp_layer.getFeatures())
+        # self.index_layer = temp_layer
+        self.nearest_index = QgsSpatialIndex(ref_layer.getFeatures())
 
         return True
 
     def processFeature(self, feature, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        point = feature.geometry().asPoint()
-        request = QgsFeatureRequest().setFilterFids(self.nearest_index.nearestNeighbor(point, 1))
-        features = list()
+        geometry = feature.geometry()
+        point = geometry.vertexAt(0)
 
-        for nearest in self.index_layer.getFeatures(request):
+        pointxy = QgsPointXY(point)
+        request = QgsFeatureRequest().setFilterFids(self.nearest_index.nearestNeighbor(pointxy, 10))
+        min_distance = float('inf')
+        nearest = None
 
-            axis = nearest.attribute('axis')
-            vertex = nearest.attribute('vertex')
-            axis_feature = [f for f in self.ref_layer.getFeatures(QgsFeatureRequest().setFilterFids([axis]))][0]
-            axis_geometry = axis_feature.geometry()
+        for candidate in self.ref_layer.getFeatures(request):
 
-            before_vertex, distance, nearest_point = nearest_point_on_linestring(axis_geometry.asPolyline(), point, vertex)
+            distance = candidate.geometry().distance(geometry)
+            if distance < min_distance:
+                min_distance = distance
+                nearest = candidate.geometry()
 
-            point_before = axis_geometry.vertexAt(before_vertex)
-            point_after = axis_geometry.vertexAt(before_vertex+1)
-            segment_length = point_after.distance(point_before)
+        if nearest:
 
-            if segment_length > 0:
+            point_before = nearest.vertexAt(0)
+            point_after = nearest.vertexAt(1)
+            # nearest_point = nearest.nearestPoint(geometry)
+            measure = nearest.lineLocatePoint(geometry)
 
-                z = point_before.z() + (point_after.z() - point_before.z()) * distance / segment_length
-                m = point_before.m() + (point_after.m() - point_before.m()) * distance / segment_length
+            x = point_before.m() + (point_after.m() - point_before.m()) * measure / nearest.length()
+            y = signed_distance(point_before, point_after, point)
 
-            else:
-
-                z = point_before.z()
-                m = point_before.m()
-
-            location = QgsPoint(point.x(), point.y(), z, m)
-            geometry = QgsGeometry(location)
             transformed = QgsFeature()
+            transformed.setAttributes(feature.attributes() + [
+                x,
+                y
+            ])
             transformed.setGeometry(geometry)
-            transformed.setAttributes(
-                feature.attributes() + [
-                    axis_feature.attribute(self.axis_pk_field),
-                    m
-                ])
 
-            features.append(transformed)
-            # nearestNeighbor(point, 1) returns eventually more than one result (sic)
-            break
+            return [transformed]
 
-        return features
+        else:
+
+            return []
