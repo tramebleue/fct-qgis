@@ -36,7 +36,7 @@
     
     
       
-        <title>Vectorize Streams</title>
+        <title>Stream To Feature</title>
       
     
     
@@ -104,7 +104,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#vectorize-streams" tabindex="1" class="md-skip">
+      <a href="#stream-to-feature" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -129,7 +129,7 @@
               Fluvial Corridor Toolbox Documentation
             </span>
             <span class="md-header-nav__topic">
-              Vectorize Streams
+              Stream To Feature
             </span>
           
         </div>
@@ -363,8 +363,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../hydrography/ExportMainDrain/" title="Export Main Drain" class="md-nav__link">
-      Export Main Drain
+    <a href="../../hydrography/ExportMainDrain.md" title="None" class="md-nav__link">
+      None
     </a>
   </li>
 
@@ -399,8 +399,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../hydrography/LengthOrder/" title="Hack (Length-wise) Stream Order" class="md-nav__link">
-      Hack (Length-wise) Stream Order
+    <a href="../../hydrography/LengthOrder.md" title="None" class="md-nav__link">
+      None
     </a>
   </li>
 
@@ -423,8 +423,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../hydrography/MeasureNetworkFromOutlet/" title="Measure Network from Outlet" class="md-nav__link">
-      Measure Network from Outlet
+    <a href="../../hydrography/MeasureNetworkFromOutlet.md" title="None" class="md-nav__link">
+      None
     </a>
   </li>
 
@@ -483,8 +483,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../hydrography/StrahlerOrder/" title="Horton-Strahler Stream Order" class="md-nav__link">
-      Horton-Strahler Stream Order
+    <a href="../../hydrography/StrahlerOrder/" title="Strahler Stream Order" class="md-nav__link">
+      Strahler Stream Order
     </a>
   </li>
 
@@ -495,8 +495,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../hydrography/UpstreamChannelLength/" title="Upstream Channel Length" class="md-nav__link">
-      Upstream Channel Length
+    <a href="../../hydrography/UpstreamChannelLength.md" title="None" class="md-nav__link">
+      None
     </a>
   </li>
 
@@ -578,11 +578,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Vectorize Streams
+        Stream To Feature
       </label>
     
-    <a href="./" title="Vectorize Streams" class="md-nav__link md-nav__link--active">
-      Vectorize Streams
+    <a href="./" title="Stream To Feature" class="md-nav__link md-nav__link--active">
+      Stream To Feature
     </a>
     
       
@@ -633,8 +633,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../TopologicalStreamBurn/" title="Topological Stream Burn" class="md-nav__link">
-      Topological Stream Burn
+    <a href="../TopologicalStreamBurn.md" title="None" class="md-nav__link">
+      None
     </a>
   </li>
 
@@ -1525,9 +1525,9 @@
                   <a href="https://github.com/tramebleue/fct/edit/master/docs/algorithms/terrain/StreamToFeature.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="vectorize-streams">Vectorize Streams<a class="headerlink" href="#vectorize-streams" title="Permanent link">&para;</a></h1>
+                <h1 id="stream-to-feature">Stream To Feature<a class="headerlink" href="#stream-to-feature" title="Permanent link">&para;</a></h1>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Vectorize Stream Features</p>
+<p>Vectorize Stream Features from Flow Direction/Accumulation Rasters</p>
 <p>Tags:<br/><code>hydrography</code>, <code>raster</code>, <code>feature extraction</code></p>
 
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
@@ -1545,8 +1545,8 @@
 
         <tr>
             <td>
-                Streams Raster</br>
-                <code>STREAMS</code>
+                Flow Accumulation</br>
+                <code>FLOW_ACC</code>
 
             </td>
             <td>
@@ -1572,6 +1572,40 @@
             </td>
             <td>
                 QgsProcessingParameterRasterLayer
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Elevations</br>
+                <code>ELEVATIONS</code>
+                (Optional)
+            </td>
+            <td>
+
+
+
+            </td>
+            <td>
+                QgsProcessingParameterRasterLayer
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Minimum Contributing Area (km2)</br>
+                <code>MIN_ACC</code>
+
+            </td>
+            <td>
+
+
+                Default value: <code>5.0</code>
+
+
+            </td>
+            <td>
+                QgsProcessingParameterNumber
             </td>
         </tr>
 
@@ -1630,13 +1664,13 @@
           </a>
         
         
-          <a href="../TopologicalStreamBurn/" title="Topological Stream Burn" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../Watershed/" title="Watershed Analysis" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Topological Stream Burn
+                Watershed Analysis
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
