@@ -14,4 +14,4 @@ Disaggregation Workflows
 """
 
 from .PolylineDisaggregation import PolylineDisaggregation
-from .PolylineDisaggregation import Sequencing
+from .Sequencing import Sequencing
