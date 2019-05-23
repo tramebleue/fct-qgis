@@ -1,0 +1,207 @@
+<!DOCTYPE model>
+<Option type="Map">
+  <Option type="Map" name="children">
+    <Option type="Map" name="fct:fixlinkorientation_1">
+      <Option type="bool" name="active" value="true"/>
+      <Option name="alg_config"/>
+      <Option type="QString" name="alg_id" value="fct:fixlinkorientation"/>
+      <Option type="QString" name="component_description" value="Check/Fix Link Orientation"/>
+      <Option type="double" name="component_pos_x" value="574"/>
+      <Option type="double" name="component_pos_y" value="553"/>
+      <Option name="dependencies"/>
+      <Option type="QString" name="id" value="fct:fixlinkorientation_1"/>
+      <Option type="Map" name="outputs">
+        <Option type="Map" name="Oriented Network">
+          <Option type="QString" name="child_id" value="fct:fixlinkorientation_1"/>
+          <Option type="QString" name="component_description" value="Oriented Network"/>
+          <Option type="double" name="component_pos_x" value="774"/>
+          <Option type="double" name="component_pos_y" value="598"/>
+          <Option type="Map" name="default_value">
+            <Option type="QString" name="class" value="QgsProcessingOutputLayerDefinition"/>
+            <Option type="Map" name="create_options">
+              <Option type="QString" name="fileEncoding" value="System"/>
+            </Option>
+            <Option type="Map" name="sink">
+              <Option type="bool" name="active" value="true"/>
+              <Option type="int" name="type" value="1"/>
+              <Option type="QString" name="val" value="memory:"/>
+            </Option>
+          </Option>
+          <Option type="bool" name="mandatory" value="true"/>
+          <Option type="QString" name="name" value="Oriented Network"/>
+          <Option type="QString" name="output_name" value="OUTPUT"/>
+        </Option>
+      </Option>
+      <Option type="bool" name="outputs_collapsed" value="false"/>
+      <Option type="bool" name="parameters_collapsed" value="true"/>
+      <Option type="Map" name="params">
+        <Option type="List" name="DRYRUN">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="bool" name="static_value" value="false"/>
+          </Option>
+        </Option>
+        <Option type="List" name="FROM_NODE_FIELD">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="QString" name="static_value" value="NODEA"/>
+          </Option>
+        </Option>
+        <Option type="List" name="INPUT">
+          <Option type="Map">
+            <Option type="QString" name="child_id" value="fct:identifynetworknodes_1"/>
+            <Option type="QString" name="output_name" value="OUTPUT"/>
+            <Option type="int" name="source" value="1"/>
+          </Option>
+        </Option>
+        <Option type="List" name="NODES">
+          <Option type="Map">
+            <Option type="QString" name="child_id" value="native:setzfromraster_1"/>
+            <Option type="QString" name="output_name" value="OUTPUT"/>
+            <Option type="int" name="source" value="1"/>
+          </Option>
+        </Option>
+        <Option type="List" name="NODE_PK_FIELD">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="QString" name="static_value" value="GID"/>
+          </Option>
+        </Option>
+        <Option type="List" name="OUTLETS_DEFINITION">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="int" name="static_value" value="0"/>
+          </Option>
+        </Option>
+        <Option type="List" name="TO_NODE_FIELD">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="QString" name="static_value" value="NODEB"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
+    <Option type="Map" name="fct:identifynetworknodes_1">
+      <Option type="bool" name="active" value="true"/>
+      <Option name="alg_config"/>
+      <Option type="QString" name="alg_id" value="fct:identifynetworknodes"/>
+      <Option type="QString" name="component_description" value="Identify Network Nodes"/>
+      <Option type="double" name="component_pos_x" value="374"/>
+      <Option type="double" name="component_pos_y" value="194"/>
+      <Option name="dependencies"/>
+      <Option type="QString" name="id" value="fct:identifynetworknodes_1"/>
+      <Option name="outputs"/>
+      <Option type="bool" name="outputs_collapsed" value="true"/>
+      <Option type="bool" name="parameters_collapsed" value="true"/>
+      <Option type="Map" name="params">
+        <Option type="List" name="INPUT">
+          <Option type="Map">
+            <Option type="QString" name="parameter_name" value="polyline"/>
+            <Option type="int" name="source" value="0"/>
+          </Option>
+        </Option>
+        <Option type="List" name="QUANTIZATION">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="int" name="static_value" value="100000000"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
+    <Option type="Map" name="native:setzfromraster_1">
+      <Option type="bool" name="active" value="true"/>
+      <Option name="alg_config"/>
+      <Option type="QString" name="alg_id" value="native:setzfromraster"/>
+      <Option type="QString" name="component_description" value="Drape (set z-value from raster)"/>
+      <Option type="double" name="component_pos_x" value="451"/>
+      <Option type="double" name="component_pos_y" value="368"/>
+      <Option name="dependencies"/>
+      <Option type="QString" name="id" value="native:setzfromraster_1"/>
+      <Option name="outputs"/>
+      <Option type="bool" name="outputs_collapsed" value="true"/>
+      <Option type="bool" name="parameters_collapsed" value="true"/>
+      <Option type="Map" name="params">
+        <Option type="List" name="BAND">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="QString" name="static_value" value="1"/>
+          </Option>
+        </Option>
+        <Option type="List" name="INPUT">
+          <Option type="Map">
+            <Option type="QString" name="child_id" value="fct:identifynetworknodes_1"/>
+            <Option type="QString" name="output_name" value="NODES"/>
+            <Option type="int" name="source" value="1"/>
+          </Option>
+        </Option>
+        <Option type="List" name="NODATA">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="double" name="static_value" value="0"/>
+          </Option>
+        </Option>
+        <Option type="List" name="RASTER">
+          <Option type="Map">
+            <Option type="QString" name="parameter_name" value="rawdem"/>
+            <Option type="int" name="source" value="0"/>
+          </Option>
+        </Option>
+        <Option type="List" name="SCALE">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="double" name="static_value" value="1"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
+  </Option>
+  <Option name="help"/>
+  <Option type="QString" name="model_group" value=""/>
+  <Option type="QString" name="model_name" value="Sequencing"/>
+  <Option type="Map" name="parameterDefinitions">
+    <Option type="Map" name="fct:fixlinkorientation_1:Oriented Network">
+      <Option type="bool" name="create_by_default" value="true"/>
+      <Option type="int" name="data_type" value="-1"/>
+      <Option name="default"/>
+      <Option type="QString" name="description" value="Oriented Network"/>
+      <Option type="int" name="flags" value="0"/>
+      <Option name="metadata"/>
+      <Option type="QString" name="name" value="fct:fixlinkorientation_1:Oriented Network"/>
+      <Option type="QString" name="parameter_type" value="sink"/>
+      <Option type="bool" name="supports_non_file_outputs" value="true"/>
+    </Option>
+    <Option type="Map" name="polyline">
+      <Option type="List" name="data_types">
+        <Option type="int" value="1"/>
+      </Option>
+      <Option type="invalid" name="default"/>
+      <Option type="QString" name="description" value="Polyline"/>
+      <Option type="int" name="flags" value="0"/>
+      <Option name="metadata"/>
+      <Option type="QString" name="name" value="polyline"/>
+      <Option type="QString" name="parameter_type" value="vector"/>
+    </Option>
+    <Option type="Map" name="rawdem">
+      <Option type="invalid" name="default"/>
+      <Option type="QString" name="description" value="Raw DEM"/>
+      <Option type="int" name="flags" value="0"/>
+      <Option name="metadata"/>
+      <Option type="QString" name="name" value="rawdem"/>
+      <Option type="QString" name="parameter_type" value="raster"/>
+    </Option>
+  </Option>
+  <Option type="Map" name="parameters">
+    <Option type="Map" name="polyline">
+      <Option type="QString" name="component_description" value="polyline"/>
+      <Option type="double" name="component_pos_x" value="113"/>
+      <Option type="double" name="component_pos_y" value="134"/>
+      <Option type="QString" name="name" value="polyline"/>
+    </Option>
+    <Option type="Map" name="rawdem">
+      <Option type="QString" name="component_description" value="rawdem"/>
+      <Option type="double" name="component_pos_x" value="111"/>
+      <Option type="double" name="component_pos_y" value="294"/>
+      <Option type="QString" name="name" value="rawdem"/>
+    </Option>
+  </Option>
+</Option>

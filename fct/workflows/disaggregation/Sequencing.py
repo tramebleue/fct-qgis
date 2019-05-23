@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Disaggregation Workflows
+Sequencing
 
 ***************************************************************************
 *                                                                         *
@@ -13,5 +13,21 @@ Disaggregation Workflows
 ***************************************************************************
 """
 
-from .PolylineDisaggregation import PolylineDisaggregation
-from .PolylineDisaggregation import Sequencing
+import os
+
+from qgis.core import ( # pylint:disable=no-name-in-module
+    QgsProcessingModelAlgorithm
+)
+
+from ..metadata import AlgorithmMetadata
+
+class Sequencing(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+    """ 
+    Sequencing
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.METADATA = AlgorithmMetadata.read(__file__, type(self).__name__)
+        self.fromFile(os.path.join(os.path.dirname(__file__), type(self).__name__ + '.model3'))

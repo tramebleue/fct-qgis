@@ -132,7 +132,7 @@ def task_install():
             (copyfiles, ('fct', fct_target_folder())),
             copy_extension
         ],
-        'task_dep': ['uninstall', 'extension'],
+        'task_dep': ['uninstall'],
         'verbosity': 2
     }
 
