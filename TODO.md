@@ -143,7 +143,7 @@
             * Topological stream burn
             * Vectorize streams
             * Orient streams ?
-        * [ ] Valley bottom
+        * [x] Valley bottom
             * RelativeDEM
             * ValleyBottom
     * [ ] Disaggregation Processes
@@ -151,7 +151,7 @@
         * [ ] Segmentation
             * Disaggregate Polygon
             * To complete with disaggregate line
-        * [ ] Sequencing
+        * [x] Sequencing
             * Identifey network nodes
             * Drape
             * Check/Fix link orientation

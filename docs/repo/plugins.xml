@@ -1,0 +1,28 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<?xml-stylesheet type="text/xsl" href="plugins.xsl" ?>
+<plugins>
+    <pyqgis_plugin name="Fluvial Corridor Toolbox" version="1.0.3" plugin_id="1">
+        <description><![CDATA[Fluvial Corridor Toolbox]]></description>
+        <version>1.0.3</version>
+        <qgis_minimum_version>3.4.0</qgis_minimum_version>
+        <qgis_maximum_version>3.99.0</qgis_maximum_version>
+        <homepage><![CDATA[https://github.com/tramebleue/fct]]></homepage>
+        <file_name>FluvialCorridorToolbox.1.0.3.zip</file_name>
+        <icon>https://github.com/tramebleue/fct/raw/master/fct/images/icon.png</icon>
+        <author_name><![CDATA[Geopeka]]></author_name>
+        <download_url>https://github.com/tramebleue/fct/releases/download/v1.0.3/FluvialCorridorToolbox.1.0.3.zip</download_url>
+        <uploaded_by><![CDATA[sdunesme]]></uploaded_by>
+        <create_date>2019-05-15</create_date>
+        <update_date>2019-05-15</update_date>
+        <experimental>True</experimental>
+        <deprecated>False</deprecated>
+        <tracker><![CDATA[]]></tracker>
+        <repository><![CDATA[https://github.com/tramebleue/fct.git]]></repository>
+        <tags><![CDATA[fluvial, vector, analysis, processing]]></tags>
+        <downloads>1</downloads>
+        <average_vote>5</average_vote>
+        <rating_votes>1</rating_votes>
+        <external_dependencies></external_dependencies>
+        <server>False</server>
+    </pyqgis_plugin>
+</plugins>
