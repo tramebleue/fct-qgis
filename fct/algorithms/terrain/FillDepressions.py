@@ -67,7 +67,9 @@ class FillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.FLOW,
-            self.tr('Flow Direction (D8)')))
+            self.tr('Flow Direction (D8)'),
+            optional=True,
+            createByDefault=False))
 
     def canExecute(self): #pylint: disable=unused-argument,missing-docstring
 
@@ -125,21 +127,29 @@ class FillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
         dst.GetRasterBand(1).WriteArray(elevations)
         dst.GetRasterBand(1).SetNoDataValue(nodata)
 
+        # Properly close GDAL resources
+        dst = None
+
         feedback.setProgress(50)
         feedback.pushInfo(self.tr('Write Flow Direction'))
 
-        dst = driver.Create(
-            flow_output,
-            xsize=elevations_ds.RasterXSize,
-            ysize=elevations_ds.RasterYSize,
-            bands=1,
-            eType=gdal.GDT_Int16,
-            options=['TILED=YES', 'COMPRESS=DEFLATE'])
+        if flow_output:
 
-        dst.SetGeoTransform(transform)
-        dst.SetProjection(elevations_lyr.crs().toWkt())
-        dst.GetRasterBand(1).WriteArray(flow)
-        dst.GetRasterBand(1).SetNoDataValue(-1)
+            dst = driver.Create(
+                flow_output,
+                xsize=elevations_ds.RasterXSize,
+                ysize=elevations_ds.RasterYSize,
+                bands=1,
+                eType=gdal.GDT_Int16,
+                options=['TILED=YES', 'COMPRESS=DEFLATE'])
+
+            dst.SetGeoTransform(transform)
+            dst.SetProjection(elevations_lyr.crs().toWkt())
+            dst.GetRasterBand(1).WriteArray(flow)
+            dst.GetRasterBand(1).SetNoDataValue(-1)
+
+            # Properly close GDAL resources
+            dst = None
 
         feedback.setProgress(100)
 

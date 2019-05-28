@@ -28,6 +28,7 @@ from .RandomPoissonDiscSamples import RandomPoissonDiscSamples
 from .RegularHexSamples import RegularHexSamples
 from .RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from .SciPyVoronoiPolygons import SciPyVoronoiPolygons
+from .Segmentize import Segmentize
 from .SelectByDistance import SelectByDistance
 from .SelectNearestFeature import SelectNearestFeature
 from .SetMCoordFromMeasureField import SetMCoordFromMeasureField
