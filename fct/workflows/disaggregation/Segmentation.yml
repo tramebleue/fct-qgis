@@ -1,11 +1,58 @@
 displayName: Segmentation
 group: disaggregation
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
+summary: |
+  Disaggregate fluvial units (polygons or polylines) in DGO of chosen size.
+
+description: |
+  Prior to assess metrics to characterize a fluvial system, fluvial units 
+  have to be disaggregated. This step enables to discretize a continuum 
+  with a constant length in order to provide a higher resolution for 
+  characterizing fluvial units. The constant length must be set precisely 
+  to ensure spatial trends or relationships between several variables to be 
+  correctly detected either at a network scale or at a local scale. Spatial 
+  disaggregation can be run both for linear (e.g. hydrographic network, 
+  centerline) and polygon feature (valley bottom, active channel).
+
+  [@roux2014]
+
+  Algorithm:
+    
+      if input type is polyline
+        run segmentize algorithm
+
+      elif input type is polygon
+        if a centerline is provided
+          calculate a AXIS FID field on centerline
+          run disaggregate polygon algorithm
+
 tags:
   - dgo
   - polygon
   - polyline
   - segmentation
   - transect
+  - vector
+  - disaggregation
+  - centerline
+
+parameters:
+  INPUT:
+    type: Polygon, MultiPolygon, LineString or MultiLineString
+    description: The feature to be segmented
+  CENTERLINE:
+    type: LineString or MultiLineString
+    description: |
+      Useful in case of a polygon feature to segment and
+      relates to the centerline of this input feature.
+  STEP:
+    type: Number
+    description: |
+      User-defined constant length used to disaggregate
+      the input feature (in map unit).
+  OUTPUT:
+    type: Polygon or LineString (depend of input type)
+    description: The segmented output feature.
+
+seealso:
+  - "[Disaggregate Polygon](../../../algorithms/spatialcomponents/DisaggregatePolygon/)"
+  - "[Segmentize](../../../algorithms/vector/Segmentize/)"

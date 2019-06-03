@@ -1,7 +1,46 @@
 displayName: Sequencing
 group: disaggregation
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
+summary: |
+  Check and correct ordination and orientation of a stream network using a DEM.
+
+description: |
+  Mutliscale characterization of fluvial system is based on fluvial linear such 
+  as the hydrographic network or the centerline network. To ensure a consistent 
+  process, one of the necessary conditions is that networks must be (i) oriented, 
+  (ii) connected and (iii) relevant of the in-field configuration. Sequencing tool 
+  aiming at ordering and, if it is needed, flipping streams of a network, to ensure :
+  
+  1. a good flow direction from upstream to downstream.
+  2. a good ordination of streams in order to spatially and hierarchically located them within a network.
+
+  [@roux2014]
+
+  Algorithm:
+
+      run Identify Network Nodes algorithm with input lines
+      run Drape algorithm with identified nodes and input DEM
+      run Check/Fix Link Orientation algorithm with draped nodes and identified lines
+
 tags:
   - hydrography
+  - ordination
+  - orientation
+  - network
+  - polyline
+  - dem
+
+parameters:
+  polyline:
+    type: LineString or MultiLineString
+    description: The linear network (or linear feature) which needs to be sequenced.
+  rawdem:
+    type: Raster
+    description: The raw DEM covering all the input network.
+  Oriented Network:
+    type: LineString
+    description: The output sequenced linear network (or linear feature).
+
+seealso:
+  - "[Identify Network Nodes](../../../algorithms/hydrography/IdentifyNetworkNodes/)"
+  - "[Drape Vectors](../../../algorithms/raster/DrapeVectors/)"
+  - "[Check/Fix Link Orientation](../../../algorithms/hydrography/FixLinkOrientation/)"

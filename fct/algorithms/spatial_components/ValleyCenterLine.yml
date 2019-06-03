@@ -13,12 +13,13 @@ description: |
 
   Algorithm:
   
-  - Intersect the input polygon boundaries with the stream network
-  - Keep the most distant resulting points (upstream and downstream points)
-  - Cut the input polygon boundaries with the upstream and downstream points (get two polygon sides)
-  - Compute Voronoi polygons with points on the sides and dissolve it on each side
-  - Cut the Voronoi lines with the input polygon
-  - Remove duplicate lines
+      Intersect the input polygon boundaries with the stream network
+      Keep the most distant resulting points (upstream and downstream points)
+      Cut the input polygon boundaries with the upstream and downstream points (get two polygon sides)
+      Compute Voronoi polygons with points on the sides and dissolve it on each side
+      Cut the Voronoi lines with the input polygon
+      Remove duplicate lines
+      
 tags:
   - vector
   - polygon

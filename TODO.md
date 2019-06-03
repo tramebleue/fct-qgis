@@ -146,9 +146,9 @@
         * [x] Valley bottom
             * RelativeDEM
             * ValleyBottom
-    * [ ] Disaggregation Processes
+    * [x] Disaggregation Processes
         * [x] Polyline disaggregation (=Planform metrics)
-        * [ ] Segmentation
+        * [x] Segmentation
             * Disaggregate Polygon
             * To complete with disaggregate line
         * [x] Sequencing

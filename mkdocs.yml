@@ -44,24 +44,31 @@ nav:
       - algorithms/hydrography/AggregateStreamSegments.md
       - algorithms/hydrography/AggregateUndirectedLines.md
       - algorithms/hydrography/ConnectLines.md
-      - algorithms/hydrography/ExportMainDrain.md
       - algorithms/hydrography/FixLinkOrientation.md
+      - algorithms/hydrography/HackOrder.md
       - algorithms/hydrography/IdentifyNetworkNodes.md
-      - algorithms/hydrography/LengthOrder.md
       - algorithms/hydrography/LongestPathInDirectedGraph.md
-      - algorithms/hydrography/MeasureNetworkFromOutlet.md
+      - algorithms/hydrography/MergeShortLinks.md
       - algorithms/hydrography/NetworkNodes.md
+      - algorithms/hydrography/PrincipalStem.md
       - algorithms/hydrography/RasterizeStreamNetwork.md
       - algorithms/hydrography/ReverseFlowDirection.md
       - algorithms/hydrography/SelectConnectedComponents.md
       - algorithms/hydrography/StrahlerOrder.md
-      - algorithms/hydrography/UpstreamChannelLength.md
+      - algorithms/hydrography/TotalUpstreamChannelLength.md
     - Terrain Analysis:
       - Index: algorithms/terrain/index.md
+      - algorithms/terrain/BurnFill.md
       - algorithms/terrain/DetrendDEM.md
+      - algorithms/terrain/DistanceToStream.md
+      - algorithms/terrain/FillDepressions.md
       - algorithms/terrain/FlowAccumulation.md
+      - algorithms/terrain/FlowDirection.md
+      - algorithms/terrain/RelativeDEM.md
+      - algorithms/terrain/RelativeDEMByFlow.md
+      - algorithms/terrain/ResolveFlats.md
       - algorithms/terrain/StreamToFeature.md
-      - algorithms/terrain/TopologicalStreamBurn.md
+      - algorithms/terrain/StreamToRaster.md
       - algorithms/terrain/Watershed.md
     - Spatial Components:
       - Index: algorithms/spatialcomponents/index.md
@@ -78,21 +85,35 @@ nav:
       - algorithms/metrics/OrthogonalTransects.md
       - algorithms/metrics/PlanformMetrics.md
       - algorithms/metrics/PolygonWidth.md
+    - Spatial Reference:
+      - Index: algorithms/referencing/index.md
+      - algorithms/referencing/AxisTransform.md
+      - algorithms/referencing/LocatePointAlongNetwork.md
+      - algorithms/referencing/LocatePolygonAlongNetwork.md
+      - algorithms/referencing/MeasureNetworkFromOutlet.md
+      - algorithms/referencing/PointAxisTransform.md
     - Tools for Rasters:
       - Index: algorithms/raster/index.md
+      - algorithms/raster/AnisotropicDiffusionFilter.md
       - algorithms/raster/ApplyMask.md
       - algorithms/raster/BinaryClosing.md
+      - algorithms/raster/BurnLineStringZ.md
       - algorithms/raster/DifferentialRasterThreshold.md
       - algorithms/raster/DrapeVectors.md
       - algorithms/raster/FocalMean.md
       - algorithms/raster/RasterDifference.md
       - algorithms/raster/RasterInfo.md
+      - algorithms/raster/SimpleRasterFilter.md
+      - algorithms/raster/WienerRasterFilter.md
     - Tools for Vectors:
       - Index: algorithms/vector/index.md
+      - algorithms/vector/CutAndRotateRing.md
       - algorithms/vector/DistanceToOtherLayer.md
+      - algorithms/vector/ExtractCoordinatesAsFields.md
       - algorithms/vector/LineMidpoints.md
       - algorithms/vector/LineStringBufferByM.md
       - algorithms/vector/LocatePointAlongLine.md
+      - algorithms/vector/MonotonicZ.md
       - algorithms/vector/PointsAlongPolygon.md
       - algorithms/vector/PointsInPolygon.md
       - algorithms/vector/PointsMedialAxis.md
@@ -101,6 +122,7 @@ nav:
       - algorithms/vector/RegularHexSamples.md
       - algorithms/vector/RemoveSmallPolygonalObjects.md
       - algorithms/vector/SciPyVoronoiPolygons.md
+      - algorithms/vector/Segmentize.md
       - algorithms/vector/SelectByDistance.md
       - algorithms/vector/SelectNearestFeature.md
       - algorithms/vector/SetMCoordFromMeasureField.md
@@ -108,13 +130,17 @@ nav:
       - algorithms/vector/TransformCoordinateByExpression.md
       - algorithms/vector/UniquePoints.md
       - algorithms/vector/VariableLengthTransects.md
+      - algorithms/vector/WienerCoordinateFilter.md
   - Workflows Reference:
     - 1- Spatial Components:
       - Index: workflows/spatialcomponents/index.md
       - workflows/spatialcomponents/OrientedCenterline.md
+      - workflows/spatialcomponents/ValleyBottom.md
     - 2- Disaggregation Processes:
       - Index: workflows/disaggregation/index.md
       - workflows/disaggregation/PolylineDisaggregation.md
+      - workflows/disaggregation/Segmentation.md
+      - workflows/disaggregation/Sequencing.md
     - 3- Metrics:
       - Index: workflows/metrics/index.md
       - workflows/metrics/Morphometry.md

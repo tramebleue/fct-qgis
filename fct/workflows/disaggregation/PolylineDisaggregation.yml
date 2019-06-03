@@ -1,7 +1,52 @@
 displayName: Polyline disaggregation
 group: disaggregation
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
+summary: |
+  Disaggregate input polyline on inflection points and calculate bendlength, 
+  wavelength, sinuosity, amplitude, omega0 and omega1 of each disaggregated segment.
+  Return also attributed inflexion points and inflection lines.
+
+description: |
+  In order to characterize fluvial corridors thanks to a set of metrics, 
+  it is necessary to create entities which do not necessarily have a 
+  physical reality. It is the case of the inflection line, used during 
+  a set of planimetric metrics assessment such as the streamline sinuosity 
+  or the half-amplitude of bends. The inflection line of a curve is 
+  defined as the line passing through its inflection points. 
+
+  [@roux2014]
+
+  Algorithm: 
+
+      run multipart to singlepart on network
+      simplify network (Douglas-Peucker method) by simplify offset parameter
+      smooth network
+      run Planform Metrics algorithm
+
 tags:
   - hydrography
+  - sinuosity
+  - inflection
+  - centerline
+  - polyline
+  - disaggregation
+  - longitudinal profile
+
+parameters:
+  sequencednetwork:
+    type: LineString or MultiLineString
+    description: Linear features on which the inflection lines and inflection points are extracted. Can be a unique LineString or a full network.
+  simplifyoffset:
+    type: Number
+    description: Threshold used to ignore small fluctuations and noise (in map unit).
+  Ouput inflexion points:
+    type: Points
+    description: The output inflection points.
+  Output disaggregated line:
+    type: LineString
+    description: The output disaggregated line features
+  Output inflection line:
+    type: LineString
+    description: The output inflection lines.
+    
+seealso:
+  - "[Planform Metrics](../../../algorithms/metrics/PlanformMetrics/)"
