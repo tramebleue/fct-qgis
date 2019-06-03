@@ -15,3 +15,4 @@ Disaggregation Workflows
 
 from .PolylineDisaggregation import PolylineDisaggregation
 from .Sequencing import Sequencing
+from .Segmentation import Segmentation

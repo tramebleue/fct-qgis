@@ -1,0 +1,11 @@
+displayName: Segmentation
+group: disaggregation
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - dgo
+  - polygon
+  - polyline
+  - segmentation
+  - transect
