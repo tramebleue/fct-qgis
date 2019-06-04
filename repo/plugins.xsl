@@ -77,7 +77,7 @@ td.menu_panel {
 </head>
 <body>
 <img src="https://qgis.org/en/_downloads/qgis-icon64.png"/>
-<h2>QGIS Python Plugins</h2>
+<h2>QGIS Fluvial Corridor Toolbox plugins</h2>
 <p>
 NOTE: The preferred way to install QGIS plugins is via the <a href="https://docs.qgis.org/testing/en/docs/user_manual/plugins/plugins.html">Plugin Manager</a> in QGIS itself!
 QGIS will download this list automatically and make it possible to install a plugin with one click.
