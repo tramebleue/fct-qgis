@@ -6,9 +6,9 @@
         <version>1.0.3</version>
         <qgis_minimum_version>3.4.0</qgis_minimum_version>
         <qgis_maximum_version>3.99.0</qgis_maximum_version>
-        <homepage><![CDATA[https://github.com/tramebleue/fct]]></homepage>
+        <homepage><![CDATA[https://tramebleue.github.io/fct/]]></homepage>
         <file_name>FluvialCorridorToolbox.1.0.3.zip</file_name>
-        <icon>https://github.com/tramebleue/fct/raw/master/fct/images/icon.png</icon>
+        <icon>https://tramebleue.github.io/fct/repo/icon.png</icon>
         <author_name><![CDATA[Geopeka]]></author_name>
         <download_url>https://github.com/tramebleue/fct/releases/download/v1.0.3/FluvialCorridorToolbox.1.0.3.zip</download_url>
         <uploaded_by><![CDATA[sdunesme]]></uploaded_by>
