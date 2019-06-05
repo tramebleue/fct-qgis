@@ -14,7 +14,7 @@ StrahlerOrder - Horton-Strahler stream order of each link in a stream network
 """
 
 from functools import partial, reduce
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QVariant
@@ -68,6 +68,7 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
     INPUT = 'INPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
+    AXIS_FIELD = 'AXIS_FIELD'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
@@ -91,6 +92,14 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             type=QgsProcessingParameterField.Numeric,
             defaultValue='NODEB'))
 
+        self.addParameter(QgsProcessingParameterField(
+            self.AXIS_FIELD,
+            self.tr('Axis Id'),
+            parentLayerParameterName=self.INPUT,
+            type=QgsProcessingParameterField.Numeric,
+            defaultValue='AXIS',
+            optional=True))
+
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
             self.tr('Strahler Order'),
@@ -101,6 +110,7 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
+        axis_field = self.parameterAsString(parameters, self.AXIS_FIELD, context)
 
         # Step 1 - Build adjacency index
 
@@ -116,20 +126,36 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             a = edge.attribute(from_node_field)
             b = edge.attribute(to_node_field)
-            adjacency.append((a, b, edge.id()))
+            axis = edge.attribute(axis_field) if axis_field else None
+            adjacency.append((a, b, edge.id(), axis))
 
             feedback.setProgress(int(current * total))
 
         # Step 2 - Find sources and compute confluences in-degree
 
-        anodes = set([a for a, b, e in adjacency])
-        bnodes = set([b for a, b, e in adjacency])
+        anodes = set([a for a, b, e, axis in adjacency])
+        bnodes = set([b for a, b, e, axis in adjacency])
         # No edge points to a source,
         # then sources are not in bnodes
         sources = anodes - bnodes
 
         # Confluences in-degree
-        bcount = reduce(partial(count_by, 1), adjacency, defaultdict(lambda: 0))
+        if axis_field:
+
+            bcount = Counter()
+            baxis = set()
+            
+            for a, b, e, axis in adjacency:
+                if not (b, axis) in baxis:
+                    bcount[b] += 1
+                    baxis.add((b, axis))
+
+            del baxis
+
+        else:
+
+            bcount = reduce(partial(count_by, 1), adjacency, defaultdict(lambda: 0))
+        
         confluences = {node: indegree for node, indegree in bcount.items() if indegree > 1}
 
         # Index : Node A -> Edges starting from A
@@ -154,6 +180,9 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         order = 1
         srclayer = context.getMapLayer(layer.sourceName())
 
+        seen_nodes = set()
+        baxis = set()
+
         while True:
 
             if feedback.isCanceled():
@@ -166,7 +195,12 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                 a = queue.pop()
 
-                for a, b, edgeid in aindex[a]:
+                if a in seen_nodes:
+                    continue
+
+                seen_nodes.add(a)
+
+                for a, b, edgeid, axis in aindex[a]:
 
                     edge = srclayer.getFeature(edgeid)
                     feature = QgsFeature()
@@ -180,7 +214,9 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
                     feedback.setProgress(int(current * total))
 
                     if b in confluences:
-                        confluences[b] = confluences[b] - 1
+                        if not (b, axis) in baxis:
+                            confluences[b] = confluences[b] - 1
+                            baxis.add((b, axis))
                     else:
                         queue.append(b)
 

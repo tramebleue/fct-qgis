@@ -1,4 +1,4 @@
-displayName: Check/Fix Link Orientation
+displayName: Fix Link Orientation
 group: hydrography
 summary: |
   Check links are oriented downslope.

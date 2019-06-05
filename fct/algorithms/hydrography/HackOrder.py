@@ -103,7 +103,7 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Measure Field'),
             parentLayerParameterName=self.INPUT,
             type=QgsProcessingParameterField.Numeric,
-            defaultValue='MEAS'))
+            defaultValue='MEASURE'))
 
         self.addParameter(QgsProcessingParameterBoolean(
             self.IS_DOWNSTREAM_MEAS,

@@ -14,7 +14,7 @@ UpstreamChannelLength - Compute a new `UCL` attribute
 ***************************************************************************
 """
 
-from collections import defaultdict, Counter, namedtuple
+from collections import defaultdict, deque
 
 from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QVariant
@@ -27,19 +27,22 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessingAlgorithm,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
-    QgsProcessingParameterField
+    QgsProcessingParameterField,
+    QgsProcessingParameterNumber
 )
 
-from .graph import create_link_index
+# from .graph import create_link_index
 from ..metadata import AlgorithmMetadata
 from ..util import asQgsFields
-
-Link = namedtuple('Link', ('a', 'b', 'edge_id', 'length'))
 
 class TotalUpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
     Compute the total upstream channel length of each link;
-    and store the result in a new attribute named `TUCL`. 
+    and store the result in a new attribute named `TUCL`.
+    The current implementation does not handle the presence of diffluences
+    in the stream network.
+    If needed, you can use the `Principal Stem` tool
+    to extract a simpler network.
     """
 
     METADATA = AlgorithmMetadata.read(__file__, 'TotalUpstreamChannelLength')
@@ -48,6 +51,7 @@ class TotalUpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
     OUTPUT = 'OUTPUT'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
+    SCALE = 'SCALE'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
@@ -70,19 +74,31 @@ class TotalUpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
             type=QgsProcessingParameterField.Numeric,
             defaultValue='NODEB'))
 
+        self.addParameter(QgsProcessingParameterNumber(
+            self.SCALE,
+            self.tr('Scale Factor'),
+            type=QgsProcessingParameterNumber.Double,
+            defaultValue=0.001))
+
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
             self.tr('Total Upstream Channel Length'),
             QgsProcessing.TypeVectorLine))
+
+        # self.addParameter(QgsProcessingParameterFeatureSink(
+        #     "CONVERGING",
+        #     self.tr('Converging Nodes'),
+        #     QgsProcessing.TypeVectorPoint))
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
+        scale = self.parameterAsDouble(parameters, self.SCALE, context)
 
         fields = layer.fields().toList() + [
-            QgsField('TUCL', QVariant.Double, len=10, prec=2)
+            QgsField('TUCL', QVariant.Double)
         ]
 
         (sink, dest_id) = self.parameterAsSink(
@@ -98,8 +114,12 @@ class TotalUpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr("Build adjacency index ..."))
 
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
-        adjacency = list()
-        indegree = Counter()
+        # adjacency = list()
+
+        # Directed graph: node A -connects to-> list of nodes B
+        graph = defaultdict(set)
+        backtrack = defaultdict(set)
+        contributions = defaultdict(lambda: 0)
 
         for current, edge in enumerate(layer.getFeatures()):
 
@@ -108,56 +128,55 @@ class TotalUpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             a = edge.attribute(from_node_field)
             b = edge.attribute(to_node_field)
-            adjacency.append(Link(a, b, edge.id(), edge.geometry().length()))
-            indegree[b] += 1
+
+            length = edge.geometry().length()
+            contributions[b] += length
+            graph[a].add(b)
+            backtrack[b].add(a)
 
             feedback.setProgress(int(current * total))
 
-        sources = set([link.a for link in adjacency]) - set([link.b for link in adjacency])
-
-        def key(link):
-            """ Index by a node """
-            return link.a
-
-        # Index: a -> list of links departing from a, downslope walk
-        edge_index = create_link_index(adjacency, key)
-
-        stack = list(sources)
-        distances = {source: 0.0 for source in sources}
+        # diffluences = {a for a in graph if len(graph[a]) > 1}
+        sources = {a for a in graph if len(backtrack[a]) == 0}
+        # outlets = {b for b in backtrack if len(graph[b]) == 0}
 
         feedback.setProgressText(self.tr("Accumulate ..."))
 
-        current = 0
-        # seen_nodes = set()
-        total = 100.0 / layer.featureCount() if layer.featureCount() else 0
+        tucl = defaultdict(lambda: 0.0)
 
-        while stack:
+        queue = deque(sources)
+        # seen_nodes = set()
+        visited = 0
+
+        indegree = defaultdict(lambda: 0)
+        indegree.update({a: len(backtrack[a]) for a in backtrack})
+
+        while queue:
 
             if feedback.isCanceled():
                 break
 
-            node = stack.pop()
-            ucl = distances[node]
+            a = queue.popleft()
+            visited += 1
 
-            for link in edge_index[node]:
+            indegree[a] -= 1
 
-                if indegree[link.b] > 0:
+            if indegree[a] > 0:
+                continue
 
-                    distances[link.b] = distances.get(link.b, 0.0) + ucl + link.length
-                    indegree[link.b] -= 1
+            tucl[a] = contributions[a]
+            for up in backtrack[a]:
+                tucl[a] += tucl[up]
 
-                    # check if we reach a confluence cell
-                    if indegree[link.b] > 0:
-                        continue
+            queue.extend(graph[a])
 
-                    stack.append(link.b)
+        feedback.setProgressText(self.tr("Output features ..."))
 
-                # if not link.b in seen_nodes:
-                #     seen_nodes.add(link.b)
-                #     stack.append(link.b)
+        # feedback.pushInfo('Terminal nodes : %d' % len(terminal_nodes))
+        feedback.pushInfo('Visited nodes : %d' % visited)
 
-            current = current + 1
-            feedback.setProgress(int(current * total))
+        current = 0
+        total = 100.0 / layer.featureCount() if layer.featureCount() else 0
 
         for current, edge in enumerate(layer.getFeatures()):
 
@@ -165,12 +184,12 @@ class TotalUpstreamChannelLength(AlgorithmMetadata, QgsProcessingAlgorithm):
                 break
 
             a = edge.attribute(from_node_field)
-            ucl = distances.get(a, 0.0) + edge.geometry().length()
+            ucl = tucl[a] + edge.geometry().length()
 
             out_feature = QgsFeature()
             out_feature.setGeometry(edge.geometry())
             out_feature.setAttributes(edge.attributes() + [
-                ucl
+                scale*ucl
             ])
 
             sink.addFeature(out_feature)

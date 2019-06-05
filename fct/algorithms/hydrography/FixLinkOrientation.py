@@ -310,8 +310,8 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
         while queue or sinks:
 
             if feedback.isCanceled():
-                # z, node = heappop(queue)
-                # print(z, node)
+                z, node = heappop(queue)
+                feedback.pushInfo('z = %f, node = %d' % (z, node))
                 break
 
             if sinks:
@@ -397,7 +397,7 @@ class FixLinkOrientation(AlgorithmMetadata, QgsProcessingFeatureBasedAlgorithm):
                         # we can traverse further
                         stack.append(next_node)
 
-                    current += 1
+                    current = current + 1
                     feedback.setProgress(int(current * total))
 
         feedback.pushInfo('%d features need to be reversed' % len(marked))

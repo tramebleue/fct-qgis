@@ -26,5 +26,6 @@ from .PrincipalStem import PrincipalStem
 from .RasterizeStreamNetwork import RasterizeStreamNetwork
 from .ReverseFlowDirection import ReverseFlowDirection
 from .SelectConnectedComponents import SelectConnectedComponents
+from .SelectGraphCycle import SelectGraphCycle
 from .StrahlerOrder import StrahlerOrder
 from .TotalUpstreamChannelLength import TotalUpstreamChannelLength
