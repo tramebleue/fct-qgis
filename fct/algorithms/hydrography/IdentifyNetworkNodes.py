@@ -94,7 +94,7 @@ class IdentifyNetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
         layer = self.parameterAsSource(parameters, self.INPUT, context)
 
         # Step 1
-        feedback.setProgressText(self.tr("Get Line Endpoints ..."))
+        feedback.setProgressText(self.tr("[1/4] Get Line Endpoints ..."))
 
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
         coordinates = list()
@@ -118,7 +118,7 @@ class IdentifyNetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
             feedback.setProgress(int(total * current))
 
         # Step 2
-        feedback.setProgressText(self.tr("Quantize coordinates ..."))
+        feedback.setProgressText(self.tr("[2/4] Quantize coordinates ..."))
 
         coordinates = np.array(coordinates)
         minx = np.min(coordinates[:, 0])
@@ -135,7 +135,7 @@ class IdentifyNetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
         coordinates = np.int32(np.round((coordinates - (minx, miny)) / (sx, sy)))
 
         # Step 3
-        feedback.setProgressText(self.tr("Build Endpoints Index ..."))
+        feedback.setProgressText(self.tr("[3/4] Build Endpoints Index ..."))
 
         fields = QgsFields()
         fields.append(QgsField('GID', type=QVariant.Int, len=10))
@@ -184,7 +184,7 @@ class IdentifyNetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
         del coordinates_map
 
         # Step 4
-        feedback.setProgressText(self.tr("Output Lines with Node Attributes ..."))
+        feedback.setProgressText(self.tr("[4/4] Output Lines with Node Attributes ..."))
 
         fields = QgsFields(layer.fields())
         fields.append(QgsField('NODEA', QVariant.Int, len=10))
