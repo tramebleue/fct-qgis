@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Metrics Workflows
+WidthVB
 
 ***************************************************************************
 *                                                                         *
@@ -13,6 +13,21 @@ Metrics Workflows
 ***************************************************************************
 """
 
-from .ElevationAndSlope import ElevationAndSlope
-from .Morphometry import Morphometry
-from .WidthVB import WidthVB
+import os
+
+from qgis.core import ( # pylint:disable=no-name-in-module
+    QgsProcessingModelAlgorithm
+)
+
+from ..metadata import AlgorithmMetadata
+
+class WidthVB(AlgorithmMetadata, QgsProcessingModelAlgorithm):
+    """ 
+    WidthVB
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.METADATA = AlgorithmMetadata.read(__file__, type(self).__name__)
+        self.fromFile(os.path.join(os.path.dirname(__file__), type(self).__name__ + '.model3'))
