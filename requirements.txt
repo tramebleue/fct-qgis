@@ -1,8 +1,10 @@
+
 Click>=7.0
 scipy>=1.2.1
 plotly>=3.3
 cython
 doit
+PyGithub
 pylint>=1.9.4
 mkdocs>=1.0.4
 mkdocs-material>=3.3.0

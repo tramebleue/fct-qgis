@@ -17,7 +17,7 @@ extensions = [
 
 setup(
     name='fct',
-    version='1.0.3',
+    version='1.0.4',
     packages=find_packages(),
     ext_modules=cythonize(extensions),
     include_package_data=True,
