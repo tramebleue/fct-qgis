@@ -365,8 +365,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../FixLinkOrientation/" title="Check/Fix Link Orientation" class="md-nav__link">
-      Check/Fix Link Orientation
+    <a href="../FixLinkOrientation/" title="Fix Link Orientation" class="md-nav__link">
+      Fix Link Orientation
     </a>
   </li>
 
@@ -1852,7 +1852,9 @@
                 <h1 id="total-upstream-channel-length">Total Upstream Channel Length<a class="headerlink" href="#total-upstream-channel-length" title="Permanent link">&para;</a></h1>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <p>Compute the total upstream channel length of each link;
-and store the result in a new attribute named <code>TUCL</code>. </p>
+and store the result in a new attribute named <code>TUCL</code>.</p>
+<p>The implemented algorithm can process a complex network
+with diffluences.</p>
 <p>Tags:<br/><code>hydrography</code>, <code>graph</code>, <code>metric</code></p>
 
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
@@ -1917,6 +1919,24 @@ and store the result in a new attribute named <code>TUCL</code>. </p>
             </td>
             <td>
                 QgsProcessingParameterField
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Scale Factor</br>
+                <code>SCALE</code>
+
+            </td>
+            <td>
+
+
+                Default value: <code>0.001</code>
+
+
+            </td>
+            <td>
+                QgsProcessingParameterNumber
             </td>
         </tr>
 
