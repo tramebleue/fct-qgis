@@ -51,6 +51,13 @@ def qgis_plugin_dir():
 def fct_target_folder():
     return os.path.join(qgis_plugin_dir(), 'FluvialCorridorToolbox')
 
+def fct_current_version():
+    config = ConfigParser()
+    with open(os.path.join('fct', 'metadata.txt')) as f:
+        config.read_file(f)
+
+    return config['general']['version']
+
 def pyclean(root):
     """
     Delete __pycache__ dirs and *.pyc files
@@ -186,7 +193,7 @@ def task_doc():
 
     return {
         'actions': [
-            'python -m fct.cli.autodoc build'
+            'python3 -m fct.cli.autodoc build'
         ],
         'task_dep': ['doc_clean']
     }
@@ -198,7 +205,7 @@ def task_doc_toc():
 
     return {
         'actions': [
-            LongRunning('python -m fct.cli.autodoc toc')
+            LongRunning('python3 -m fct.cli.autodoc toc')
         ],
         'verbosity': 2
     }
@@ -210,7 +217,7 @@ def task_doc_serve():
 
     return {
         'actions': [
-            LongRunning('python -m mkdocs serve')
+            LongRunning('python3 -m mkdocs serve')
         ],
         'task_dep': ['doc']
     }
@@ -222,7 +229,7 @@ def task_doc_deploy():
 
     return {
         'actions': [
-            LongRunning('python -m mkdocs gh-deploy')
+            LongRunning('python3 -m mkdocs gh-deploy')
         ],
         'task_dep': ['doc']
     }
@@ -252,14 +259,8 @@ def task_zip():
         Create zip archive in current `release` directory
         """
 
-        config = ConfigParser()
-        with open(os.path.join('fct', 'metadata.txt')) as f:
-            config.read_file(f)
-
-        version = config['general']['version']
-
         shutil.make_archive(
-            os.path.join('release', 'FluvialCorridorToolbox.' + version),
+            os.path.join('release', 'FluvialCorridorToolbox.' + fct_current_version()),
             'zip',
             qgis_plugin_dir(),
             'FluvialCorridorToolbox'
@@ -383,7 +384,7 @@ def task_release():
             new_item.find("version").text = version
             new_item.find("file_name").text = zip_asset.name
             new_item.find("download_url").text = zip_asset.browser_download_url
-            new_item.find("uploaded_by").text = f"<![CDATA[{user}]]>"
+            new_item.find("uploaded_by").text = user
             new_item.find("create_date").text = new_release.created_at.strftime("%Y-%m-%d")
             new_item.find("update_date").text = new_release.created_at.strftime("%Y-%m-%d")
 
@@ -407,6 +408,7 @@ def task_release():
         'actions': [
             release_plugin
         ],
-        'task_dep': ['zip', 'releases_stats'],
+        'task_dep': ['releases_stats'],
+        'file_dep': ["release/FluvialCorridorToolbox.%s.zip" % fct_current_version()],
         'verbosity': 2
     }
