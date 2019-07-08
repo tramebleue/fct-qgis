@@ -37,8 +37,9 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 from ..metadata import AlgorithmMetadata
 
 def medial_axis(voronoi, groups): # pylint: disable=too-many-locals
-    """ Extract Voronoi vertices equidistant of two points
-        from two different groups.
+    """
+    Extract Voronoi vertices equidistant of two points
+    from two different groups.
     """
 
     for (p, q), rv in zip(voronoi.ridge_points, voronoi.ridge_vertices):
@@ -127,7 +128,8 @@ class PointsMedialAxis(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         feedback.setProgressText(self.tr('Compute Voronoi polygons'))
 
-        voronoi = Voronoi(np.array([[p.x(), p.y()] for i, p in points]))
+        # see http://www.qhull.org/html/qh-optq.htm#QJn
+        voronoi = Voronoi(np.array([[p.x(), p.y()] for i, p in points]), qhull_options='Qbb Qc QJ')
 
         feedback.setProgressText(self.tr('Output medial axes'))
 

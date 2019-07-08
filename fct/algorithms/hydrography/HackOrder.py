@@ -186,9 +186,9 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgress(0)
 
         fields = layer.fields().toList() + [
-            QgsField('STEMID', QVariant.Int, len=5),
-            QgsField('HACK', QVariant.Int, len=5),
-            QgsField('STEMLENGTH', QVariant.Double, len=10, prec=2)
+            QgsField('AXIS', QVariant.Int, len=5),
+            QgsField('LAXIS', QVariant.Double, len=10, prec=2),
+            QgsField('HACK', QVariant.Int, len=5)
         ]
 
         (sink, dest_id) = self.parameterAsSink(
@@ -236,8 +236,8 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
                 outfeature.setGeometry(feature.geometry())
                 outfeature.setAttributes(feature.attributes() + [
                     current,
-                    rank,
-                    length
+                    length,
+                    rank
                 ])
                 sink.addFeature(outfeature)
                 seen_edges[feature.id()] = rank

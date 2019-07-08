@@ -183,6 +183,10 @@ class BurnFill(AlgorithmMetadata, QgsProcessingAlgorithm):
             for i in range(linestring.shape[0]-1, -1, -1):
 
                 px, py = linestring[i]
+
+                if px < 0 or py < 0 or px >= width or py >= height:
+                    continue
+
                 if streams[py, px] == link_id:
                     junctions[py, px] = 1
                     break

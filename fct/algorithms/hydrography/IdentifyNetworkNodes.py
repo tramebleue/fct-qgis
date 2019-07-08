@@ -15,11 +15,11 @@ IdentifyNetworkNodes - Identify nodes in hydrogaphy network
 
 import numpy as np
 
-from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module
+from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QVariant
 )
 
-from qgis.core import ( # pylint:disable=no-name-in-module
+from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsFeature,
     QgsField,
     QgsFields,
@@ -235,7 +235,24 @@ class IdentifyNetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
                 break
 
             geom = feature.geometry()
-            output_simple_features(geom, feature)
+
+            if not geom.isMultipart():
+
+                polyline = geom.asPolyline()
+                a = polyline[0]
+                b = polyline[-1]
+
+                out_feature = QgsFeature()
+                out_feature.setGeometry(geom)
+                out_feature.setAttributes(feature.attributes() + [
+                    nearest(a),
+                    nearest(b)
+                ])
+
+                sink.addFeature(out_feature)
+
+            else:
+                output_simple_features(geom, feature)
 
             feedback.setProgress(int(total * current))
 
