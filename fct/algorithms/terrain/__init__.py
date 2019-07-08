@@ -25,3 +25,4 @@ from .ResolveFlats import ResolveFlats
 from .StreamToFeature import StreamToFeature
 from .StreamToRaster import StreamToRaster
 from .Watershed import Watershed
+from .WatershedMax import WatershedMax
