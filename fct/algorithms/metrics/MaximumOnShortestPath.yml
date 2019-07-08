@@ -1,0 +1,8 @@
+displayName: Maximum On Shortest Path
+group: metrics
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - graph
+  - lateral continuity

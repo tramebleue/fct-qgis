@@ -16,6 +16,7 @@ Metrics Algorithms
 from .AggregateFeatures import AggregateFeatures
 from .KnickPoints import KnickPoints
 from .LineStringZSlope import LineStringZSlope
+from .MaximumOnShortestPath import MaximumOnShortestPath
 from .OrthogonalTransects import OrthogonalTransects
 from .PlanformMetrics import PlanformMetrics
 from .PolygonWidth import PolygonWidth
