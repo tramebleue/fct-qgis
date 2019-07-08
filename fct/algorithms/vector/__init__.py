@@ -19,6 +19,7 @@ from .ExtractCoordinatesAsFields import ExtractCoordinatesAsFields
 from .LineMidpoints import LineMidpoints
 from .LineStringBufferByM import LineStringBufferByM
 from .LocatePointAlongLine import LocatePointAlongLine
+from .MinimumOrientedBoundingBox import MinimumOrientedBoundingBox
 from .MonotonicZ import MonotonicZ
 from .PointsAlongPolygon import PointsAlongPolygon
 from .PointsInPolygon import PointsInPolygon
@@ -36,4 +37,5 @@ from .TransectByPoint import TransectByPoint
 from .TransformCoordinateByExpression import TransformCoordinateByExpression
 from .UniquePoints import UniquePoints
 from .VariableLengthTransects import VariableLengthTransects
+from .VoronoiTransects import VoronoiTransects
 from .WienerCoordinateFilter import WienerCoordinateFilter

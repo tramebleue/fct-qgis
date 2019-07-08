@@ -1,0 +1,9 @@
+displayName: Voronoi Transects
+group: vector
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - vector
+  - generator
+  - transect
