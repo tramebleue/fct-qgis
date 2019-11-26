@@ -19,11 +19,12 @@ def shortest_max(
         float[:, :] data,
         float nodata,
         float startval=0,
+        float[:, :] cost=None,
         float[:, :] out=None,
         float[:, :] distance=None,
         feedback=None):
     """
-    shortest_max(data, nodata, startval=0, out=None, distance=None, feedback=None)
+    shortest_max(data, nodata, startval=0, cost=None, out=None, distance=None, feedback=None)
     """
 
     cdef:
@@ -45,6 +46,9 @@ def shortest_max(
     total = 100.0 / (height*width)
     count = 0
     progress0 = progress1 = 0
+
+    if cost is None:
+        cost = np.ones((height, width), dtype=np.float32)
 
     if out is None:
         out = np.full((height, width), startval, dtype=np.float32)
@@ -71,6 +75,13 @@ def shortest_max(
                 distance[i, j] = 0
                 out[i, j] = data[i, j]
 
+            elif data[i, j] != nodata:
+
+                count += 1
+
+    total = 100.0 / count
+    count = 0
+
     # Djiskstra iteration
 
     while not queue.empty():
@@ -95,13 +106,14 @@ def shortest_max(
             ix = ijx.first
             jx = ijx.second
             out[i, j] = max[float](data[i, j], out[ix, jx])
+            distance[i, j] = distance[ix, jx] + 1
             ancestors.erase(ij)
 
         else:
 
             out[i, j] = data[i, j]
-
-        distance[i, j] = d
+            distance[i, j] = 0
+        
         seen[i, j] = 2 # settled
         
         count += 1
@@ -117,6 +129,11 @@ def shortest_max(
 
         for x in range(8):
 
+            # D4 connectivity
+
+            # if not (ci[x] == 0 or cj[x] == 0):
+            #     continue
+
             ix = i + ci[x]
             jx = j + cj[x]
 
@@ -127,9 +144,11 @@ def shortest_max(
                 continue
 
             if ci[x] == 0 or cj[x] == 0:
-                dx = d + 1
+                dx = 1
             else:
-                dx = d + 1.4142135623730951 # sqrt(2)
+                dx = 1.4142135623730951 # sqrt(2)
+
+            dx = d + dx * cost[ix, jx]
 
             if seen[ix, jx] == 0:
 
