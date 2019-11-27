@@ -74,6 +74,7 @@ def shortest_max(
                 seen[i, j] = 1 # seen
                 distance[i, j] = 0
                 out[i, j] = data[i, j]
+                count += 1
 
             elif data[i, j] != nodata:
 
@@ -85,6 +86,17 @@ def shortest_max(
     # Djiskstra iteration
 
     while not queue.empty():
+
+        count += 1
+        progress1 = int(count*total)
+
+        if progress1 > progress0:
+        
+            if feedback.isCanceled():
+                break
+        
+            feedback.setProgress(progress1)
+            progress0 = progress1
 
         entry = queue.top()
         queue.pop()
@@ -105,8 +117,14 @@ def shortest_max(
             ijx = ancestors[ij]
             ix = ijx.first
             jx = ijx.second
+            
             out[i, j] = max[float](data[i, j], out[ix, jx])
-            distance[i, j] = distance[ix, jx] + 1
+            
+            if i == ix or j == jx:
+                distance[i, j] = distance[ix, jx] + 1
+            else:
+                distance[i, j] = distance[ix, jx] + 1.4142135623730951 # sqrt(2)
+            
             ancestors.erase(ij)
 
         else:
@@ -115,17 +133,6 @@ def shortest_max(
             distance[i, j] = 0
         
         seen[i, j] = 2 # settled
-        
-        count += 1
-        progress1 = int(count*total)
-
-        if progress1 > progress0:
-        
-            if feedback.isCanceled():
-                break
-        
-            feedback.setProgress(progress1)
-            progress0 = progress1
 
         for x in range(8):
 
@@ -148,7 +155,7 @@ def shortest_max(
             else:
                 dx = 1.4142135623730951 # sqrt(2)
 
-            dx = d + dx * cost[ix, jx]
+            dx = d + dx*cost[ix, jx]
 
             if seen[ix, jx] == 0:
 
