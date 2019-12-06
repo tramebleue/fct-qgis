@@ -17,6 +17,7 @@ cdef long propagate_max(
     short[:, :] flow, long height, long width,
     unsigned char[:, :] values,
     unsigned char[:, :] reference,
+    unsigned char[:, :] seen,
     long i0, long j0):
     """
     Propagate data values upstream.
@@ -31,6 +32,7 @@ cdef long propagate_max(
     cell = Cell(i0, j0)
     stack.push(cell)
     count = 0
+    seen[i0, j0] = 1
 
     while not stack.empty():
 
@@ -51,8 +53,12 @@ cdef long propagate_max(
                 if values[i+di, j+dj] == 0:
                     
                     values[i+di, j+dj] = max(values[i, j], reference[i+di, j+dj])
-                    cell = Cell(i+di, j+dj)
-                    stack.push(cell)
+
+                    if seen[i+di, j+dj] == 0:
+
+                        cell = Cell(i+di, j+dj)
+                        stack.push(cell)
+                        seen[i+di, j+dj] = 1
 
     return count
 
@@ -110,6 +116,7 @@ def watershed_max(
     if feedback is None:
         feedback = SilentFeedback()
 
+    seen = np.zeros((height, width), dtype=np.uint8)
     seen2 = np.zeros((height, width), dtype=np.uint8)
 
     # Lookup for outlets
@@ -133,6 +140,7 @@ def watershed_max(
                 current = current + propagate_max(
                     flow, height, width,
                     values, reference,
+                    seen,
                     i, j)
 
                 progress1 = int(current*total)
@@ -172,6 +180,7 @@ def watershed_max(
                     flow, height, width,
                     values,
                     reference,
+                    seen,
                     ix, jx)
 
             progress1 = int(current*total)
