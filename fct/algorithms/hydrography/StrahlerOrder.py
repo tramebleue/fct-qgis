@@ -98,7 +98,7 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             parentLayerParameterName=self.INPUT,
             type=QgsProcessingParameterField.Numeric,
             defaultValue='AXIS',
-            optional=True))
+            optional=False))
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
@@ -180,7 +180,8 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         order = 1
         srclayer = context.getMapLayer(layer.sourceName())
 
-        seen_nodes = set()
+        # seen_nodes = set()
+        edges = dict()
         baxis = set()
 
         while True:
@@ -195,23 +196,37 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                 a = queue.pop()
 
-                if a in seen_nodes:
-                    continue
+                # if a in seen_nodes:
+                #     continue
 
-                seen_nodes.add(a)
+                # seen_nodes.add(a)
 
                 for a, b, edgeid, axis in aindex[a]:
 
-                    edge = srclayer.getFeature(edgeid)
-                    feature = QgsFeature()
-                    feature.setGeometry(edge.geometry())
-                    feature.setAttributes(edge.attributes() + [
-                        order
-                    ])
-                    sink.addFeature(feature)
+                    # edge = srclayer.getFeature(edgeid)
+                    # feature = QgsFeature()
+                    # feature.setGeometry(edge.geometry())
+                    # feature.setAttributes(edge.attributes() + [
+                    #     order
+                    # ])
+                    # sink.addFeature(feature)
 
-                    current = current + 1
-                    feedback.setProgress(int(current * total))
+                    # edges[edgeid] = order
+                    # current = current + 1
+                    # feedback.setProgress(int(current * total))
+
+                    if edgeid in edges:
+
+                        if edges[edgeid] >= order:
+                            continue
+                        else:
+                            edges[edgeid] = order
+
+                    else:
+
+                        edges[edgeid] = order
+                        current = current + 1
+                        feedback.setProgress(int(current * total))
 
                     if b in confluences:
                         if not (b, axis) in baxis:
@@ -227,5 +242,19 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             # if not confluences and not queue:
             if not queue:
                 break
+
+        for current, edgeid in enumerate(edges):
+
+            edge = srclayer.getFeature(edgeid)
+            order = edges[edgeid]
+
+            feature = QgsFeature()
+            feature.setGeometry(edge.geometry())
+            feature.setAttributes(edge.attributes() + [
+                order
+            ])
+            sink.addFeature(feature)
+
+            feedback.setProgress(int(current * total))
 
         return {self.OUTPUT: dest_id}
