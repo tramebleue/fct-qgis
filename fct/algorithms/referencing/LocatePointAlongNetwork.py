@@ -44,6 +44,8 @@ from qgis.core import (
     QgsWkbTypes
 )
 
+import numpy as np
+
 from ..metadata import AlgorithmMetadata
 from ..util import appendUniqueField
 
@@ -131,6 +133,8 @@ class LocatePointAlongNetwork(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
     def outputFields(self, inputFields): #pylint: disable=no-self-use,missing-docstring
         appendUniqueField(QgsField('AXIS', QVariant.Int), inputFields)
         appendUniqueField(QgsField('MLOC', QVariant.Double), inputFields)
+        appendUniqueField(QgsField('DISTANCE', QVariant.Double), inputFields)
+        appendUniqueField(QgsField('SIDE', QVariant.Double), inputFields)
         return inputFields
 
     def supportInPlaceEdit(self, layer): #pylint: disable=no-self-use,missing-docstring,unused-argument
@@ -202,13 +206,18 @@ class LocatePointAlongNetwork(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
 
             if segment_length > 0:
 
-                z = point_before.z() + (point_after.z() - point_before.z()) * distance / segment_length
-                m = point_before.m() + (point_after.m() - point_before.m()) * distance / segment_length
+                dist_before = nearest_point.distance(QgsPointXY(point_before))
+                z = point_before.z() + (point_after.z() - point_before.z()) * dist_before / segment_length
+                m = point_before.m() + (point_after.m() - point_before.m()) * dist_before / segment_length
+                nearest_dir = np.array([point_after.x() - point_before.x(), point_after.y() - point_before.y()])
+                diff = np.array([point.x() - nearest_point.x(), point.y() - nearest_point.y()])
+                side = float(np.sign(np.cross(nearest_dir, diff)))
 
             else:
 
                 z = point_before.z()
                 m = point_before.m()
+                side = 1.0
 
             location = QgsPoint(point.x(), point.y(), z, m)
             geometry = QgsGeometry(location)
@@ -217,7 +226,9 @@ class LocatePointAlongNetwork(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
             transformed.setAttributes(
                 feature.attributes() + [
                     axis_feature.attribute(self.axis_pk_field),
-                    m
+                    m,
+                    distance,
+                    side
                 ])
 
             features.append(transformed)

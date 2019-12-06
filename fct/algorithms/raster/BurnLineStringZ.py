@@ -20,6 +20,7 @@ from qgis.core import ( # pylint:disable=no-name-in-module,import-error
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingParameterBand,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterNumber,
     QgsProcessingParameterRasterDestination,
@@ -45,6 +46,7 @@ class BurnLineStringZ(AlgorithmMetadata, QgsProcessingAlgorithm):
     INPUT = 'INPUT'
     BAND = 'BAND'
     LINESTRINGZ = 'LINESTRINGZ'
+    SOURCE = 'SOURCE'
     NODATA = 'NODATA'
     OFFSET = 'OFFSET'
     OUTPUT = 'OUTPUT'
@@ -63,18 +65,24 @@ class BurnLineStringZ(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterFeatureSource(
             self.LINESTRINGZ,
-            self.tr('LineString With Z'),
+            self.tr('LineString With Z or M Coordinate'),
             [QgsProcessing.TypeVectorLine]))
+
+        self.addParameter(QgsProcessingParameterEnum(
+            self.SOURCE,
+            self.tr('Source Coordinate'),
+            options=[self.tr(option) for option in ['Z', 'M']],
+            defaultValue=0))
 
         self.addParameter(QgsProcessingParameterNumber(
             self.NODATA,
-            self.tr('LineString Z No-Data Value'),
+            self.tr('LineString No-Data Value'),
             type=QgsProcessingParameterNumber.Double,
             defaultValue=-99999.0))
 
         self.addParameter(QgsProcessingParameterNumber(
             self.OFFSET,
-            self.tr('Offset to add to Z values'),
+            self.tr('Offset to add to Coord. values'),
             type=QgsProcessingParameterNumber.Double,
             defaultValue=0.0))
 
@@ -87,13 +95,20 @@ class BurnLineStringZ(AlgorithmMetadata, QgsProcessingAlgorithm):
         raster = self.parameterAsRasterLayer(parameters, self.INPUT, context)
         band = self.parameterAsInt(parameters, self.BAND, context)
         layer = self.parameterAsSource(parameters, self.LINESTRINGZ, context)
+        source = self.parameterAsInt(parameters, self.SOURCE, context)
         nodata = self.parameterAsDouble(parameters, self.NODATA, context)
         offset = self.parameterAsDouble(parameters, self.OFFSET, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
-        if not QgsWkbTypes.hasZ(layer.wkbType()):
-            feedback.reportError(self.tr('Linestrings must have Z coordinate.'), True)
-            return {}
+        if source == 0:
+            if not QgsWkbTypes.hasZ(layer.wkbType()):
+                feedback.reportError(self.tr('Linestrings must have Z coordinate.'), True)
+                return {}
+
+        if source == 1:
+            if not QgsWkbTypes.hasM(layer.wkbType()):
+                feedback.reportError(self.tr('Linestrings must have M coordinate.'), True)
+                return {}
 
         feedback.setProgressText(self.tr('Read input raster'))
 
@@ -127,7 +142,11 @@ class BurnLineStringZ(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             for vertex in linestring.vertices():
 
-                z = vertex.z()
+                if source == 0:
+                    z = vertex.z()
+                elif source == 1:
+                    z = vertex.m()
+
                 if z == nodata:
                     continue
 

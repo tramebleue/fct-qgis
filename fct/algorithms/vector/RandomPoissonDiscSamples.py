@@ -163,6 +163,7 @@ class PoissonDiscSampler(object):
 
                 i = round(np.random.uniform() * (len(self.queue) - 1))
                 point = self.queue[i]
+                success = False
 
                 for j in range(self.k):
 
@@ -170,11 +171,15 @@ class PoissonDiscSampler(object):
 
                     if self.withinExtent(q) and not self.near(q):
                         self.accept(q)
+                        success = True
                         yield q
+                        break
 
-                last = self.queue.pop()
-                if i < len(self.queue):
-                    self.queue[i] = last
+                if not success:
+                    
+                    last = self.queue.pop()
+                    if i < len(self.queue):
+                        self.queue[i] = last
 
                 if not self.queue:
                     break

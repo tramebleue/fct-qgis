@@ -1,8 +1,10 @@
-displayName: Burn LineString Z
+displayName: Burn LineString Coordinate
 group: raster
 shortHelpString: NULL
 helpString: NULL
 helpUrl: NULL
 tags:
   - z
+  - m
+  - burn
   - preprocess
