@@ -1,7 +1,8 @@
+* Make cython extensions for linux AND windows before any release
 * [ ] Dev Strategy
     * [ ] Test Framework for automated tests : split tests YAML into small chunks, one per algorithm
     * [ ] I18n Framework
-    * [ ] Write python installer (use `doit`)
+    * [x] Write python installer (use `doit`)
     * [ ] Dependencies not available in QGIS3 default installation 
         * [ ] SciPy for morphology operations (eg. BinaryClosing) and better Voronoi Polygons
 

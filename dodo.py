@@ -113,7 +113,7 @@ def task_extension():
 
     return {
         'actions': [
-            'pip install -e .'
+            'python -m pip install -e .'
         ],
         'verbosity': 2
     }
