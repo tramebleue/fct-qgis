@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-FlowAccumulation
+Mask Accumulation
 
 ***************************************************************************
 *                                                                         *
@@ -24,28 +24,27 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
+from ...lib.terrain_analysis import flow_accumulation
 
-try:
-    from ...lib.terrain_analysis import flow_accumulation
-    CYTHON = True
-except ImportError:
-    from ...lib.flow_accumulation import flow_accumulation
-    CYTHON = False
-
-class FlowAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
-    """ Compute flow accumulation raster.
+class MaskAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
+    """ Compute mask accumulation raster.
     """
 
-    METADATA = AlgorithmMetadata.read(__file__, 'FlowAccumulation')
+    METADATA = AlgorithmMetadata.read(__file__, 'MaskAccumulation')
 
     FLOW = 'FLOW'
+    INPUT = 'INPUT'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
         self.addParameter(QgsProcessingParameterRasterLayer(
+            self.INPUT,
+            self.tr('Mask Raster')))
+
+        self.addParameter(QgsProcessingParameterRasterLayer(
             self.FLOW,
-            self.tr('Flow Direction')))
+            self.tr('Flow Direction (D8)')))
 
         # self.addParameter(ParameterString(self.NO_DATA,
         #                                   self.tr('No data value'), '-9999'))
@@ -56,24 +55,22 @@ class FlowAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        if CYTHON:
-            feedback.pushInfo("Using Cython flow_accumulation() ...")
-        else:
-            feedback.pushInfo("Pure python flow_accumulation() - this may take a while ...")
-
+        mask_lyr = self.parameterAsRasterLayer(parameters, self.INPUT, context)
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
         flow_ds = gdal.Open(flow_lyr.dataProvider().dataSourceUri())
         flow = flow_ds.GetRasterBand(1).ReadAsArray()
-        nodata = flow_ds.GetRasterBand(1).GetNoDataValue()
+        # nodata = flow_ds.GetRasterBand(1).GetNoDataValue()
+
+        mask_ds = gdal.Open(mask_lyr.dataProvider().dataSourceUri())
+        mask = np.uint32(mask_ds.GetRasterBand(1).ReadAsArray())
 
         # epsg = flow_ds.crs().authid().split(':')[1]
         # srs = osr.SpatialReference()
         # srs.ImportFromEPSG(epsg)
 
-        out = flow_accumulation(flow, feedback=feedback)
-        out[flow == nodata] = 0
+        flow_accumulation(flow, mask, feedback=feedback)
 
         if feedback.isCanceled():
             feedback.reportError(self.tr('Aborted'), True)
@@ -95,11 +92,12 @@ class FlowAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
         # dst.SetProjection(srs.exportToWkt())
         dst.SetProjection(flow_lyr.crs().toWkt())
 
-        dst.GetRasterBand(1).WriteArray(np.asarray(out))
+        dst.GetRasterBand(1).WriteArray(np.asarray(mask))
         dst.GetRasterBand(1).SetNoDataValue(0)
 
         # Properly close GDAL resources
         flow_ds = None
+        mask_ds = None
         dst = None
 
         return {self.OUTPUT: output}
