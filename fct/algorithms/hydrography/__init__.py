@@ -29,3 +29,5 @@ from .SelectConnectedComponents import SelectConnectedComponents
 from .SelectGraphCycle import SelectGraphCycle
 from .StrahlerOrder import StrahlerOrder
 from .TotalUpstreamChannelLength import TotalUpstreamChannelLength
+from .UpstreamDownstreamLink import UpstreamDownstreamLink
+from .WatershedLink import WatershedLink
