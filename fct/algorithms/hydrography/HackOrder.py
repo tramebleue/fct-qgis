@@ -13,13 +13,14 @@ LengthOrder
 ***************************************************************************
 """
 
-from heapq import heappush, heappop
+from heapq import heappush, heappop, heapify
 from functools import (
     partial,
     reduce,
     total_ordering
 )
-from collections import defaultdict
+
+from collections import defaultdict, Counter
 
 from qgis.PyQt.QtCore import ( # pylint:disable=no-name-in-module,import-error
     QVariant
@@ -128,7 +129,10 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr("Build adjacency index ..."))
 
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
-        adjacency = list()
+        
+        graph = defaultdict(list) # A -> list of (B, fid)
+        distances = defaultdict(lambda: 0) # distance from A to outlet
+        indegree = Counter() # Number of edges reaching node B
 
         if is_downstream:
 
@@ -153,25 +157,21 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             a = edge.attribute(from_node_field)
             b = edge.attribute(to_node_field)
-            adjacency.append((a, b, edge.id(), measure(edge)))
+            distance = measure(edge)
+
+            graph[a].append((b, edge.id()))
+            indegree[b] += 1
+            distances[a] = max(distance, distances[a])
 
             feedback.setProgress(int(current * total))
 
-        anodes = set([a for a, b, e, d in adjacency])
-        bnodes = set([b for a, b, e, d in adjacency])
-        # No edge points to a source,
-        # then sources are not in bnodes
-        sources = anodes - bnodes
-
-        # Index : Node A -> Edges starting from A
-        aindex = reduce(partial(index_by, 0), adjacency, defaultdict(list))
-
         # Step 2 - Sort sources by descending distance
 
-        queue = list()
-        for source in sources:
-            for a, b, edge_id, distance in aindex[source]:
-                heappush(queue, SourceEntry(edge_id, distance))
+        # sources = [a for a in graph if indegree[a] == 0]
+        # queue = heapify([SourceEntry(source, distances[source]) for source in sources])
+
+        queue = [SourceEntry(a, distances[a]) for a in graph if indegree[a] == 0]
+        heapify(queue)
 
         # Step 3 - Output edges starting from maximum distance source to outlet ;
         #          when outlet is reached,
@@ -179,11 +179,6 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         #          until no edge remains
 
         feedback.setProgressText(self.tr("Sort subgraphs by descending source distance"))
-
-        seen_edges = dict()
-        current = 1
-        total = 100.0 / len(sources) if sources else 0
-        feedback.setProgress(0)
 
         fields = layer.fields().toList() + [
             QgsField('AXIS', QVariant.Int, len=5),
@@ -195,7 +190,28 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             parameters, self.OUTPUT, context,
             asQgsFields(*fields), layer.wkbType(), layer.sourceCrs())
 
-        srclayer = context.getMapLayer(layer.sourceName())
+        seen_edges = defaultdict(lambda: 0)
+        seen_nodes = set()
+        current = 1
+        total = 100.0 / len(queue) if queue else 0
+        feedback.setProgress(0)
+
+        def node_rank(node):
+            """
+            Return the minimum rank of edges starting from 'node'
+            """
+
+            rank = 0
+
+            for b, edge in graph[node]:
+                if rank == 0:
+                    rank = seen_edges[edge]
+                else:
+                    rank = min(rank, seen_edges[edge])
+
+            return rank
+
+        # Iterate sources by descending distance
 
         while queue:
 
@@ -203,45 +219,52 @@ class HackOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
                 break
 
             entry = heappop(queue)
-            edge = srclayer.getFeature(entry.key)
-            process_stack = [edge]
-            selection = set()
+            a = entry.key
             rank = 1
-            length = 0
+            edges = set()
+            axis_length = distances[a]
+            downstream_measure = 0
 
-            while process_stack:
+            # Walk down the network from A until we reach
+            # some part we have already explored.
 
-                edge = process_stack.pop()
-                selection.add(edge.id())
-                length += edge.geometry().length()
-                to_node = edge.attribute(to_node_field)
+            stack = [a]
 
-                if to_node in aindex:
+            while stack:
 
-                    edges = [e for a, b, e, d in aindex[to_node]]
-                    query = QgsFeatureRequest().setFilterFids(edges)
+                a = stack.pop()
 
-                    for next_edge in layer.getFeatures(query):
+                for b, edge in graph[a]:
 
-                        next_id = next_edge.id()
-                        if next_id in seen_edges:
-                            rank = seen_edges[next_id] + 1
-                        elif next_id not in selection:
-                            process_stack.append(next_edge)
+                    edges.add(edge)
 
-            query = QgsFeatureRequest().setFilterFids(list(selection))
+                    if b in seen_nodes:
+
+                        rank = max(rank, node_rank(b) + 1)
+
+                        if downstream_measure == 0:
+                            downstream_measure = distances[b]
+                        else:
+                            downstream_measure = min(downstream_measure, distances[b])
+
+                    else:
+
+                        seen_nodes.add(b)
+                        stack.append(b)
+
+            query = QgsFeatureRequest().setFilterFids(list(edges))
+
             for feature in layer.getFeatures(query):
 
                 outfeature = QgsFeature()
                 outfeature.setGeometry(feature.geometry())
                 outfeature.setAttributes(feature.attributes() + [
                     current,
-                    length,
+                    (axis_length - downstream_measure),
                     rank
                 ])
                 sink.addFeature(outfeature)
                 seen_edges[feature.id()] = rank
-
 
             current = current + 1
             feedback.setProgress(int(current * total))
