@@ -19,6 +19,7 @@ from .DistanceToStream import DistanceToStream
 from .FillDepressions import FillDepressions
 from .FlowAccumulation import FlowAccumulation
 from .FlowDirection import FlowDirection
+from .HeightAboveNearestDrainageInSameWatershed import HeightAboveNearestDrainageInSameWatershed
 from .MaskAccumulation import MaskAccumulation
 from .RelativeDEM import RelativeDEM
 from .RelativeDEMByFlow import RelativeDEMByFlow

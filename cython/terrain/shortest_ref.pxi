@@ -25,6 +25,43 @@ def shortest_ref(
         feedback=None):
     """
     shortest_ref(data, nodata, startval=1, cost=None, out=None, distance=None, feedback=None)
+
+    Assign to each input cell the value of the nearest origin (reference) cell.
+
+    Input Parameters
+    ----------------
+
+    data: array-like, ndims=2, dtype=float32
+        Origin cells, having value `startval`
+
+    nodata: float
+        No-data value in `data`
+
+    startval: float
+        Marker value for origin cells in `data`
+
+    cost: array-like, same shape and type as `data`
+        Optional cost matrix
+        to account for in shortest distance computation.
+
+    Output Parameters
+    -----------------
+
+    out: array-like, same shape and type as `data`
+        Value of the nearest origin cell.
+        `out` is modified in place,
+        origin cells value are left unchanged,
+        and propagated to nearest neighbors.
+
+    distance: array-like, same shape and type as `data`
+        Shortest distance in pixels to the nearest origin cell
+        in `data`
+
+    Other Parameters
+    ----------------
+
+    feedback: QgsProcessingFeedback-like object
+        or None to disable feedback
     """
 
     cdef:

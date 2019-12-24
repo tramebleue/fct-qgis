@@ -12,34 +12,46 @@ def fillsinks2(
         # short[:, :] flow = None):
     """
     fillsinks(elevations, nodata, dx, dy, minslope, out=None)
+    
     Fill sinks of digital elevation model (DEM),
     based on the algorithm of Wang & Liu (2006).
+
     Parameters
     ----------
+    
     elevations: array-like
         Digital elevation model (DEM) raster (ndim=2)
+    
     nodata: float
         no-data value in `elevations`    
+    
     dx: float
         raster horizontal resolution in `elevations`
+    
     dy: float
         raster vertical resolution in `elevations`
         (positive value)
+    
     minslope: float
         Minimum slope to preserve between cells
         when filling up sinks.
+    
     out: array-like
         Same shape and dtype as elevations, initialized to nodata
+    
     Returns
     -------
     Flow raster.
+    
     Notes
     -----
+
     [1] Wang, L. & H. Liu (2006)
         An efficient method for identifying and filling surface depressions
         in digital elevation models.
         International Journal of Geographical Information Science,
         Vol. 20, No. 2: 193-213.
+
     [2] SAGA C++ Implementation
         https://github.com/saga-gis/saga-gis/blob/1b54363/saga-gis/src/tools/terrain_analysis/ta_preprocessor/FillSinks_WL_XXL.cpp
         GPL Licensed

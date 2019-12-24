@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Shortest Maximum
+Shortest Reference Value In Same Watershed
 
 ***************************************************************************
 *                                                                         *
@@ -15,8 +15,9 @@ Shortest Maximum
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def shortest_max(
+def shortest_ref_ws(
         float[:, :] data,
+        float[:, :] watersheds,
         float nodata,
         float startval=0,
         float[:, :] cost=None,
@@ -24,16 +25,22 @@ def shortest_max(
         float[:, :] distance=None,
         feedback=None):
     """
-    shortest_max(data, nodata, startval=0, cost=None, out=None, distance=None, feedback=None)
+    shortest_ref_ws(data, watersheds, nodata, startval=1, cost=None, out=None, distance=None, feedback=None)
 
-    Assign to each input cell the maximum value on the shortest path
-    to the nearest origin (reference) cell.
+    Assign to each input cell the value of the nearest origin (reference) cell
+    belonging to the same watershed
+    (ie. the algorithm stops at watershed boundaries).
 
     Input Parameters
     ----------------
 
     data: array-like, ndims=2, dtype=float32
         Origin cells, having value `startval`
+
+    watersheds: array-like, same shape and type as `data`
+        Watershed delineation,
+        all cells with the same value belong to the same watershed.
+        See also `ta.watershed()`
 
     nodata: float
         No-data value in `data`
@@ -63,6 +70,7 @@ def shortest_max(
 
     feedback: QgsProcessingFeedback-like object
         or None to disable feedback
+
     """
 
     cdef:
@@ -111,7 +119,7 @@ def shortest_max(
                 queue.push(entry)
                 seen[i, j] = 1 # seen
                 distance[i, j] = 0
-                out[i, j] = data[i, j]
+                # out[i, j] = data[i, j]
                 count += 1
 
             elif data[i, j] != nodata:
@@ -155,19 +163,27 @@ def shortest_max(
             ijx = ancestors[ij]
             ix = ijx.first
             jx = ijx.second
-            
-            out[i, j] = max[float](data[i, j], out[ix, jx])
+
+            ancestors.erase(ij)
             
             if i == ix or j == jx:
                 distance[i, j] = distance[ix, jx] + 1
             else:
                 distance[i, j] = distance[ix, jx] + 1.4142135623730951 # sqrt(2)
-            
-            ancestors.erase(ij)
+
+            if watersheds[i, j] == watersheds[ix, jx]:
+
+                out[i, j] = out[ix, jx]
+
+            else:
+
+                out[i, j] = out[ix, jx]
+                seen[i, j] = 0 # not seen
+                continue
 
         else:
 
-            out[i, j] = data[i, j]
+            # out[i, j] = data[i, j]
             distance[i, j] = 0
         
         seen[i, j] = 2 # settled

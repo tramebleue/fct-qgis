@@ -24,6 +24,37 @@ def shortest_distance(
         feedback=None):
     """
     shortest_distance(data, nodata, startval=1, cost=None, distance=None, feedback=None)
+
+    Compute the shortest distance (in pixels) to the nearest origin (reference) cell.
+
+    Input Parameters
+    ----------------
+
+    data: array-like, ndims=2, dtype=float32
+        Origin cells, having value `startval`
+
+    nodata: float
+        No-data value in `data`
+
+    startval: float
+        Marker value for origin cells in `data`
+
+    cost: array-like, same shape and type as `data`
+        Optional cost matrix
+        to account for in shortest distance computation.
+
+    Output Parameters
+    -----------------
+
+    distance: array-like, same shape and type as `data`
+        Shortest distance in pixels to the nearest origin cell
+        in `data`
+
+    Other Parameters
+    ----------------
+
+    feedback: QgsProcessingFeedback-like object
+        or None to disable feedback
     """
 
     cdef:
