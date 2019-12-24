@@ -24,6 +24,7 @@ from .MaskAccumulation import MaskAccumulation
 from .RelativeDEM import RelativeDEM
 from .RelativeDEMByFlow import RelativeDEMByFlow
 from .ResolveFlats import ResolveFlats
+from .ShortestDistance import ShortestDistance
 from .StreamToFeature import StreamToFeature
 from .StreamToRaster import StreamToRaster
 from .Watershed import Watershed

@@ -1,0 +1,8 @@
+displayName: Shortest Distance From LineString
+group: terrain
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - raster
+  - nearest
