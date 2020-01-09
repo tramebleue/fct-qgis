@@ -171,15 +171,8 @@ def shortest_ref_ws(
             else:
                 distance[i, j] = distance[ix, jx] + 1.4142135623730951 # sqrt(2)
 
-            if watersheds[i, j] == watersheds[ix, jx]:
 
-                out[i, j] = out[ix, jx]
-
-            else:
-
-                out[i, j] = out[ix, jx]
-                seen[i, j] = 0 # not seen
-                continue
+            out[i, j] = out[ix, jx]
 
         else:
 
@@ -202,6 +195,9 @@ def shortest_ref_ws(
                 continue
 
             if data[ix, jx] == nodata:
+                continue
+
+            if watersheds[ix, jx] != watersheds[i, j]:
                 continue
 
             if ci[x] == 0 or cj[x] == 0:
