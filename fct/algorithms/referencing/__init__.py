@@ -18,3 +18,5 @@ from .LocatePointAlongNetwork import LocatePointAlongNetwork
 from .LocatePolygonAlongNetwork import LocatePolygonAlongNetwork
 from .MeasureNetworkFromOutlet import MeasureNetworkFromOutlet
 from .PointAxisTransform import PointAxisTransform
+from .SubGridMap import SubGridMap
+from .SubGridTopography import SubGridTopography
