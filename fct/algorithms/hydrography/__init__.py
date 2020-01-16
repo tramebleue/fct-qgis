@@ -25,8 +25,10 @@ from .NetworkNodes import NetworkNodes
 from .PrincipalStem import PrincipalStem
 from .RasterizeStreamNetwork import RasterizeStreamNetwork
 from .ReverseFlowDirection import ReverseFlowDirection
+from .SelectConnectedBasins import SelectConnectedBasins
 from .SelectConnectedComponents import SelectConnectedComponents
 from .SelectGraphCycle import SelectGraphCycle
+from .SelectHeadwaterBasins import SelectHeadwaterBasins
 from .StrahlerOrder import StrahlerOrder
 from .TotalUpstreamChannelLength import TotalUpstreamChannelLength
 from .UpstreamDownstreamLink import UpstreamDownstreamLink
