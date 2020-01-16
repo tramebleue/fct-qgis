@@ -33,6 +33,8 @@ Funding and support have been kindly provided by :
 * [Association nationale pour la recherche technologique](http://www.anrt.asso.fr/fr)
 * [Agence de l'eau Rhône-Méditerranée-Corse](https://www.eaurmc.fr/)
 
+![Supporting Partners](img/partners.png)
+
 ## License
 
 The Fluvial Corridor Toolbox is released under the [GNU Public License][].

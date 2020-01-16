@@ -26,7 +26,6 @@ from .PointsInPolygon import PointsInPolygon
 from .PointsMedialAxis import PointsMedialAxis
 from .ProjectPointOnNearestLine import ProjectPointOnNearestLine
 from .RandomPoissonDiscSamples import RandomPoissonDiscSamples
-from .RandomPoissonDiscSamplesWithMask import RandomPoissonDiscSamplesWithMask
 from .RegularHexSamples import RegularHexSamples
 from .RemoveSmallPolygonalObjects import RemoveSmallPolygonalObjects
 from .SciPyVoronoiPolygons import SciPyVoronoiPolygons
