@@ -13,63 +13,12 @@ Watershed Analysis
 ***************************************************************************
 """
 
-cdef long propagate_max(
-    short[:, :] flow, long height, long width,
-    unsigned char[:, :] values,
-    unsigned char[:, :] reference,
-    unsigned char[:, :] seen,
-    long i0, long j0):
-    """
-    Propagate data values upstream.
-    Start from cell (i0, j0) and move in inverse flow direction
-    """
-
-    cdef long i, j, count
-    cdef int x, di, dj
-    cdef Cell cell
-    cdef CellStack stack
-
-    cell = Cell(i0, j0)
-    stack.push(cell)
-    count = 0
-    seen[i0, j0] = 1
-
-    while not stack.empty():
-
-        cell = stack.top()
-        stack.pop()
-        i = cell.first
-        j = cell.second
-
-        count += 1
-
-        for x in range(8):
-
-            di = ci[x]
-            dj = cj[x]
-
-            if ingrid(height, width, i+di, j+dj) and flow[i+di, j+dj] == upward[x]:
-
-                if values[i+di, j+dj] == 0:
-                    
-                    values[i+di, j+dj] = max(values[i, j], reference[i+di, j+dj])
-
-                    if seen[i+di, j+dj] == 0:
-
-                        cell = Cell(i+di, j+dj)
-                        stack.push(cell)
-                        seen[i+di, j+dj] = 1
-
-    return count
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def watershed_max(
-    short[:, :] flow,
-    unsigned char[:, :] values,
-    unsigned char[:, :] reference,
-    feedback=None):
+def watershed_max(short[:, :] flow, float[:, :] values, float[:, :] reference, float fill_value=0, feedback=None):
     """
+    watershed2(flow, values, fill_value=0, feedback=None)
+
     Watershed analysis
 
     Fills no-data cells in `values`
@@ -86,14 +35,18 @@ def watershed_max(
     Parameters
     ----------
 
-    flow: array-like
-        D8 flow direction raster, dtype=int8, nodata=-1 (ndim=2)
+    flow: array-like, dtype=int8, nodata=-1 (ndim=2)
+        D8 flow direction raster
 
-    values: array-like
-        Values to propagate upstream, same shape as `flow`, any data
+    values: array-like, dtype=float32, same shape as `flow`
+        Values to propagate upstream
 
-    reference: array-like
-        Values to propagate upstream, same shape as `flow`, any data
+    reference: array-like, dtype=float32, same shape as `flow`
+        Values to propagate upstream
+
+    fill_value: float
+        Update only cells in `values` having value equal to `fill_value`.
+        Other cells are left unchanged.
 
     feedback: QgsProcessingFeedback-like object
         or None to disable feedback
@@ -101,11 +54,12 @@ def watershed_max(
 
     cdef:
 
-        long height, width, i, j, ix, jx
-        short direction
-        int x, di, dj, current, progress0, progress1
+        long height, width, i, j, ik, jk, ix, jx
+        int x, current, progress0, progress1
         float total
-        unsigned char[:, :] seen2
+        unsigned char[:, :] seen
+        cdef Cell cell
+        cdef CellStack stack
 
     height = flow.shape[0]
     width = flow.shape[1]
@@ -113,13 +67,10 @@ def watershed_max(
     current = 0
     progress0 = progress1 = 0
 
+    seen = np.zeros((height, width), dtype=np.uint8)
+
     if feedback is None:
         feedback = SilentFeedback()
-
-    seen = np.zeros((height, width), dtype=np.uint8)
-    seen2 = np.zeros((height, width), dtype=np.uint8)
-
-    # Lookup for outlets
 
     for i in range(height):
 
@@ -128,62 +79,44 @@ def watershed_max(
 
         for j in range(width):
 
-            if flow[i, j] == -1:
-                current = current + 1
+            if seen[i, j]:
                 continue
 
-            if seen2[i, j] > 0:
-                continue
+            if values[i, j] != fill_value:
 
-            if flow[i, j] == 0:
+                cell = Cell(i, j)
+                # stack = CellStack()
+                stack.push(cell)
+                seen[i, j] = True
 
-                current = current + propagate_max(
-                    flow, height, width,
-                    values, reference,
-                    seen,
-                    i, j)
+                while not stack.empty():
 
-                progress1 = int(current*total)
-                if progress1 > progress0:
-                    feedback.setProgress(progress1)
-                    progress0 = progress1
-
-            else:
-
-                ix = i
-                jx = j
-                x = ilog2(flow[ix, jx])
-                di = ci[x]
-                dj = cj[x]
-
-                while ingrid(height, width, ix+di, jx+dj) and flow[ix+di, jx+dj] != -1 and values[ix+di, jx+dj] == 0:
-
-                    ix = ix + di
-                    jx = jx + dj
-                    
-                    if flow[ix, jx] == 0:
+                    if feedback.isCanceled():
                         break
 
-                    x = ilog2(flow[ix, jx])
-                    di = ci[x]
-                    dj = cj[x]
+                    cell = stack.top()
+                    stack.pop()
 
-                    if seen2[ix, jx] == 1:
-                        # print('loop....')
-                        break
+                    ik = cell.first
+                    jk = cell.second
 
-                    seen2[ix, jx] = 1
+                    for x in range(8):
 
-                # feedback.pushInfo('Propagate values from cell(%d, %d)' % (ix, jx))
+                        ix = ik + ci[x]
+                        jx = jk + cj[x]
 
-                current = current + propagate_max(
-                    flow, height, width,
-                    values,
-                    reference,
-                    seen,
-                    ix, jx)
+                        if ingrid(height, width, ix, jx) and flow[ix, jx] == upward[x] and not seen[ix, jx]:
 
-            progress1 = int(current*total)
-            if progress1 > progress0:
-                feedback.setProgress(progress1)
-                progress0 = progress1
+                            if values[ix, jx] == fill_value:
+                                values[ix, jx] = max(values[ik, jk], reference[ik, jk])
+
+                            cell = Cell(ix, jx)
+                            stack.push(cell)
+                            seen[ix, jx] = True
+
+                    current += 1
+
+                    progress1 = int(current*total)
+                    if progress1 > progress0:
+                        feedback.setProgress(progress1)
+                        progress0 = progress1

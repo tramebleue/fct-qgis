@@ -42,7 +42,6 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     FLOW = 'FLOW'
     TARGET = 'TARGET'
-    IMPL = 'IMPL'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
@@ -55,12 +54,6 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.FLOW,
             self.tr('Flow Direction')))
 
-        self.addParameter(QgsProcessingParameterEnum(
-            self.IMPL,
-            self.tr('Implementation'),
-            options=[self.tr(option) for option in ['ta.watershed()', 'ta.watershed2()']],
-            defaultValue=0))
-
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.OUTPUT,
             self.tr('Watersheds')))
@@ -71,8 +64,6 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
         target_lyr = self.parameterAsRasterLayer(parameters, self.TARGET, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
-        implementation = self.parameterAsInt(parameters, self.IMPL, context)
-
         flow_ds = gdal.Open(flow_lyr.dataProvider().dataSourceUri())
         flow = flow_ds.GetRasterBand(1).ReadAsArray()
 
@@ -81,10 +72,7 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
         # TODO check target dtype
         target = np.float32(target_ds.GetRasterBand(1).ReadAsArray())
 
-        if implementation == 0:
-            ta.watershed(flow, target, feedback=feedback)
-        else:
-            ta.watershed2(flow, target, feedback=feedback)
+        ta.watershed(flow, target, feedback=feedback)
 
         target[flow == -1] = nodata
 
