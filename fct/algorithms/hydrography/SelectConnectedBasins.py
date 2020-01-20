@@ -147,6 +147,9 @@ class SelectConnectedBasins(AlgorithmMetadata, QgsProcessingAlgorithm):
                     if component in seen:
                         break
 
+                    if component not in findex:
+                        break
+
                     fid = findex[component]
                     selection.add(fid)
                     seen.add(component)
