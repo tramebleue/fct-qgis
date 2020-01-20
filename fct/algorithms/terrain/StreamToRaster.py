@@ -20,8 +20,10 @@ from osgeo import gdal
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessing,
     QgsProcessingAlgorithm,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField,
+    QgsProcessingParameterNumber,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer
 )
@@ -115,6 +117,9 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
     INPUT = 'INPUT'
     PK_FIELD = 'PK_FIELD'
     RASTER_TEMPLATE = 'RASTER_TEMPLATE'
+    METHOD = 'METHOD'
+    FILL_VALUE = 'FILL_VALUE'
+    BURN_VALUE = 'BURN_VALUE'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
@@ -132,7 +137,25 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterRasterLayer(
             self.RASTER_TEMPLATE,
-            self.tr('Raster Template')))
+            self.tr('Raster Template/Data')))
+
+        self.addParameter(QgsProcessingParameterEnum(
+            self.METHOD,
+            self.tr('Get Values From'),
+            options=[self.tr(option) for option in ['Vector Id Field', 'Source Raster', 'Burn fixed value']],
+            defaultValue=0))
+
+        self.addParameter(QgsProcessingParameterNumber(
+            self.FILL_VALUE,
+            self.tr('Fill Value'),
+            defaultValue=0
+        ))
+
+        self.addParameter(QgsProcessingParameterNumber(
+            self.BURN_VALUE,
+            self.tr('Optional Burn Value'),
+            defaultValue=1.0
+        ))
 
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.OUTPUT,
@@ -143,6 +166,9 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
         template_lyr = self.parameterAsRasterLayer(parameters, self.RASTER_TEMPLATE, context)
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         pk_field = self.parameterAsString(parameters, self.PK_FIELD, context)
+        method = self.parameterAsInt(parameters, self.METHOD, context)
+        fill_value = self.parameterAsDouble(parameters, self.FILL_VALUE, context)
+        burn_value = self.parameterAsDouble(parameters, self.BURN_VALUE, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
         template_ds = gdal.OpenEx(template_lyr.dataProvider().dataSourceUri())
@@ -154,7 +180,9 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgressText('Rasterize stream vectors')
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0.0
 
+        data = template_ds.GetRasterBand(1).ReadAsArray()
         streams = np.zeros((height, width), dtype=np.float32)
+        out = np.full((height, width), fill_value, dtype=np.float32)
 
         def isdata(px, py):
             """
@@ -162,6 +190,39 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
             """
 
             return px >= 0 and py >= 0 and px < width and py < height
+
+        if method == 0:
+
+            def set_data(row, col):
+                """
+                Set Pixel Value to Line Primary Field
+                """
+
+                current_value = streams[row, col]
+
+                if current_value == 0 or link_id < current_value:
+                    # Override with the smallest ID
+                    streams[row, col] = link_id
+                    out[row, col] = link_id
+
+        elif method == 1:
+
+            def set_data(row, col):
+                """
+                Set Pixel Value to Template Raster Value
+                """
+
+                out[row, col] = data[row, col]
+
+        elif method == 2:
+
+            def set_data(row, col):
+                """
+                Set Pixel Value to Fixed Value
+                """
+
+                out[row, col] = burn_value
+
 
         for current, feature in enumerate(layer.getFeatures()):
 
@@ -180,13 +241,15 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
             for a, b in zip(linestring[:-1], linestring[1:]):
                 for col, row in rasterize_linestring(a, b):
                     if isdata(col, row):
-                        current_value = streams[row, col]
-                        if current_value == 0 or link_id < current_value:
-                            # Override with the smallest ID
-                            streams[row, col] = link_id
+                        set_data(row, col)
 
         feedback.setProgress(100)
         feedback.setProgressText(self.tr('Write output ...'))
+
+        if nodata is None:
+            nodata = -99999
+        else:
+            out[data == nodata] = nodata
 
         driver = gdal.GetDriverByName('GTiff')
 
@@ -200,7 +263,7 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
         dst.SetGeoTransform(transform)
         dst.SetProjection(template_lyr.crs().toWkt())
 
-        dst.GetRasterBand(1).WriteArray(streams)
+        dst.GetRasterBand(1).WriteArray(out)
         dst.GetRasterBand(1).SetNoDataValue(nodata)
 
         # Properly close GDAL resources
