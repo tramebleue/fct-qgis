@@ -148,6 +148,7 @@ class ShortestDistance(AlgorithmMetadata, QgsProcessingAlgorithm):
         transform = elevations_ds.GetGeoTransform()
         resolution_x = transform[1]
         resolution_y = -transform[5]
+        height, width = elevations.shape
 
         feedback.setProgressText('Build stream point index')
 
@@ -155,6 +156,17 @@ class ShortestDistance(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         origins = np.zeros_like(elevations)
         # height, width = elevations.shape
+
+        def isdata(px, py):
+            """
+            True if (py, px) is a valid pixel coordinate,
+            and is not a no-data value.
+            """
+
+            if px < 0 or py < 0 or px >= width or py >= height:
+                return False
+
+            return elevations[py, px] != nodata
 
         for current, feature in enumerate(stream_layer.getFeatures()):
 
@@ -173,7 +185,7 @@ class ShortestDistance(AlgorithmMetadata, QgsProcessingAlgorithm):
                 for px, py in rasterize_linestring(a, b):
                     px = int(round(px))
                     py = int(round(py))
-                    if elevations[py, px] != nodata:
+                    if isdata(px, py):
                         origins[py, px] = 1
 
             # Add a separator point at Infinity between linestrings

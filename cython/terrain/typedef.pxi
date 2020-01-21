@@ -1,6 +1,7 @@
 from libcpp.queue cimport priority_queue
 from libcpp.pair cimport pair
 from libcpp.stack cimport stack
+from libcpp.vector cimport vector
 # from libcpp.string cimport string
 
 ctypedef pair[long, long] Cell

@@ -169,11 +169,23 @@ class DistanceToStream(AlgorithmMetadata, QgsProcessingAlgorithm):
         elevations = elevations_ds.GetRasterBand(1).ReadAsArray()
         nodata = elevations_ds.GetRasterBand(1).GetNoDataValue()
         transform = elevations_ds.GetGeoTransform()
+        height, width = elevations.shape
 
         feedback.setProgressText('Build stream point index')
         stream_points = list()
         directions = list()
         total = 100.0 / stream_layer.featureCount() if stream_layer.featureCount() else 0.0
+
+        def isdata(px, py):
+            """
+            True if (py, px) is a valid pixel coordinate,
+            and is not a no-data value.
+            """
+
+            if px < 0 or py < 0 or px >= width or py >= height:
+                return False
+
+            return elevations[py, px] != nodata
 
         for current, feature in enumerate(stream_layer.getFeatures()):
 
@@ -192,7 +204,7 @@ class DistanceToStream(AlgorithmMetadata, QgsProcessingAlgorithm):
                 stream_points.extend([
                     (py, px, len(directions)) for px, py
                     in rasterize_linestring(a, b)
-                    if elevations[int(round(py)), int(round(px))] != nodata
+                    if isdata(int(round(px)), int(round(py)))
                 ][:-1])
 
                 # Axis are reversed in pixel coord !

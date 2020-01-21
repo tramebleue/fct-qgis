@@ -19,6 +19,7 @@ def shortest_ref(
         float[:, :] data,
         float nodata,
         float startval=0,
+        float fillval=0,
         float[:, :] cost=None,
         float[:, :] out=None,
         float[:, :] distance=None,
@@ -155,7 +156,8 @@ def shortest_ref(
             ix = ijx.first
             jx = ijx.second
             
-            out[i, j] = out[ix, jx]
+            if out[i, j] == fillval:
+                out[i, j] = out[ix, jx]
             
             if i == ix or j == jx:
                 distance[i, j] = distance[ix, jx] + 1
