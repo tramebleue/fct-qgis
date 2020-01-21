@@ -108,7 +108,7 @@ def watershed_max(short[:, :] flow, float[:, :] values, float[:, :] reference, f
                         if ingrid(height, width, ix, jx) and flow[ix, jx] == upward[x] and not seen[ix, jx]:
 
                             if values[ix, jx] == fill_value:
-                                values[ix, jx] = max(values[ik, jk], reference[ik, jk])
+                                values[ix, jx] = max(values[ik, jk], reference[ix, jx])
 
                             cell = Cell(ix, jx)
                             stack.push(cell)

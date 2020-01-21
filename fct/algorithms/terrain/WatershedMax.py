@@ -19,6 +19,7 @@ from osgeo import gdal
 
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessingAlgorithm,
+    QgsProcessingParameterNumber,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer
 )
@@ -42,6 +43,7 @@ class WatershedMax(AlgorithmMetadata, QgsProcessingAlgorithm):
     FLOW = 'FLOW'
     TARGET = 'TARGET'
     REFERENCE = 'REFERENCE'
+    FILL_VALUE = 'FILL_VALUE'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
@@ -58,6 +60,11 @@ class WatershedMax(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.FLOW,
             self.tr('Flow Direction')))
 
+        self.addParameter(QgsProcessingParameterNumber(
+            self.FILL_VALUE,
+            self.tr('Fill Value'),
+            defaultValue=-99999))
+
         self.addParameter(QgsProcessingParameterRasterDestination(
             self.OUTPUT,
             self.tr('Watersheds')))
@@ -69,14 +76,14 @@ class WatershedMax(AlgorithmMetadata, QgsProcessingAlgorithm):
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         target_lyr = self.parameterAsRasterLayer(parameters, self.TARGET, context)
         ref_lyr = self.parameterAsRasterLayer(parameters, self.REFERENCE, context)
+        fill_value = self.parameterAsDouble(parameters, self.FILL_VALUE, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
         flow_ds = gdal.Open(flow_lyr.dataProvider().dataSourceUri())
         flow = flow_ds.GetRasterBand(1).ReadAsArray()
 
         target_ds = gdal.Open(target_lyr.dataProvider().dataSourceUri())
-        # nodata = target_ds.GetRasterBand(1).GetNoDataValue()
-        # TODO check target dtype
+        nodata = target_ds.GetRasterBand(1).GetNoDataValue()
         target = target_ds.GetRasterBand(1).ReadAsArray()
         transform = target_ds.GetGeoTransform()
         # width = target_ds.RasterXSize
@@ -85,11 +92,11 @@ class WatershedMax(AlgorithmMetadata, QgsProcessingAlgorithm):
         ref_ds = gdal.OpenEx(ref_lyr.dataProvider().dataSourceUri(), gdal.GA_ReadOnly)
         reference = ref_ds.GetRasterBand(1).ReadAsArray()
 
-        reference[(reference >= 50) & (reference < 60)] = 0
-        target[reference == 1] = 1
+        watershed_max(flow, target, reference, fill_value=fill_value, feedback=feedback)
 
-        watershed_max(flow, target, reference, feedback=feedback)
-        
+        # target[target == fill_value] = reference[target == fill_value]
+        target[target == fill_value] = nodata
+
         if feedback.isCanceled():
             feedback.reportError(self.tr('Aborted'), True)
             return {}
@@ -98,7 +105,7 @@ class WatershedMax(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.pushInfo(self.tr('Write output ...'))
 
         driver = gdal.GetDriverByName('GTiff')
-        
+
         dst = driver.Create(
             output,
             xsize=target_ds.RasterXSize,
@@ -110,6 +117,7 @@ class WatershedMax(AlgorithmMetadata, QgsProcessingAlgorithm):
         dst.SetProjection(target_lyr.crs().toWkt())
 
         dst.GetRasterBand(1).WriteArray(target)
+        dst.GetRasterBand(1).SetNoDataValue(nodata)
 
         # Properly close GDAL resources
         flow_ds = None

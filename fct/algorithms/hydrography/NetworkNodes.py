@@ -106,6 +106,7 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Measure Field'),
             parentLayerParameterName=self.INPUT,
             type=QgsProcessingParameterField.Numeric,
+            defaultValue='MEASURE',
             optional=True))
 
         self.addParameter(QgsProcessingParameterFeatureSink(

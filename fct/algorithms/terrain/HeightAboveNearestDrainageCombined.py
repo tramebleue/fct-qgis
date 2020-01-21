@@ -227,7 +227,7 @@ class HeightAboveNearestDrainageCombined(AlgorithmMetadata, QgsProcessingAlgorit
         slope_ds = gdal.Open(slope_lyr.dataProvider().dataSourceUri())
         slope = slope_ds.GetRasterBand(1).ReadAsArray()
 
-        refz[(slope > 1) & (data == 0)] = -99999
+        refz[(slope > 2) & (data == 0)] = -99999
 
         del data
         del slope
@@ -235,7 +235,7 @@ class HeightAboveNearestDrainageCombined(AlgorithmMetadata, QgsProcessingAlgorit
         flow_ds = gdal.Open(flow_lyr.dataProvider().dataSourceUri())
         flow = flow_ds.GetRasterBand(1).ReadAsArray()
 
-        ta.watershed2(flow, refz, fill_value=-99999, feedback=feedback)
+        ta.watershed(flow, refz, fill_value=-99999, feedback=feedback)
 
         feedback.setProgress(100)
         feedback.setProgressText(self.tr('Write output ...'))
