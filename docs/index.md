@@ -1,4 +1,4 @@
-# Fluvial Toolbox Corridor
+# Fluvial Corridor Toolbox
 
 The Fluvial Corridor Toolbox is a set of geoalgorithms intended to describe and measure fluvial features and processes.
 
