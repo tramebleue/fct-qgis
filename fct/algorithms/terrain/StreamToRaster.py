@@ -142,7 +142,7 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterEnum(
             self.METHOD,
             self.tr('Get Values From'),
-            options=[self.tr(option) for option in ['Vector Id Field', 'Source Raster', 'Burn fixed value']],
+            options=[self.tr(option) for option in ['Vector Id Field', 'Source Raster', 'Burn fixed value', 'Vertex Z', 'Vertex M']],
             defaultValue=0))
 
         self.addParameter(QgsProcessingParameterNumber(
@@ -223,7 +223,6 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                 out[row, col] = burn_value
 
-
         for current, feature in enumerate(layer.getFeatures()):
 
             if feedback.isCanceled():
@@ -233,15 +232,36 @@ class StreamToRaster(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             link_id = feature.attribute(pk_field)
 
-            linestring = worldtopixel(np.array([
-                (point.x(), point.y())
-                for point in feature.geometry().asPolyline()
-            ]), transform)
+            if method == 3 or method == 4:
 
-            for a, b in zip(linestring[:-1], linestring[1:]):
-                for col, row in rasterize_linestring(a, b):
+                vidx = (method - 1)
+
+                vertices = np.array([
+                    (vertex.x(), vertex.y(), vertex.z(), vertex.m())
+                    for vertex in feature.geometry().vertices()
+                ])
+
+                vertices[:, :2] = worldtopixel(vertices[:, :2], transform)
+
+                for vertex in vertices:
+
+                    col = int(vertex[0])
+                    row = int(vertex[1])
+
                     if isdata(col, row):
-                        set_data(row, col)
+                        out[row, col] = vertex[vidx]
+
+            else:
+
+                linestring = worldtopixel(np.array([
+                    (point.x(), point.y())
+                    for point in feature.geometry().asPolyline()
+                ]), transform)
+
+                for a, b in zip(linestring[:-1], linestring[1:]):
+                    for col, row in rasterize_linestring(a, b):
+                        if isdata(col, row):
+                            set_data(row, col)
 
         feedback.setProgress(100)
         feedback.setProgressText(self.tr('Write output ...'))

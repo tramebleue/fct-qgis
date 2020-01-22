@@ -25,7 +25,7 @@ def shortest_ref(
         float[:, :] distance=None,
         feedback=None):
     """
-    shortest_ref(data, nodata, startval=1, cost=None, out=None, distance=None, feedback=None)
+    shortest_ref(data, nodata, startval=1, fillval=0, cost=None, out=None, distance=None, feedback=None)
 
     Assign to each input cell the value of the nearest origin (reference) cell.
 

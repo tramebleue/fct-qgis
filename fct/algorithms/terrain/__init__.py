@@ -26,6 +26,7 @@ from .RelativeDEM import RelativeDEM
 from .RelativeDEMByFlow import RelativeDEMByFlow
 from .ResolveFlats import ResolveFlats
 from .ShortestDistance import ShortestDistance
+from .ShortestDistanceReference import ShortestDistanceReference
 from .SignedShortestDistance import SignedShortestDistance
 from .StreamToFeature import StreamToFeature
 from .StreamToRaster import StreamToRaster

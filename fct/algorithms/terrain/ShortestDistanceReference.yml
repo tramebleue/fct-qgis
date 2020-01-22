@@ -1,0 +1,9 @@
+displayName: Shortest Distance Reference
+group: terrain
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - raster
+  - nearest
+  - dijkstra
