@@ -227,7 +227,7 @@ class SignedShortestDistance(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             point = np.array([(x, y)])
             nearest_segments = np.take(segments, nearest_idx[current], axis=0, mode='wrap')
-            dist, signed_dist, pos = signed_distance(nearest_segments[:, :2], nearest_segments[:, 2:], point)
+            dist, signed_dist, pos = ta.signed_distance(nearest_segments[:, :2], nearest_segments[:, 2:], point)
 
             min_dist = float('inf')
             min_signed = float('inf')

@@ -31,6 +31,7 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsPointXY,
     QgsProcessing,
     QgsProcessingAlgorithm,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterRasterLayer,
@@ -68,6 +69,7 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
     INPUT = 'INPUT'
     FLOW = 'FLOW'
     FLOW_ACC = 'FLOW_ACC'
+    IMPLEMENTATION = 'IMPLEMENTATION'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
@@ -85,6 +87,14 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.FLOW,
             self.tr('Flow Direction')))
 
+        self.addParameter(QgsProcessingParameterEnum(
+            self.IMPLEMENTATION,
+            self.tr('Implementation'),
+            options=[self.tr(option) for option in [
+                'Pure Python',
+                'Cython']],
+            defaultValue=0))
+
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
             self.tr('SubGrid Nodes'),
@@ -92,7 +102,11 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        # pylint:disable=import-error,no-name-in-module
+        from ...lib import terrain_analysis as ta
+
         layer = self.parameterAsSource(parameters, self.INPUT, context)
+        implementation = self.parameterAsInt(parameters, self.IMPLEMENTATION, context)
 
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         flow_acc_lyr = self.parameterAsRasterLayer(parameters, self.FLOW_ACC, context)
@@ -130,7 +144,6 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
         height, width = flow.shape
 
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0.0
-        mask = np.zeros_like(flow, dtype=np.bool)
 
         ci = [-1, -1,  0,  1,  1,  1,  0, -1]
         cj = [ 0,  1,  1,  1,  0, -1, -1, -1]
@@ -168,8 +181,13 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             return lca
 
-        feedback.setProgressText(self.tr("Find feature outlets ..."))
-
+        if implementation == 0:
+            feedback.setProgressText(self.tr("Find feature outlets ..."))
+            mask = np.zeros_like(flow, dtype=np.bool)
+        else:
+            feedback.setProgressText(self.tr("Extract feature bounding boxes ..."))
+            geometries = dict()
+        
         outlet_pixels = dict()
         centroids = dict()
 
@@ -182,48 +200,71 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             geom = feature.geometry()
             centroids[feature.id()] = geom.centroid().asPoint()
-            bbox = geom.boundingBox()
-            (jmin, imin), (jmax, imax) = worldtopixel(np.array([(bbox.xMinimum(), bbox.yMaximum()), (bbox.xMaximum(), bbox.yMinimum())]), transform)
 
-            # mask = np.zeros((imax-imin+1, jmax-jmin+1), dtype=np.bool)
-            mask[:, :] = False
-            max_acc = list()
+            if implementation == 0:
 
-            for i in range(imin, imax+1):
-                for j in range(jmin, jmax+1):
-                    # test if pixel is in geometry
-                    px, py = pixeltoworld(np.array([j, i]), transform)
-                    if isdata(i, j) and flow[i, j] != nodata and geom.contains(QgsGeometry.fromPointXY(QgsPointXY(px, py))):
-                        # mask[i-imin, j-jmin] = True
-                        mask[i, j] = True
-                        acc = flow_acc[i, j]
-                        max_acc.append(Pixel(-acc, i, j))
+                # Python implementation
 
-            if len(max_acc) == 0:
-                continue
+                bbox = geom.boundingBox()
+                (jmin, imin), (jmax, imax) = worldtopixel(np.array([(bbox.xMinimum(), bbox.yMaximum()), (bbox.xMaximum(), bbox.yMinimum())]), transform)
 
-            # sort by acc
-            heapify(max_acc)
+                # mask = np.zeros((imax-imin+1, jmax-jmin+1), dtype=np.bool)
+                mask[:, :] = False
+                max_acc = list()
 
-            candidate = heappop(max_acc)
-            local_acc = local_contributive_area(candidate.i, candidate.j)
+                for i in range(imin, imax+1):
+                    for j in range(jmin, jmax+1):
+                        # test if pixel is in geometry
+                        px, py = pixeltoworld(np.array([j, i]), transform)
+                        if isdata(i, j) and flow[i, j] != nodata and geom.contains(QgsGeometry.fromPointXY(QgsPointXY(px, py))):
+                            # mask[i-imin, j-jmin] = True
+                            mask[i, j] = True
+                            acc = flow_acc[i, j]
+                            max_acc.append(Pixel(-acc, i, j))
 
-            # TODO test if next candidate has greater local_acc
-            while max_acc:
+                if len(max_acc) == 0:
+                    continue
 
-                next_candidate = heappop(max_acc)
-                next_local_acc = local_contributive_area(next_candidate.i, next_candidate.j)
+                # sort by acc
+                heapify(max_acc)
 
-                if next_local_acc > local_acc:
+                candidate = heappop(max_acc)
+                local_acc = local_contributive_area(candidate.i, candidate.j)
 
-                    candidate = next_candidate
-                    local_acc = next_local_acc
+                # TODO test if next candidate has greater local_acc
+                while max_acc:
 
-                else:
+                    next_candidate = heappop(max_acc)
+                    next_local_acc = local_contributive_area(next_candidate.i, next_candidate.j)
 
-                    break
+                    if next_local_acc > local_acc:
 
-            outlet_pixels[feature.id()] = Pixel(local_acc, candidate.i, candidate.j)
+                        candidate = next_candidate
+                        local_acc = next_local_acc
+
+                    else:
+
+                        break
+
+                outlet_pixels[feature.id()] = Pixel(local_acc, candidate.i, candidate.j)
+
+            else:
+
+                bbox = QgsGeometry.fromRect(geom.boundingBox())
+                geometries[feature.id()] = np.array([(v.x(), v.y()) for v in bbox.vertices()], dtype=np.float32)
+                # try:
+                #     (i, j), area = ta.subgrid_outlet(bbox_coords, flow, flow_acc, mask, transform)
+                #     outlet_pixels[feature.id()] = Pixel(area, i, j)
+                # except ValueError:
+                #     pass
+
+        if implementation == 1:
+
+            feedback.setProgressText(self.tr("Find feature outlets ..."))
+
+            outlets = ta.subgrid_outlets(geometries, flow, flow_acc, transform, feedback)
+            outlet_pixels = {fid: Pixel(area, i, j) for (fid, ((i, j), area)) in outlets.items()}
+            del outlets
 
         feedback.setProgressText(self.tr("Build upstream/downstream graph ..."))
 

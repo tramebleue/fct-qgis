@@ -1,7 +1,7 @@
 import array
 import sys
 from cpython cimport array
-from libc.math cimport sqrt, atan, atan2, pi, cos, sin, tan, acos
+from libc.math cimport sqrt, atan, atan2, pi, cos, sin, tan, acos, lround
 from libcpp.map cimport map
 from libcpp.deque cimport deque
 

@@ -27,7 +27,6 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
-from ...lib import terrain_analysis as ta
 
 def rasterize_linestring(a, b):
     """
@@ -140,6 +139,8 @@ class ShortestDistanceReference(AlgorithmMetadata, QgsProcessingAlgorithm):
             optional=True))
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
+
+        from ...lib import terrain_analysis as ta
 
         input_lyr = self.parameterAsRasterLayer(parameters, self.INPUT, context)
         fill_value = self.parameterAsDouble(parameters, self.FILL_VALUE, context)
