@@ -24,6 +24,7 @@ cimport cython
 
 include "common.pxi"
 include "typedef.pxi"
+include "transform.pxi"
 include "fillsinks.pxi"
 include "fillsinks2.pxi"
 include "flowdir.pxi"

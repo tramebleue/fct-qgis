@@ -1,45 +1,6 @@
-
-cdef struct GeoTransform:
-
-    float origin_x
-    float origin_y
-    float scale_x
-    float scale_y
-    float shear_x
-    float shear_y
-
-ctypedef pair[float, float] Point
-
 ctypedef pair[Cell, Cell] GridExtent
 
 ctypedef pair[Cell, ContributingArea] Outlet
-
-cdef Point pixeltoworld(Cell pixel, GeoTransform transform) nogil:
-    """
-    Transform raster pixel coordinates (py, px)
-    into real world coordinates (x, y)
-    """
-
-    cdef float x, y
-
-    x = (pixel.second + 0.5) * transform.scale_x + transform.origin_x
-    y = (pixel.first + 0.5) * transform.scale_y + transform.origin_y
-
-    return Point(x, y)
-
-@cython.cdivision(True) 
-cdef Cell worldtopixel(Point p, GeoTransform transform) nogil:
-    """
-    Transform real world coordinates (x, y)
-    into raster pixel coordinates (py, px)
-    """
-
-    cdef long i, j
-
-    j = lround((p.first - transform.origin_x) / transform.scale_x - 0.5)
-    i = lround((p.second - transform.origin_y) / transform.scale_y - 0.5)
-    
-    return Cell(i, j)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -55,7 +16,7 @@ cdef GridExtent grid_extent(float[:, :] geometry, GeoTransform transform) nogil:
     for k in range(length):
 
         coordinate = Point(geometry[k, 0], geometry[k, 1])
-        pixel = worldtopixel(coordinate, transform)
+        pixel = pointtopixel(coordinate, transform)
 
         if pixel.first < mini or mini == -1:
             mini = pixel.first
@@ -68,16 +29,9 @@ cdef GridExtent grid_extent(float[:, :] geometry, GeoTransform transform) nogil:
 
     return GridExtent(Cell(mini, minj), Cell(maxi, maxj))
 
-cdef float cross(float ax, float ay, float bx, float by, float cx, float cy) nogil:
+cdef inline float cross(float ax, float ay, float bx, float by, float cx, float cy) nogil:
 
-    cdef float abx, aby, acx, acy
-
-    abx = bx - ax
-    aby = by - ay
-    acx = cx - ax
-    acy = cy - ay
-
-    return (abx*acy) - (aby*acx)
+    return (bx - ax)*(cy - ay) - (by - ay)*(cx - ax)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -247,7 +201,6 @@ cdef Outlet subgrid_outlet(float[:, :] geometry, short[:, :] flow, ContributingA
         CellQueue queue
         ContributingArea area, other_area
 
-    mask[:, :] = False
     extent = grid_extent(geometry, transform)
     mini = extent.first.first
     minj = extent.first.second
@@ -261,7 +214,7 @@ cdef Outlet subgrid_outlet(float[:, :] geometry, short[:, :] flow, ContributingA
                 continue
 
             pixel = Cell(i, j)
-            p = pixeltoworld(pixel, transform)
+            p = pixeltopoint(pixel, transform)
 
             if flow[i, j] != -1 and point_in_ring(p, geometry):
 
@@ -299,6 +252,11 @@ cdef Outlet subgrid_outlet(float[:, :] geometry, short[:, :] flow, ContributingA
 
             break
 
+    for i in range(mini, maxi+1):
+        for j in range(minj, maxj+1):
+
+            mask[i, j] = False
+
     return Outlet(pixel, area)
 
 @cython.boundscheck(False)
@@ -318,13 +276,8 @@ def subgrid_outlets(dict geometries, short[:, :] flow, ContributingArea[:, :] ac
 
     outlets = dict()
     mask = np.zeros((height, width), dtype=np.uint8)
-    transform.origin_x = gdal_transform[0]
-    transform.origin_y = gdal_transform[3]
-    transform.scale_x = gdal_transform[1]
-    transform.scale_y = gdal_transform[5]
-    transform.shear_x = gdal_transform[2]
-    transform.shear_y = gdal_transform[4]
-
+    transform = transform_from_gdal(gdal_transform)
+    
     total = 100.0 / len(geometries) if len(geometries) else 0
 
     for current, (fid, geometry) in enumerate(geometries.items()):

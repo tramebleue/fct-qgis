@@ -250,8 +250,8 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             else:
 
-                bbox = QgsGeometry.fromRect(geom.boundingBox())
-                geometries[feature.id()] = np.array([(v.x(), v.y()) for v in bbox.vertices()], dtype=np.float32)
+                # bbox = QgsGeometry.fromRect(geom.boundingBox())
+                geometries[feature.id()] = np.array([(v.x(), v.y()) for v in geom.vertices()], dtype=np.float32)
                 # try:
                 #     (i, j), area = ta.subgrid_outlet(bbox_coords, flow, flow_acc, mask, transform)
                 #     outlet_pixels[feature.id()] = Pixel(area, i, j)
@@ -264,6 +264,8 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             outlets = ta.subgrid_outlets(geometries, flow, flow_acc, transform, feedback)
             outlet_pixels = {fid: Pixel(area, i, j) for (fid, ((i, j), area)) in outlets.items()}
+
+            del geometries
             del outlets
 
         feedback.setProgressText(self.tr("Build upstream/downstream graph ..."))

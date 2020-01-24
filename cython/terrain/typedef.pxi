@@ -4,6 +4,7 @@ from libcpp.stack cimport stack
 from libcpp.vector cimport vector
 # from libcpp.string cimport string
 
+ctypedef pair[float, float] Point
 ctypedef pair[long, long] Cell
 ctypedef stack[Cell] CellStack
 ctypedef pair[float, Cell] QueueEntry
