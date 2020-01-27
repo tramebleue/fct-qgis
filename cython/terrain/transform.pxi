@@ -8,6 +8,9 @@ cdef struct GeoTransform:
     float shear_y
 
 cdef GeoTransform transform_from_gdal(gdal_transform):
+    """
+    Convert GDAL GeoTransform Tuple to internal GeoTransform
+    """
 
     cdef GeoTransform transform
 
@@ -21,6 +24,9 @@ cdef GeoTransform transform_from_gdal(gdal_transform):
     return transform
 
 cdef GeoTransform transform_from_rasterio(rio_transform):
+    """
+    Convert RasterIO Affine Transform Object to internal GeoTransform
+    """
 
     cdef GeoTransform transform
 
@@ -80,50 +86,184 @@ cdef Cell pointtopixel(Point p, GeoTransform transform) nogil:
     
     return Cell(i, j)
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def worldtopixel(float[:, :] coordinates, transform, gdal=True):
+def pixeltoxy(int row, int col, transform, gdal=True):
     """
-    DOCME
+    Transform raster pixel coordinates (py, px)
+    into real world coordinates (x, y)
+
+    Parameters
+    ----------
+
+    row, col: int
+        raster pixel coordinates
+
+    transform: object
+        GDAL GeoTransform or RasterIO Affine Transform Object
+
+    gdal: boolean
+        True if `transform` is a GDAL GeoTransform,
+        False if it is a Rasterio Affine Transform
+
+    Returns
+    -------
+
+    (x, y): float
+        x and y real world coordinates
+        
     """
-
-    cdef:
-
-        long length = coordinates.shape[0], k
-        unsigned int[:, :] pixels
-        GeoTransform gt
-        Point point
-        Cell pixel
 
     if gdal:
         gt = transform_from_gdal(transform)
     else:
         gt = transform_from_rasterio(transform)
 
-    pixels = np.zeros((length, 2), dtype=np.uint32)
+    return pixeltopoint(Cell(row, col), gt)
 
-    with nogil:
+def xytopixel(float x, float y, transform, gdal=True):
+    """
+    Transform real world coordinates (x, y)
+    into raster pixel coordinates (py, px)
 
-        for k in range(length):
+    Parameters
+    ----------
 
-            point =  Point(coordinates[k, 0], coordinates[k, 1])
-            pixel = pointtopixel(point, gt)
-            pixels[k, 0] = pixel.first
-            pixels[k, 1] = pixel.second
+    x, y: float
+        x and y real world coordinates
 
-    return pixels
+    transform: object
+        GDAL GeoTransform or RasterIO Affine Transform Object
+
+    gdal: boolean
+        True if `transform` is a GDAL GeoTransform,
+        False if it is a Rasterio Affine Transform
+
+    Returns
+    -------
+
+    (row, col): int
+        raster pixel coordinates
+    """
+
+    if gdal:
+        gt = transform_from_gdal(transform)
+    else:
+        gt = transform_from_rasterio(transform)
+
+    return pointtopixel(Point(x, y), gt)
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def pixeltoworld(unsigned int[:, :] pixels, transform, gdal=True):
+def worldtopixel(np.float32_t[:, :] coordinates, transform, gdal=True):
     """
-    DOCME
+    Transform real world coordinates (x, y)
+    into raster pixel coordinates (py, px)
+
+    Parameters
+    ----------
+
+    coordinates: array, shape (n, 2), dtype=float32
+        array of (x, y) coordinates
+
+    transform: object
+        GDAL GeoTransform or RasterIO Affine Transform Object
+
+    gdal: boolean
+        True if `transform` is a GDAL GeoTransform,
+        False if it is a Rasterio Affine Transform 
+
+    Returns
+    -------
+
+    Raster pixel coordinates
+    as an array of shape (n, 2), dtype=int32
+    """
+
+    cdef:
+
+        long length = coordinates.shape[0], k
+        np.int32_t[:, :] pixels
+        GeoTransform gt
+        # Point point
+        # Cell pixel
+        float x, y
+        float det, a, b, c, d, e, f
+
+    if gdal:
+        gt = transform_from_gdal(transform)
+    else:
+        gt = transform_from_rasterio(transform)
+
+    pixels = np.zeros((length, 2), dtype=np.int32)
+
+    with nogil:
+
+        if gt.shear_x == 0 and gt.shear_y == 0:
+
+            for k in range(length):
+
+                # point =  Point(coordinates[k, 0], coordinates[k, 1])
+                x = coordinates[k, 0]
+                y = coordinates[k, 1]
+                
+                # pixel = pointtopixel(point, gt)
+                pixels[k, 0] = lround((y - gt.origin_y) / gt.scale_y - 0.5)
+                pixels[k, 1] = lround((x - gt.origin_x) / gt.scale_x - 0.5)
+
+        else:
+
+            # Compute inverse transform only once
+
+            det = gt.scale_x*gt.scale_y - gt.shear_x*gt.shear_y
+            a = -gt.shear_y / det
+            b = gt.scale_x / det
+            c = (gt.origin_x*gt.shear_y - gt.scale_x*gt.origin_y) / det
+            d = gt.scale_y / det
+            e = -gt.shear_x / det
+            f = (gt.shear_x*gt.origin_y - gt.origin_x*gt.scale_y) / det
+
+            for k in range(length):
+
+                # point =  Point(coordinates[k, 0], coordinates[k, 1])
+                x = coordinates[k, 0]
+                y = coordinates[k, 1]
+                
+                pixels[k, 0] = lround((a*x + b*y + c) - 0.5)
+                pixels[k, 1] = lround((d*x + e*y + f) - 0.5)
+                
+    return np.asarray(pixels)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def pixeltoworld(np.int32_t[:, :] pixels, transform, gdal=True):
+    """
+    Transform raster pixel coordinates (py, px)
+    into real world coordinates (x, y)
+
+    Parameters
+    ----------
+
+    pixels: array, shape (n, 2), dtype=int32
+        array of (row, col) raster coordinates
+
+    transform: object
+        GDAL GeoTransform or RasterIO Affine Transform Object
+
+    gdal: boolean
+        True if `transform` is a GDAL GeoTransform,
+        False if it is a Rasterio Affine Transform 
+
+    Returns
+    -------
+
+    Real world coordinates
+    as an array of shape (n, 2), dtype=float32
     """
 
     cdef:
 
         long length = pixels.shape[0], k
-        float[:, :] coordinates
+        np.float32_t[:, :] coordinates
         GeoTransform gt
         Point point
         Cell pixel
@@ -144,6 +284,4 @@ def pixeltoworld(unsigned int[:, :] pixels, transform, gdal=True):
             coordinates[k, 0] = point.first
             coordinates[k, 1] = point.second
 
-    return coordinates
-
-
+    return np.asarray(coordinates)

@@ -1,5 +1,5 @@
 # coding: utf-8
-# cython: c_string_type=str, c_string_encoding=ascii
+# cython: c_string_type=str, c_string_encoding=ascii, embedsignature=True
 
 """
 Terrain Analysis - Cython implementation of some terrain analysis algorithms
