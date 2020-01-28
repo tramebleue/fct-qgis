@@ -143,6 +143,7 @@ class ShortestDistance(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        # pylint:disable=import-error,no-name-in-module
         from ...lib.terrain_analysis import shortest_distance
 
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.INPUT, context)

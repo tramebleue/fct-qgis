@@ -68,6 +68,7 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        # pylint:disable=import-error,no-name-in-module
         from ...lib import terrain_analysis as ta
 
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)

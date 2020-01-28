@@ -82,11 +82,7 @@ class FillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        # if CYTHON:
-        #     feedback.pushInfo("Using Cython flow_accumulation() ...")
-        # else:
-        #     feedback.pushInfo("Pure python flow_accumulation() - this may take a while ...")
-
+        # pylint:disable=import-error,no-name-in-module
         from ...lib.terrain_analysis import fillsinks
 
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.DEM, context)

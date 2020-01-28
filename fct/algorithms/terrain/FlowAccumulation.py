@@ -58,6 +58,9 @@ class FlowAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        # pylint:disable=import-error,no-name-in-module
+        from ...lib.terrain_analysis import flow_accumulation
+
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 

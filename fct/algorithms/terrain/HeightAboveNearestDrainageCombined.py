@@ -162,6 +162,7 @@ class HeightAboveNearestDrainageCombined(AlgorithmMetadata, QgsProcessingAlgorit
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        # pylint:disable=import-error,no-name-in-module
         from ...lib import terrain_analysis as ta
 
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.INPUT, context)

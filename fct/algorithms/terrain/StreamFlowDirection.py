@@ -61,6 +61,7 @@ class StreamFlowDirection(AlgorithmMetadata, QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
+        # pylint:disable=import-error,no-name-in-module
         from ...lib.terrain_analysis import stream_flow
 
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.ELEVATIONS, context)
