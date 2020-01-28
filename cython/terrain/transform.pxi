@@ -154,6 +154,7 @@ def xytopixel(float x, float y, transform, gdal=True):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.cdivision(True)
 def worldtopixel(np.float32_t[:, :] coordinates, transform, gdal=True):
     """
     Transform real world coordinates (x, y)
