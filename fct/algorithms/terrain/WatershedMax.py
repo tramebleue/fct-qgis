@@ -24,7 +24,6 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessingParameterRasterLayer
 )
 
-from processing.core.ProcessingConfig import ProcessingConfig
 from ..metadata import AlgorithmMetadata
 
 class WatershedMax(AlgorithmMetadata, QgsProcessingAlgorithm):
@@ -69,9 +68,18 @@ class WatershedMax(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.OUTPUT,
             self.tr('Watersheds')))
 
+    def canExecute(self): #pylint: disable=unused-argument,missing-docstring
+
+        try:
+            # pylint: disable=import-error,unused-variable
+            from ...lib import terrain_analysis as ta
+            return True, ''
+        except ImportError:
+            return False, self.tr('Missing dependency: FCT terrain_analysis')
+
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
-        from ...lib.terrain_analysis import watershed_max
+        from ...lib import terrain_analysis as ta
 
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         target_lyr = self.parameterAsRasterLayer(parameters, self.TARGET, context)
@@ -92,7 +100,7 @@ class WatershedMax(AlgorithmMetadata, QgsProcessingAlgorithm):
         ref_ds = gdal.OpenEx(ref_lyr.dataProvider().dataSourceUri(), gdal.GA_ReadOnly)
         reference = ref_ds.GetRasterBand(1).ReadAsArray()
 
-        watershed_max(flow, target, reference, fill_value=fill_value, feedback=feedback)
+        ta.watershed_max(flow, target, reference, fill_value=fill_value, feedback=feedback)
 
         # target[target == fill_value] = reference[target == fill_value]
         target[target == fill_value] = nodata

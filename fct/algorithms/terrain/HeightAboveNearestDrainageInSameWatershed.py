@@ -26,7 +26,6 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
-from ...lib.terrain_analysis import shortest_ref_ws
 
 def rasterize_linestring(a, b):
     """
@@ -150,8 +149,18 @@ class HeightAboveNearestDrainageInSameWatershed(AlgorithmMetadata, QgsProcessing
             self.OUTPUT,
             self.tr('Relative DEM')))
 
+    def canExecute(self): #pylint: disable=unused-argument,missing-docstring
+
+        try:
+            # pylint: disable=import-error,unused-variable
+            from ...lib.terrain_analysis import shortest_ref_ws
+            return True, ''
+        except ImportError:
+            return False, self.tr('Missing dependency: FCT terrain_analysis')
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
+
+        from ...lib.terrain_analysis import shortest_ref_ws
 
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.INPUT, context)
         watersheds_lyr = self.parameterAsRasterLayer(parameters, self.WATERSHEDS, context)

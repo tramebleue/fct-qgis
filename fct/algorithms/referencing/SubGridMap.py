@@ -26,7 +26,6 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
-from ...lib.terrain_analysis import watershed
 from .SubGridTopography import worldtopixel
 
 class SubGridMap(AlgorithmMetadata, QgsProcessingAlgorithm):
@@ -56,6 +55,8 @@ class SubGridMap(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Subgrid Map')))
 
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
+
+        from ...lib.terrain_analysis import watershed
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)

@@ -25,7 +25,6 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
-from ...lib import terrain_analysis as ta
 
 class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
@@ -58,7 +57,18 @@ class Watershed(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.OUTPUT,
             self.tr('Watersheds')))
 
+    def canExecute(self): #pylint: disable=unused-argument,missing-docstring
+
+        try:
+            # pylint: disable=import-error,unused-variable
+            from ...lib import terrain_analysis as ta
+            return True, ''
+        except ImportError:
+            return False, self.tr('Missing dependency: FCT terrain_analysis')
+
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
+
+        from ...lib import terrain_analysis as ta
 
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         target_lyr = self.parameterAsRasterLayer(parameters, self.TARGET, context)

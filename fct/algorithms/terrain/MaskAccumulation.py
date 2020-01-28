@@ -24,7 +24,6 @@ from qgis.core import ( # pylint:disable=no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
-from ...lib.terrain_analysis import flow_accumulation
 
 class MaskAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Compute mask accumulation raster.
@@ -53,7 +52,18 @@ class MaskAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.OUTPUT,
             self.tr('Accumulation Raster')))
 
+    def canExecute(self): #pylint: disable=unused-argument,missing-docstring
+
+        try:
+            # pylint: disable=import-error,unused-variable
+            from ...lib.terrain_analysis import flow_accumulation
+            return True, ''
+        except ImportError:
+            return False, self.tr('Missing dependency: FCT terrain_analysis')
+
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
+
+        from ...lib.terrain_analysis import flow_accumulation
 
         mask_lyr = self.parameterAsRasterLayer(parameters, self.INPUT, context)
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)

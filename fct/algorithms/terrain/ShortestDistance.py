@@ -27,7 +27,6 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
-from ...lib.terrain_analysis import shortest_distance
 
 def rasterize_linestring(a, b):
     """
@@ -133,7 +132,18 @@ class ShortestDistance(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.OUTPUT,
             self.tr('Shortest Distance')))
 
+    def canExecute(self): #pylint: disable=unused-argument,missing-docstring
+
+        try:
+            # pylint: disable=import-error,unused-variable
+            from ...lib.terrain_analysis import shortest_distance
+            return True, ''
+        except ImportError:
+            return False, self.tr('Missing dependency: FCT terrain_analysis')
+
     def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
+
+        from ...lib.terrain_analysis import shortest_distance
 
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.INPUT, context)
         stream_layer = self.parameterAsSource(parameters, self.STREAM, context)

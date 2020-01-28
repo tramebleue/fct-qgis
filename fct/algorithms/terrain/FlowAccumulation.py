@@ -17,20 +17,13 @@ import numpy as np
 from osgeo import gdal
 # import osr
 
-from qgis.core import ( # pylint:disable=no-name-in-module
+from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessingAlgorithm,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer
 )
 
 from ..metadata import AlgorithmMetadata
-
-try:
-    from ...lib.terrain_analysis import flow_accumulation
-    CYTHON = True
-except ImportError:
-    from ...lib.flow_accumulation import flow_accumulation
-    CYTHON = False
 
 class FlowAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Compute flow accumulation raster.
@@ -54,12 +47,16 @@ class FlowAccumulation(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.OUTPUT,
             self.tr('Accumulation Raster')))
 
-    def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
+    def canExecute(self): #pylint: disable=unused-argument,missing-docstring
 
-        if CYTHON:
-            feedback.pushInfo("Using Cython flow_accumulation() ...")
-        else:
-            feedback.pushInfo("Pure python flow_accumulation() - this may take a while ...")
+        try:
+            # pylint: disable=import-error,unused-variable
+            from ...lib.terrain_analysis import flow_accumulation
+            return True, ''
+        except ImportError:
+            return False, self.tr('Missing dependency: FCT terrain_analysis')
+
+    def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
 
         flow_lyr = self.parameterAsRasterLayer(parameters, self.FLOW, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
