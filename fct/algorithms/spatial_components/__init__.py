@@ -14,6 +14,7 @@ Spatial Components Algorithms
 """
 
 from .DisaggregatePolygon import DisaggregatePolygon
+from .LandCoverContinuity import LandCoverContinuity
 from .PolygonSkeleton import PolygonSkeleton
 from .ValleyBottom import ValleyBottom
 from .ValleyCenterLine import ValleyCenterLine

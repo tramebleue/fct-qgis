@@ -1,0 +1,11 @@
+displayName: Land Cover Continuity Analysis
+group: spatialcomponents
+shortHelpString: NULL
+helpString: NULL
+helpUrl: NULL
+tags:
+  - lateral
+  - shortest path
+  - land cover
+  - land use
+  - fluvial corridor
