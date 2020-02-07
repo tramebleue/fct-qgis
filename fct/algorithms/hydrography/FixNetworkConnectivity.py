@@ -163,19 +163,23 @@ class FixNetworkConnectivity(AlgorithmMetadata, QgsProcessingAlgorithm):
             feedback.setProgress(int(current * total))
 
             queue = list()
-            seen = dict()
+            distance = dict()
             backtrack = dict()
             junction = None
             mindist = float('inf')
 
             heappush(queue, (0.0, origin, None, None))
-            seen[origin] = 0.0
+            distance[origin] = 0.0
 
             while queue:
 
                 dist, node, preceding, edge = heappop(queue)
 
-                seen[node] = dist
+                if node in distance and distance[node] < dist:
+                    continue
+
+                distance[node] = dist
+
                 if preceding is not None:
                     backtrack[node] = (preceding, edge)
 
@@ -192,10 +196,12 @@ class FixNetworkConnectivity(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                         next_dist = dist + next_length
 
-                        if next_node in seen:
-                            if next_dist < seen[next_node]:
+                        if next_node in distance:
+                            if next_dist < distance[next_node]:
+                                distance[next_node] = next_dist
                                 heappush(queue, (next_dist, next_node, node, edge))
                         else:
+                            distance[next_node] = next_dist
                             heappush(queue, (next_dist, next_node, node, edge))
 
             if junction is not None:

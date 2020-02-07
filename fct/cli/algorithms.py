@@ -26,6 +26,8 @@ from qgis.core import (
     QgsProcessingParameterDefinition
 )
 
+from qgis.analysis import QgsNativeAlgorithms
+
 from processing.core.Processing import Processing
 
 from fct.FluvialCorridorToolbox import (
@@ -137,6 +139,8 @@ class AlgorithmCommand(click.Command):
         app = start_app(cleanup=False)
         # We have to keep a reference to provider objects
         providers = [cls() for cls in PROVIDERS]
+        providers.append(QgsNativeAlgorithms())
+        
         for provider in providers:
             QgsApplication.processingRegistry().addProvider(provider)
 

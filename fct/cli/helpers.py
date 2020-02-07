@@ -34,11 +34,13 @@ from processing.tools.dataobjects import ( # pylint: disable=import-error,no-nam
     createContext
 )
 
-def execute_algorithm(algorithm_id, **parameters):
+def execute_algorithm(algorithm_id, feedback=None, **parameters):
 
     algorithm = QgsApplication.processingRegistry().createAlgorithmById(algorithm_id)
 
-    feedback = QgsProcessingFeedback()
+    if feedback is None:
+        feedback = QgsProcessingFeedback()
+
     context = createContext(feedback)
 
     parameters_ok, msg = algorithm.checkParameterValues(parameters, context)

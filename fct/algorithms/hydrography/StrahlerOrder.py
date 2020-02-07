@@ -25,6 +25,7 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsField,
     QgsProcessing,
     QgsProcessingAlgorithm,
+    QgsProcessingMultiStepFeedback,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField
@@ -105,7 +106,9 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Strahler Order'),
             QgsProcessing.TypeVectorLine))
 
-    def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
+    def processAlgorithm(self, parameters, context, fb): #pylint: disable=unused-argument,missing-docstring
+
+        feedback = QgsProcessingMultiStepFeedback(3, fb)
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
@@ -114,6 +117,7 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         # Step 1 - Build adjacency index
 
+        feedback.setCurrentStep(0)
         feedback.setProgressText(self.tr("Build adjacency index ..."))
 
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
@@ -163,6 +167,7 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         # Step 3 - Prune sources/leaves iteratively
 
+        feedback.setCurrentStep(1)
         feedback.setProgressText(self.tr("Enumerate links by Strahler order ..."))
 
         current = 0
@@ -178,7 +183,6 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         queue = list(sources)
         order = 1
-        srclayer = context.getMapLayer(layer.sourceName())
 
         # seen_nodes = set()
         edges = dict()
@@ -243,10 +247,12 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             if not queue:
                 break
 
-        for current, edgeid in enumerate(edges):
+        feedback.setCurrentStep(2)
+        feedback.setProgressText(self.tr('Output features ...'))
 
-            edge = srclayer.getFeature(edgeid)
-            order = edges[edgeid]
+        for current, edge in enumerate(layer.getFeatures()):
+
+            order = edges[edge.id()]
 
             feature = QgsFeature()
             feature.setGeometry(edge.geometry())

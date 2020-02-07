@@ -14,7 +14,9 @@ MeasureNetworkFromOutlet - Compute a new `measure` attribute
 ***************************************************************************
 """
 
-from collections import Counter, namedtuple
+from heapq import heappush, heappop
+
+from collections import Counter, namedtuple, defaultdict
 
 from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QVariant
@@ -30,6 +32,7 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
+    QgsProcessingMultiStepFeedback,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField,
@@ -103,7 +106,9 @@ class UpdateAxisLengthAndMeasure(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Updated'),
             QgsProcessing.TypeVectorLine))
 
-    def processAlgorithm(self, parameters, context, feedback): #pylint: disable=unused-argument,missing-docstring
+    def processAlgorithm(self, parameters, context, fb): #pylint: disable=unused-argument,missing-docstring
+
+        feedback = QgsProcessingMultiStepFeedback(2, fb)
 
         layer = self.parameterAsSource(parameters, self.INPUT, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
@@ -114,6 +119,7 @@ class UpdateAxisLengthAndMeasure(AlgorithmMetadata, QgsProcessingAlgorithm):
         fields = QgsFields(layer.fields())
         appendUniqueField(QgsField('AXIS', QVariant.Int, len=5), fields)
         appendUniqueField(QgsField('LAXIS', QVariant.Double, len=10, prec=2), fields)
+        appendUniqueField(QgsField('MAIN', QVariant.Int, len=1), fields)
 
         (sink, dest_id) = self.parameterAsSink(
             parameters,
@@ -126,11 +132,14 @@ class UpdateAxisLengthAndMeasure(AlgorithmMetadata, QgsProcessingAlgorithm):
         # Step 1 - Find sources and build adjacency index
 
         feedback.setProgressText(self.tr("Build network graph ..."))
+        feedback.setCurrentStep(0)
 
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
-        graph = dict()
+        graph = defaultdict(list)
+        order = dict()
+        measures = dict()
         segments = list()
-        indegree = Counter()
+        indegree = defaultdict(Counter)
 
         for current, feature in enumerate(layer.getFeatures()):
 
@@ -145,14 +154,30 @@ class UpdateAxisLengthAndMeasure(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             segment = Segment(feature.id(), a, b, hack, measure, feature.geometry().length())
             segments.append(segment)
-            graph[a] = segment
-            indegree[b] += 1
+            graph[a].append(segment)
+            indegree[hack][b] += 1
+            measures[a] = measure + feature.geometry().length()
+
+            if a in order:
+                order[a] = min(hack, order[a])
+            else:
+                order[a] = hack
+
+            if b in order:
+                order[b] = min(hack, order[b])
+            else:
+                order[b] = hack
 
             feedback.setProgress(int(current * total))
 
         feedback.setProgressText(self.tr("Output measured lines ..."))
+        feedback.setCurrentStep(1)
 
-        sources = sorted([node for node in graph if indegree[node] == 0], key=lambda f: (graph[f].hack, -graph[f].measure))
+        sources = list()
+        for hack in indegree:
+            sources.extend([node for node in order if order[node] == hack and indegree[hack][node] == 0])
+
+        sources = sorted(sources, key=lambda f: (order[f], -measures[f]))
         current = 0
 
         def setM(geometry, origin):
@@ -177,41 +202,105 @@ class UpdateAxisLengthAndMeasure(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             return QgsGeometry.fromPolyline(points)
 
-        for axis, source in enumerate(sources):
+        axis = 0
 
-            axis_order = graph[source].hack
-            axis_segments = list()
-            node = source
+        for source in sources:
 
-            while node in graph:
+            axis += 1
 
-                segment = graph[node]
+            if feedback.isCanceled():
+                break
 
-                if segment.hack < axis_order:
+            axis_order = order[source]
+            axis_segments = set()
+            queue = list()
+            distance = dict()
+            backtrack = dict()
+            junction = None
+            mindist = float('inf')
+
+            heappush(queue, (0.0, source, None, None))
+            distance[source] = 0.0
+
+            while queue:
+
+                dist, node, preceding, edge = heappop(queue)
+
+                if node in distance and distance[node] < dist:
+                    continue
+
+                distance[node] = dist
+
+                if preceding is not None:
+                    backtrack[node] = (preceding, edge)
+
+                if node in graph:
+
+                    for segment in graph[node]:
+
+                        if segment.hack < axis_order:
+
+                            if distance[node] < mindist:
+                                junction = node
+                                mindist = distance[node]
+
+                            continue
+
+                        axis_segments.add(segment)
+                        next_node = segment.b
+                        next_dist = dist + segment.length
+
+                        if next_node in distance:
+                            if next_dist < distance[next_node]:
+                                distance[node] = next_dist
+                                heappush(queue, (next_dist, next_node, node, segment.fid))
+                        else:
+                            distance[node] = next_dist
+                            heappush(queue, (next_dist, next_node, node, segment.fid))
+
+                else:
+
+                    if distance[node] < mindist:
+                        junction = node
+                        mindist = distance[node]
+
+            # axis_length = sum(s.length for s in axis_segments)
+            axis_length = mindist
+
+            path = set()
+            node = junction
+
+            while True:
+
+                preceding, edge = backtrack.get(node, (None, None))
+
+                if preceding is None:
                     break
 
-                axis_segments.append(segment)
-                node = segment.b
+                path.add(edge)
+                node = preceding
 
-            axis_length = sum(s.length for s in axis_segments)
+            query = QgsFeatureRequest([segment.fid for segment in axis_segments])
 
-            for segment in axis_segments:
+            for feature in layer.getFeatures(query):
 
-                query = QgsFeatureRequest(segment.fid)
+                main = feature.id() in path
+                measure = feature.attribute(measure_field)
+                out_feature = QgsFeature()
+                out_feature.setGeometry(setM(feature.geometry(), measure))
+                out_feature.setAttributes(feature.attributes() + [
+                    axis if main else axis+1,
+                    axis_length,
+                    main
+                ])
 
-                for feature in layer.getFeatures(query):
-
-                    out_feature = QgsFeature()
-                    out_feature.setGeometry(setM(feature.geometry(), segment.measure))
-                    out_feature.setAttributes(feature.attributes() + [
-                        axis+1,
-                        axis_length
-                    ])
-
-                    sink.addFeature(out_feature)
+                sink.addFeature(out_feature)
 
                 current += 1
                 feedback.setProgress(int(current * total))
+
+            if len(axis_segments) > len(path):
+                axis += 1
 
         return {
             self.OUTPUT: dest_id
