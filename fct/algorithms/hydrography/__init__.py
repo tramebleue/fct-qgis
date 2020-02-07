@@ -17,6 +17,7 @@ from .AggregateStreamSegments import AggregateStreamSegments
 from .AggregateUndirectedLines import AggregateUndirectedLines
 from .ConnectLines import ConnectLines
 from .FixLinkOrientation import FixLinkOrientation
+from .FixNetworkConnectivity import FixNetworkConnectivity
 from .HackOrder import HackOrder
 from .IdentifyNetworkNodes import IdentifyNetworkNodes
 from .LongestPathInDirectedGraph import LongestPathInDirectedGraph
