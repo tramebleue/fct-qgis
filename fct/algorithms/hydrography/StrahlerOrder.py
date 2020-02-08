@@ -13,7 +13,6 @@ StrahlerOrder - Horton-Strahler stream order of each link in a stream network
 ***************************************************************************
 """
 
-from functools import partial, reduce
 from collections import defaultdict, Counter
 
 from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
@@ -23,6 +22,7 @@ from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsFeature,
     QgsField,
+    QgsFields,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
@@ -32,33 +32,7 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
 )
 
 from ..metadata import AlgorithmMetadata
-from ..util import asQgsFields
-
-def index_by(i, accumulator, x):
-    """
-    Parameters
-    ----------
-
-    i: index of tuple member to index by
-    d: dict-like accumulator
-    x: data tuple
-    """
-
-    accumulator[x[i]].append(x)
-    return accumulator
-
-def count_by(i, accumulator, x):
-    """
-    Parameters
-    ----------
-
-    i: index of tuple member to count by
-    d: dict-like accumulator
-    x: data tuple
-    """
-
-    accumulator[x[i]] = accumulator[x[i]] + 1
-    return accumulator
+from ..util import appendUniqueField
 
 class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
     """ Horton-Strahler stream order of each link in a stream network
@@ -95,10 +69,10 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterField(
             self.AXIS_FIELD,
-            self.tr('Axis Id'),
+            self.tr('Hack Order Field'),
             parentLayerParameterName=self.INPUT,
             type=QgsProcessingParameterField.Numeric,
-            defaultValue='AXIS',
+            defaultValue='HACK',
             optional=False))
 
         self.addParameter(QgsProcessingParameterFeatureSink(
@@ -121,7 +95,10 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr("Build adjacency index ..."))
 
         total = 100.0 / layer.featureCount() if layer.featureCount() else 0
-        adjacency = list()
+
+        graph = defaultdict(list)
+        indegree = Counter()
+        axis_order = dict()
 
         for current, edge in enumerate(layer.getFeatures()):
 
@@ -131,128 +108,103 @@ class StrahlerOrder(AlgorithmMetadata, QgsProcessingAlgorithm):
             a = edge.attribute(from_node_field)
             b = edge.attribute(to_node_field)
             axis = edge.attribute(axis_field) if axis_field else None
-            adjacency.append((a, b, edge.id(), axis))
+
+            graph[a].append((b, axis))
+            indegree[b] += 1
+
+            if b in axis_order:
+                axis_order[b] = min(axis, axis_order[b])
+            else:
+                axis_order[b] = axis
 
             feedback.setProgress(int(current * total))
-
-        # Step 2 - Find sources and compute confluences in-degree
-
-        anodes = set([a for a, b, e, axis in adjacency])
-        bnodes = set([b for a, b, e, axis in adjacency])
-        # No edge points to a source,
-        # then sources are not in bnodes
-        sources = anodes - bnodes
-
-        # Confluences in-degree
-        if axis_field:
-
-            bcount = Counter()
-            baxis = set()
-            
-            for a, b, e, axis in adjacency:
-                if not (b, axis) in baxis:
-                    bcount[b] += 1
-                    baxis.add((b, axis))
-
-            del baxis
-
-        else:
-
-            bcount = reduce(partial(count_by, 1), adjacency, defaultdict(lambda: 0))
-        
-        confluences = {node: indegree for node, indegree in bcount.items() if indegree > 1}
-
-        # Index : Node A -> Edges starting from A
-        aindex = reduce(partial(index_by, 0), adjacency, defaultdict(list))
 
         # Step 3 - Prune sources/leaves iteratively
 
         feedback.setCurrentStep(1)
         feedback.setProgressText(self.tr("Enumerate links by Strahler order ..."))
 
-        current = 0
-        feedback.setProgress(0)
+        strahler_order = defaultdict(lambda: 1)
 
-        fields = layer.fields().toList() + [
-            QgsField('STRAHLER', QVariant.Int, len=5),
-        ]
+        sources = [node for node in graph if indegree[node] == 0]
+        active_nodes = defaultdict(set)
 
-        (sink, dest_id) = self.parameterAsSink(
-            parameters, self.OUTPUT, context,
-            asQgsFields(*fields), layer.wkbType(), layer.sourceCrs())
+        # n0 = {224128, 223943, 223944, 224007}
 
-        queue = list(sources)
-        order = 1
-
-        # seen_nodes = set()
-        edges = dict()
-        baxis = set()
-
-        while True:
+        while sources:
 
             if feedback.isCanceled():
                 break
 
-            while queue:
+            source = sources.pop(0)
+            order = strahler_order[source]
 
-                if feedback.isCanceled():
-                    break
+            # if source in n0:
+            #     feedback.pushInfo('Pick source %d with order %d' % (source, order))
 
-                a = queue.pop()
+            for next_node, next_axis in graph[source]:
 
-                # if a in seen_nodes:
-                #     continue
+                # if next_node in n0:
+                #     feedback.pushInfo(
+                #         'Pick next node %d from %d with order %d and degree %d' %
+                #         (next_node, source, strahler_order[next_node], indegree[next_node]))
 
-                # seen_nodes.add(a)
+                if next_node in active_nodes:
 
-                for a, b, edgeid, axis in aindex[a]:
+                    next_order = strahler_order[next_node]
 
-                    # edge = srclayer.getFeature(edgeid)
-                    # feature = QgsFeature()
-                    # feature.setGeometry(edge.geometry())
-                    # feature.setAttributes(edge.attributes() + [
-                    #     order
-                    # ])
-                    # sink.addFeature(feature)
+                    if next_order == order:
 
-                    # edges[edgeid] = order
-                    # current = current + 1
-                    # feedback.setProgress(int(current * total))
+                        if next_axis not in active_nodes[next_node]:
 
-                    if edgeid in edges:
-
-                        if edges[edgeid] >= order:
-                            continue
-                        else:
-                            edges[edgeid] = order
+                            strahler_order[next_node] = order + 1
+                            active_nodes[next_node].add(next_axis)
 
                     else:
 
-                        edges[edgeid] = order
-                        current = current + 1
-                        feedback.setProgress(int(current * total))
+                        strahler_order[next_node] = max(next_order, order)
+                        active_nodes[next_node].add(next_axis)
 
-                    if b in confluences:
-                        if not (b, axis) in baxis:
-                            confluences[b] = confluences[b] - 1
-                            baxis.add((b, axis))
-                    else:
-                        queue.append(b)
+                else:
 
-            queue = [node for node, indegree in confluences.items() if indegree == 0]
-            confluences = {node: indegree for node, indegree in confluences.items() if indegree > 1}
-            order = order + 1
+                    strahler_order[next_node] = order
+                    active_nodes[next_node].add(next_axis)
 
-            # if not confluences and not queue:
-            if not queue:
-                break
+                indegree[next_node] -= 1
+
+                # if next_node in n0:
+                #     feedback.pushInfo(
+                #         'Release node %d with order %d and degree %d' %
+                #         (next_node, strahler_order[next_node], indegree[next_node]))
+
+                if indegree[next_node] == 0:
+
+                    del active_nodes[next_node]
+                    sources.append(next_node)
+
+        # Check that we have consumed all nodes
+        # If not, some nodes have been trapped in loops ...
+        # We can process only directed acyclic graphs.
+
+        if sum(1 for node in graph if indegree[node] > 0) > 0:
+            feedback.reportError(self.tr("There are loops in network !"), False)
 
         feedback.setCurrentStep(2)
         feedback.setProgressText(self.tr('Output features ...'))
 
+        fields = QgsFields(layer.fields())
+        appendUniqueField(QgsField('STRAHLER', QVariant.Int, len=5), fields)
+
+        (sink, dest_id) = self.parameterAsSink(
+            parameters, self.OUTPUT, context,
+            fields,
+            layer.wkbType(),
+            layer.sourceCrs())
+
         for current, edge in enumerate(layer.getFeatures()):
 
-            order = edges[edge.id()]
+            a = edge.attribute(from_node_field)
+            order = strahler_order[a]
 
             feature = QgsFeature()
             feature.setGeometry(edge.geometry())
