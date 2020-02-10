@@ -15,8 +15,7 @@ SelectConnectedComponents - Select Connected Components
 
 from collections import defaultdict
 
-from qgis.core import ( # pylint:disable=no-name-in-module
-    QgsFeatureRequest,
+from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingParameterEnum,
@@ -149,7 +148,7 @@ class SelectConnectedComponents(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             feedback.setProgressText(self.tr("Build layer index ..."))
 
-            to_node_index = defaultdict(list)
+            graph = defaultdict(list)
             total = 100.0 / layer.featureCount() if layer.featureCount() else 0
 
             for current, feature in enumerate(layer.getFeatures()):
@@ -157,30 +156,28 @@ class SelectConnectedComponents(AlgorithmMetadata, QgsProcessingAlgorithm):
                 if feedback.isCanceled():
                     break
 
+                from_node = feature.attribute(from_node_field)
                 to_node = feature.attribute(to_node_field)
-                to_node_index[to_node].append(feature.id())
+                graph[to_node].append((from_node, feature.id()))
 
                 feedback.setProgress(int(current * total))
 
             feedback.setProgressText(self.tr("Select connected links ..."))
 
-            process_stack = [segment for segment in layer.selectedFeatures()]
+            process_stack = [(segment.attribute(from_node_field), segment.id()) for segment in layer.selectedFeatures()]
 
             while process_stack:
 
                 if feedback.isCanceled():
                     break
 
-                segment = process_stack.pop()
-                selection.add(segment.id())
-                from_node = segment.attribute(from_node_field)
+                node, segment_id = process_stack.pop()
+                selection.add(segment_id)
 
-                if from_node in to_node_index:
-                    query = QgsFeatureRequest().setFilterFids(to_node_index[from_node])
-                    for next_segment in layer.getFeatures(query):
-                        # Prevent infinite loop
-                        if next_segment.id() not in selection:
-                            process_stack.append(next_segment)
+                for next_node, next_segment_id in graph[node]:
+                    # Prevent infinite loop
+                    if next_segment_id not in selection:
+                        process_stack.append((next_node, next_segment_id))
 
         if direction == 0:
             selectConnectedLinksDirected(from_node_field, to_node_field)
