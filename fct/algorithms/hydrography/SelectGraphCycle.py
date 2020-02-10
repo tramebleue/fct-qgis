@@ -15,7 +15,7 @@ Select Graph Cycles
 
 from collections import defaultdict
 
-from qgis.core import ( # pylint:disable=no-name-in-module
+from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsFeatureRequest,
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -32,7 +32,6 @@ class NodeData(object):
     def __init__(self, index):
         self.index = index
         self.lowlink = index
-
 
 class SelectGraphCycle(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
@@ -75,7 +74,7 @@ class SelectGraphCycle(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         feedback.setProgressText(self.tr("Build graph index ..."))
 
-        node_index = dict()
+        node_index = defaultdict(list)
         feature_index = defaultdict(list)
         total = 100.0 / layer.featureCount()
 
@@ -87,13 +86,8 @@ class SelectGraphCycle(AlgorithmMetadata, QgsProcessingAlgorithm):
             from_node = feature.attribute(from_node_field)
             to_node = feature.attribute(to_node_field)
 
-            if from_node in node_index:
-                node_index[from_node].append(to_node)
-            else:
-                node_index[from_node] = [to_node]
-
-            if to_node not in node_index:
-                node_index[to_node] = list()
+            node_index[from_node].append(to_node)
+            node_index.get(to_node)
                 
             feature_index[(from_node, to_node)].append(feature.id())
 
