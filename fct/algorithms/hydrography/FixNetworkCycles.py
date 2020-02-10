@@ -13,7 +13,7 @@ Fix Network Cycles
 ***************************************************************************
 """
 
-from collections import defaultdict, namedtuple, Counter
+from collections import defaultdict, Counter
 
 from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QVariant
@@ -36,7 +36,11 @@ from qgis.core import ( # pylint:disable=import-error,no-name-in-module
 from ..metadata import AlgorithmMetadata
 from ..util import appendUniqueField
 
-NodeData = namedtuple('NodeData', ['index', 'lowlink'])
+class NodeData(object):
+
+    def __init__(self, index):
+        self.index = index
+        self.lowlink = index
 
 class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
     """
@@ -102,7 +106,9 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
             to_node = feature.attribute(to_node_field)
 
             graph[from_node].append((to_node, feature.id()))
-            graph.get(to_node)
+            # graph.get(to_node)
+            if to_node not in graph:
+                graph[to_node] = list()
             indegree[to_node] += 1
 
             feedback.setProgress(int(current * total))
@@ -113,8 +119,6 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
         stack = list()
         self.index = 0
         seen_nodes = dict()
-        # selection = set()
-        # cycle_nodes = set()
 
         def fix_cycle(origin, cycle):
             """
@@ -154,7 +158,7 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
             https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
             """
 
-            data = NodeData(self.index, self.index)
+            data = NodeData(self.index)
             seen_nodes[node] = data
             self.index = self.index + 1
             stack.append(node)
@@ -194,8 +198,6 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                 fix_cycle(node, cycle)
 
-            # progress.setPercentage(int(current * total))
-
         for node in graph:
 
             if feedback.isCanceled():
@@ -218,6 +220,8 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
             layer.wkbType(),
             layer.sourceCrs())
 
+        fixed_count = 0
+
         for current, feature in enumerate(layer.getFeatures()):
 
             if feedback.isCanceled():
@@ -234,22 +238,25 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                     outfeature = QgsFeature()
                     outfeature.setGeometry(feature.geometry())
-                    outfeature.setAttributes(feature.attributes + [
+                    outfeature.setAttributes(feature.attributes() + [
                         False
                     ])
                     sink.addFeature(outfeature)
 
                 else:
 
+                    feature[from_node_field] = a
+                    feature[to_node_field] = b
                     geometry = QgsGeometry(QgsLineString(reversed([v for v in feature.geometry().vertices()])))
-                    outfeature = QgsFeature()
+                    outfeature = QgsFeature(fields)
                     outfeature.setGeometry(geometry)
-                    outfeature.setAttributes(feature.attributes + [
+                    outfeature.setAttributes(feature.attributes() + [
                         True
                     ])
-                    outfeature[from_node_field] = b
-                    outfeature[to_node_field] = a
+                    outfeature.setGeometry(geometry)
                     sink.addFeature(outfeature)
+
+                    fixed_count += 1
 
             else:
 
@@ -261,5 +268,7 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
                 sink.addFeature(outfeature)
 
             feedback.setProgress(int(current * total))
+
+        feedback.pushInfo('Fixed %d features.' % fixed_count)
 
         return {self.OUTPUT: dest_id}

@@ -87,7 +87,9 @@ class SelectGraphCycle(AlgorithmMetadata, QgsProcessingAlgorithm):
             to_node = feature.attribute(to_node_field)
 
             node_index[from_node].append(to_node)
-            node_index.get(to_node)
+            # node_index.get(to_node)
+            if to_node not in node_index:
+                node_index[to_node] = list()
                 
             feature_index[(from_node, to_node)].append(feature.id())
 

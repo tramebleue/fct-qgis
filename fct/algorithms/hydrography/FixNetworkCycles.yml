@@ -1,4 +1,4 @@
-displayName: Find Network Cycles
+displayName: Fix Network Cycles
 group: hydrography
 shortHelpString: NULL
 helpString: NULL
@@ -6,4 +6,5 @@ helpUrl: NULL
 tags:
   - hydrography
   - graph
-  - selection
+  - cycle
+  - preprocessing
