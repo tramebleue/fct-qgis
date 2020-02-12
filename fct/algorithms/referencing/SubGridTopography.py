@@ -122,6 +122,7 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
         appendUniqueField(QgsField('OY', QVariant.Double), fields)
         appendUniqueField(QgsField('NX', QVariant.Double), fields)
         appendUniqueField(QgsField('NY', QVariant.Double), fields)
+        appendUniqueField(QgsField('NODEID', QVariant.Int), fields)
         appendUniqueField(QgsField('LINKID', QVariant.Int), fields)
         appendUniqueField(QgsField('LINKX', QVariant.Double), fields)
         appendUniqueField(QgsField('LINKY', QVariant.Double), fields)
@@ -353,6 +354,7 @@ class SubGridTopography(AlgorithmMetadata, QgsProcessingAlgorithm):
                 origin.y(),
                 neighbor.x() if neighbor is not None else None,
                 neighbor.y() if neighbor is not None else None,
+                fid,
                 target_fid,
                 xe,
                 ye,

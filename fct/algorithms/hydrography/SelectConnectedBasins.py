@@ -51,14 +51,14 @@ class SelectConnectedBasins(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.ID_FIELD,
             self.tr('ID Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric,
+            type=QgsProcessingParameterField.Any,
             defaultValue='GID'))
 
         self.addParameter(QgsProcessingParameterField(
             self.DOWNSTREAM_FIELD,
             self.tr('Downstream Field'),
             parentLayerParameterName=self.INPUT,
-            type=QgsProcessingParameterField.Numeric,
+            type=QgsProcessingParameterField.Any,
             defaultValue='AVAL'))
 
         self.addParameter(QgsProcessingParameterEnum(

@@ -14,6 +14,7 @@ Fix Network Cycles
 """
 
 from collections import defaultdict, Counter
+import itertools
 
 from qgis.PyQt.QtCore import ( # pylint:disable=import-error,no-name-in-module
     QVariant
@@ -117,7 +118,7 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr("Find cycles ..."))
 
         stack = list()
-        self.index = 0
+        index = itertools.count()
         seen_nodes = dict()
 
         def fix_cycle(origin, cycle):
@@ -158,9 +159,9 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
             https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
             """
 
-            data = NodeData(self.index)
+            current_index = next(index)
+            data = NodeData(current_index)
             seen_nodes[node] = data
-            self.index = self.index + 1
             stack.append(node)
 
             for next_node, next_feature_id in graph[node]:
@@ -198,13 +199,36 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                 fix_cycle(node, cycle)
 
-        for node in graph:
+        # Walk from sources to outlets, rather than randomly ;
+        # it should help to find a better origin node
+        # when we need to fix cycles.
+
+        # for node in graph:
+
+        #     if feedback.isCanceled():
+        #         break
+
+        #     if node not in seen_nodes:
+        #         connect(node)
+
+        stack = [node for node in graph if indegree[node] == 0]
+
+        while stack:
 
             if feedback.isCanceled():
                 break
 
+            node = stack.pop(0)
+
             if node not in seen_nodes:
                 connect(node)
+
+            for next_node, feature_id in graph[node]:
+
+                indegree[next_node] -= 1
+
+                if indegree[next_node] == 0:
+                    stack.append(next_node)
 
         feedback.setCurrentStep(2)
         feedback.setProgressText(self.tr('Output fixed features'))
