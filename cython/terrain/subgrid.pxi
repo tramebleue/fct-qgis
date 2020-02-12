@@ -254,8 +254,9 @@ cdef Outlet subgrid_outlet(float[:, :] geometry, short[:, :] flow, ContributingA
 
     for i in range(mini, maxi+1):
         for j in range(minj, maxj+1):
-
-            mask[i, j] = False
+            
+            if ingrid(height, width, i, j):
+                mask[i, j] = False
 
     return Outlet(pixel, area)
 
