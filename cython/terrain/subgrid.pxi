@@ -1,3 +1,18 @@
+# -*- coding: utf-8 -*-
+
+"""
+Subgrid Topography
+
+***************************************************************************
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+***************************************************************************
+"""
+
 ctypedef pair[Cell, Cell] GridExtent
 
 ctypedef pair[Cell, ContributingArea] Outlet
@@ -264,6 +279,9 @@ cdef Outlet subgrid_outlet(float[:, :] geometry, short[:, :] flow, ContributingA
 @cython.wraparound(False)
 @cython.embedsignature(True)
 def subgrid_outlets(dict geometries, short[:, :] flow, ContributingArea[:, :] acc, tuple gdal_transform, feedback=None):
+    """
+    Find outlets for every geometry (polygon) in `geometries`
+    """
 
     cdef:
 

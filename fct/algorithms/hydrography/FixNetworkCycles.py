@@ -286,7 +286,7 @@ class FixNetworkCycles(AlgorithmMetadata, QgsProcessingAlgorithm):
 
                 outfeature = QgsFeature()
                 outfeature.setGeometry(feature.geometry())
-                outfeature.setAttributes(feature.attributes + [
+                outfeature.setAttributes(feature.attributes() + [
                     False
                 ])
                 sink.addFeature(outfeature)
