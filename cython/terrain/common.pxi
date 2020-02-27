@@ -6,6 +6,7 @@ from libcpp.map cimport map
 from libcpp.deque cimport deque
 
 cdef extern from "<algorithm>" namespace "std":
+    cdef T min[T](T a, T b) nogil
     cdef T max[T](T a, T b) nogil
 
 # cdef extern from "<utility>" namespace "std":

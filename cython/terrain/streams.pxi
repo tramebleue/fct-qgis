@@ -26,7 +26,7 @@ def stream_to_feature(
     ----------
 
     streams: array-like
-        Rasterize stream network, same shape as `elevations`,
+        Rasterized stream network, same shape as `elevations`,
         with stream cells >= 1
 
     flow: array-like

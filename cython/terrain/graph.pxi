@@ -51,24 +51,23 @@ cdef void connect(
 @cython.boundscheck(False)
 cdef void connect_exterior_edge(
     WatershedGraph& graph,
-    float[:, :] elevations,
+    float[:] elevations,
     float nodata,
-    Label[:, :] labels,
-    int tile_id,
-    int edge_side):
+    Label[:] labels,
+    int tile_id):
 
     cdef:
 
-        int k, width = elevations.shape[1]
+        int k, width = elevations.shape[0]
         float z1, z2
         WatershedLabel l1, l2
 
     with nogil:
         for k in range(width):
-            z1 = elevations[edge_side, k]
+            z1 = elevations[k]
             if z1 == nodata:
                 continue
-            l1 = WatershedLabel(tile_id, labels[edge_side, k])
+            l1 = WatershedLabel(tile_id, labels[k])
             l2 = WatershedLabel(-1, 1)
             z2 = nodata
             connect(graph, l1, z1, l2, z2)
@@ -76,103 +75,104 @@ cdef void connect_exterior_edge(
 @cython.boundscheck(False)
 cdef void connect_edge(
     WatershedGraph& graph,
-    float[:, :] elevations,
+    float[:] elevations,
     float nodata,
-    Label[:, :] labels,
+    Label[:] labels,
     int tile_id,
-    float[:, :] neighbor_elevations,
-    Label[:, :] neighbor_labels,
-    int neighbor_id,
-    int edge_side):
+    float[:] neighbor_elevations,
+    Label[:] neighbor_labels,
+    int neighbor_id):
 
     cdef:
 
-        int k, s, width = elevations.shape[1], neighbor_side = (edge_side + 2) % 4
+        int k, s, width = elevations.shape[0]
         float z1, z2
         WatershedLabel l1, l2
 
     with nogil:
         for k in range(width):
             
-            z1 = elevations[edge_side, k]
+            z1 = elevations[k]
             
             if z1 == nodata:
                 l1 = WatershedLabel(-1, 1)
             else:
-                l1 = WatershedLabel(tile_id, labels[edge_side, k])
+                l1 = WatershedLabel(tile_id, labels[k])
             
             for s in range(-1, 2):
-                if k+s < 0 or k+s == elevations.shape[1]:
+                if k+s < 0 or k+s == width:
                     continue
                 
-                z2 = neighbor_elevations[neighbor_side, -(k+s)-1]
+                z2 = neighbor_elevations[-(k+s)-1]
                 if z2 == nodata:
                     l2 = WatershedLabel(-1, 1)
                 else:
-                    l2 = WatershedLabel(neighbor_id, neighbor_labels[neighbor_side, -(k+s)-1])
+                    l2 = WatershedLabel(neighbor_id, neighbor_labels[-(k+s)-1])
                 
                 connect(graph, l1, z1, l2, z2)
 
 cdef void connect_corner(
     WatershedGraph& graph,
-    float[:, :] elevations,
+    float[:] elevations,
     float nodata,
-    Label[:, :] labels,
+    Label[:] labels,
     int tile_id,
-    float[:, :] corner_elevations,
-    Label[:, :] corner_labels,
-    int corner_id,):
+    float[:] corner_elevations,
+    Label[:] corner_labels,
+    int corner_id):
 
     cdef:
 
         float z1, z2
         WatershedLabel l1, l2
 
-    z1 = elevations[0, 0]
+    z1 = elevations[0]
     if z1 == nodata:
         l1 = WatershedLabel(-1, 1)
     else:
-        l1 = WatershedLabel(tile_id, labels[0, 0])
+        l1 = WatershedLabel(tile_id, labels[0])
     
-    z2 = corner_elevations[2, 0]
+    z2 = corner_elevations[0]
     if z2 == nodata:
         l2 = WatershedLabel(-1, 1)
     else:
-        l2 = WatershedLabel(corner_id, corner_labels[2, 0])
+        l2 = WatershedLabel(corner_id, corner_labels[0])
 
     connect(graph, l1, z1, l2, z2)
 
-def connect_tile(int row, int col, float nodata, tilematrix, tiledatafn):
+def connect_tile(int row, int col, float nodata, dict tileindex, tiledatafn):
     """
     Return connection graph to neighbor tiles.
     """
 
     cdef:
 
-        int tile_id, neighbor_id, height, width
-        float z1, z2
+        int tile_id, neighbor_id
+        int i, j, side
+        float z, z1, z2
 
-        float[:, :] elevations
-        Label[:, :] labels
+        float[:] elevations
+        Label[:] labels
 
-        float[:, :] neighbor_elevations
-        Label[:, :] neighbor_labels
+        float[:] neighbor_elevations
+        Label[:] neighbor_labels
 
+        LabelPair link
         WatershedGraph graph
         WatershedLabel l1, l2
         WatershedPair p
 
-    height = tilematrix.shape[0]
-    width = tilematrix.shape[1]
-    tile = tilematrix[row, col]
-    tile_id = row*height+col
-    data = np.load(tiledatafn(tile))
-    elevations = data['z']
-    labels = data['labels']
+    tile_id = tileindex[(row, col)].gid
+    data = np.load(tiledatafn(row, col))
 
     for link, z in data['graph']:
-        l1 = WatershedLabel(tile_id, link[0])
-        l2 = WatershedLabel(tile_id, link[1])
+        
+        if link.first == 0:
+            l1 = WatershedLabel(-1, 1)
+        else:
+            l1 = WatershedLabel(tile_id, link.first)
+        
+        l2 = WatershedLabel(tile_id, link.second)
         p = WatershedPair(l1, l2)
         graph[p] = z
 
@@ -187,76 +187,61 @@ def connect_tile(int row, int col, float nodata, tilematrix, tiledatafn):
     #             continue
     #         connect(l1, z1, l2, z2)
 
-    if row == 0:
+    for i, j, side in [
+            (row-1, col, EdgeSide.TOP),
+            (row, col-1, EdgeSide.LEFT)
+        ]:
 
-        connect_exterior_edge(
-            graph,
-            elevations, nodata, labels, tile_id,
-            EdgeSide.TOP)
+        if (i, j) in tileindex:
 
-    else:
+            elevations = data['z'][side]
+            labels = data['labels'][side]
+            neighbor_id = tileindex[(i, j)].gid
+            neighbor_data = np.load(tiledatafn(i, j))
+            neighbor_side = (side + 2) % 4
+            neighbor_elevations = neighbor_data['z'][neighbor_side]
+            neighbor_labels = neighbor_data['labels'][neighbor_side]
 
-        # match top edge to bottom edge of row-1 cell
-        neighbor_tile = tilematrix[row-1, col]
-        neighbor_id = (row-1)*height+col
-        neighbor_data = np.load(tiledatafn(neighbor_tile))
-        neighbor_elevations = neighbor_data['z']
-        neighbor_labels = neighbor_data['labels']
-
-        connect_edge(
-            graph,
-            elevations, nodata, labels, tile_id,
-            neighbor_elevations, neighbor_labels, neighbor_id,
-            EdgeSide.TOP)
-
-        if col > 0:
-
-            # match top-left corner with bottom-right corner of (row-1, cell-1) cell
-            corner_tile = tilematrix[row-1, col-1]
-            neighbor_id = (row-1)*height+col-1
-            neighbor_data = np.load(tiledatafn(corner_tile))
-            neighbor_elevations = neighbor_data['z']
-            neighbor_labels = neighbor_data['labels']
-
-            connect_corner(
+            connect_edge(
                 graph,
                 elevations, nodata, labels, tile_id,
                 neighbor_elevations, neighbor_labels, neighbor_id)
 
-    if row == height-1:
+        else:
 
-        connect_exterior_edge(
+            elevations = data['z'][side]
+            labels = data['labels'][side]
+
+            connect_exterior_edge(
+                graph,
+                elevations, nodata, labels, tile_id)
+
+    for i, j, side in [
+            (row+1, col, EdgeSide.BOTTOM),
+            (row, col+1, EdgeSide.RIGHT)
+        ]:
+
+        if (i, j) not in tileindex:
+
+            elevations = data['z'][side]
+            labels = data['labels'][side]
+
+            connect_exterior_edge(
+                graph,
+                elevations, nodata, labels, tile_id)
+    
+    if (row-1, col-1) in tileindex:
+
+        elevations = data['z'][0]
+        labels = data['labels'][0]
+        neighbor_id = tileindex[(row-1, col-1)].gid
+        neighbor_data = np.load(tiledatafn(row-1, col-1))
+        neighbor_elevations = neighbor_data['z'][2]
+        neighbor_labels = neighbor_data['labels'][2]
+
+        connect_corner(
             graph,
             elevations, nodata, labels, tile_id,
-            EdgeSide.BOTTOM)
-
-    if col == 0:
-
-        connect_exterior_edge(
-            graph,
-            elevations, nodata, labels, tile_id,
-            EdgeSide.LEFT)
-
-    else:
-
-        # match left edge to right edge of col-1 cell
-        neighbor_tile = tilematrix[row, col-1]
-        neighbor_id = row*height+col-1
-        neighbor_data = np.load(tiledatafn(neighbor_tile))
-        neighbor_elevations = neighbor_data['z']
-        neighbor_labels = neighbor_data['labels']
-
-        connect_edge(
-            graph,
-            elevations, nodata, labels, tile_id,
-            neighbor_elevations, neighbor_labels, neighbor_id,
-            EdgeSide.LEFT)
-
-    if col == width-1:
-
-        connect_exterior_edge(
-            graph,
-            elevations, nodata, labels, tile_id,
-            EdgeSide.RIGHT)
+            neighbor_elevations, neighbor_labels, neighbor_id)
 
     return graph

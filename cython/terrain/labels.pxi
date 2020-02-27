@@ -292,41 +292,58 @@ def watershed_labels(
                 ix = i + ci[x]
                 jx = j + cj[x]
 
-                if not ingrid(height, width, ix, jx) or elevations[ix, jx] == nodata:
+                if not ingrid(height, width, ix, jx):
                     continue
 
-                other_label = labels[ix, jx]
-                zx = elevations[ix, jx]
+                # FIXME when watershed connects to nodata region
 
-                if other_label > 0:
+                if elevations[ix, jx] == nodata:
 
-                    if other_label != label:
+                    other_label = 0
+                    zx = nodata
+                    edge = LabelPair(other_label, label)
+                    over_z = z
 
-                        if label > other_label:
-                            # swap(label, other_label)
-                            label, other_label = other_label, label
-                        
-                        edge = LabelPair(label, other_label)
-                        over_z = max[float](z, zx)
-                        
-                        if graph.count(edge) == 0:
-                            graph[edge] = over_z
-                        elif over_z < graph[edge]:
-                            graph[edge] = over_z
-                    
-                    continue
+                    if graph.count(edge) == 0:
+                        graph[edge] = over_z
+                    elif over_z < graph[edge]:
+                        graph[edge] = over_z
 
-                labels[ix, jx] = label
-            
-                if zx < z:
-
-                    elevations[ix, jx] = z
-                    pit.push(Cell(ix, jx))
-                    grow_pit_region(elevations, nodata, labels, height, width, label, pit, slope)
 
                 else:
 
-                    slope.push(Cell(ix, jx))
+                    other_label = labels[ix, jx]
+                    zx = elevations[ix, jx]
+
+                    if other_label > 0:
+
+                        if other_label != label:
+
+                            if label > other_label:
+                                # swap(label, other_label)
+                                label, other_label = other_label, label
+                            
+                            edge = LabelPair(label, other_label)
+                            over_z = max[float](z, zx)
+                            
+                            if graph.count(edge) == 0:
+                                graph[edge] = over_z
+                            elif over_z < graph[edge]:
+                                graph[edge] = over_z
+                        
+                        continue
+
+                    labels[ix, jx] = label
+                
+                    if zx < z:
+
+                        elevations[ix, jx] = z
+                        pit.push(Cell(ix, jx))
+                        grow_pit_region(elevations, nodata, labels, height, width, label, pit, slope)
+
+                    else:
+
+                        slope.push(Cell(ix, jx))
 
             grow_slope_region(elevations, nodata, labels, height, width, label, slope, priority)
 
@@ -336,4 +353,116 @@ def watershed_labels(
     msg = 'Done.'
     print(msg)
 
-    return np.uint32(labels), graph
+    return np.asarray(labels), graph
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef void grow_flat_region(
+    float[:, :] flats,
+    float nodata,
+    Label[:, :] labels,
+    long height,
+    long width,
+    Label region_label,
+    CellStack& queue) nogil:
+
+    cdef:
+
+        Cell c
+        long i, j, ix, jx, x
+
+    while not queue.empty():
+
+        c = queue.top()
+        queue.pop()
+
+        i = c.first
+        j = c.second
+
+        for x in range(8):
+                    
+            ix = i + ci[x]
+            jx = j + cj[x]
+
+            if not ingrid(height, width, ix, jx) or flats[ix, jx] == nodata:
+                continue
+
+            if labels[ix, jx] > 0:
+                continue
+
+            labels[ix, jx] = region_label
+
+            if flats[ix, jx] > 0:
+
+                queue.push(Cell(ix, jx))
+
+def flat_labels(
+        float[:, :] flats,
+        float nodata,
+        # float dx, float dy,
+        # float minslope=1e-3,
+        # float[:, :] out = None,
+        Label[:, :] labels = None):
+
+    cdef:
+
+        long height = flats.shape[0], width = flats.shape[1]
+        long i, j
+        Label next_label = 1
+        CellStack pit
+
+    if labels is None:
+        labels = np.zeros((height, width), dtype=np.uint32)
+
+    for i in range(height):
+        for j in range(width):
+
+            if flats[i, j] == nodata:
+                continue
+
+            if flats[i, j] > 0 and labels[i, j] == 0:
+
+                label = next_label
+                next_label += 1
+                labels[i, j] = label
+
+                pit.push(Cell(i, j))
+                grow_flat_region(flats, nodata, labels, height, width, label, pit)
+
+    return np.asarray(labels)
+
+def flat_boxes(Label[:, :] labels):
+
+    cdef:
+
+        long height = labels.shape[0], width = labels.shape[1]
+        long i, j
+        Label label
+        map[Label, long] mini, minj, maxi, maxj, count
+
+    for i in range(height):
+        for j in range(width):
+
+            label = labels[i, j]
+
+            if label > 0:
+
+                if mini.count(label) == 0:
+
+                    mini[label] = i
+                    minj[label] = j
+                    maxi[label] = i
+                    maxj[label] = j
+                    count[label] = 1
+
+                else:
+
+                    mini[label] = min[long](i, mini[label])
+                    minj[label] = min[long](j, minj[label])
+                    maxi[label] = max[long](i, maxi[label])
+                    maxj[label] = max[long](j, maxj[label])
+                    count[label] += 1
+
+    return {l: (mini[l], minj[l], maxi[l], maxj[l], count[l]) for l in dict(mini)}
+
+

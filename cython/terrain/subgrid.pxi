@@ -275,9 +275,52 @@ cdef Outlet subgrid_outlet(float[:, :] geometry, short[:, :] flow, ContributingA
 
     return Outlet(pixel, area)
 
+def polygon_outlets(float[:, :] geometry, short[:, :] flow, unsigned char[:, :] mask, tuple gdal_transform):
+    """
+    """
+
+    cdef:
+
+        long height = flow.shape[0], width = flow.shape[1]
+        long i, j, mini, minj, maxi, maxj
+        int x
+        short direction
+        GeoTransform transform
+        GridExtent extent
+        Cell pixel
+        # Outlet outlet
+        vector[Outlet] outlets
+
+    transform = transform_from_gdal(gdal_transform)
+    extent = grid_extent(geometry, transform)
+
+    mini = extent.first.first
+    minj = extent.first.second
+    maxi = extent.second.first
+    maxj = extent.second.second
+
+    for i in range(mini, maxi+1):
+        for j in range(minj, maxj+1):
+
+            if ingrid(height, width, i, j) and mask[i, j]:
+
+                direction = flow[i, j]
+                x = ilog2(direction)
+                ix = i + ci[x]
+                jx = j + cj[x]
+
+                if ingrid(height, width, ix, jx) and not mask[ix, jx]:
+
+                    pixel = Cell(i, j)
+                    lca = local_contributive_area(pixel, flow, mask)
+                    # outlet = Outlet(pixel, lca)
+                    # outlets.append(outlet)
+                    outlets.push_back(Outlet(pixel, lca))
+
+    return outlets
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-@cython.embedsignature(True)
 def subgrid_outlets(dict geometries, short[:, :] flow, ContributingArea[:, :] acc, tuple gdal_transform, feedback=None):
     """
     Find outlets for every geometry (polygon) in `geometries`
@@ -314,3 +357,69 @@ def subgrid_outlets(dict geometries, short[:, :] flow, ContributingArea[:, :] ac
         feedback.setProgress(int(current*total))
 
     return outlets
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def tile_outlets(short[:, :] flow, unsigned char[:, :] mask):
+
+    cdef:
+
+        long height = flow.shape[0], width = flow.shape[1]
+        long i, j, ix, jx
+        vector[Outlet] outlets
+        vector[Cell] targets
+        Cell pixel
+        Outlet outlet
+        int x
+        ContributingArea area
+
+    for i in range(height):
+        for j in range(width):
+
+            if mask[i, j]:
+
+                direction = flow[i, j]
+                
+                if direction == -1 or direction == 0:
+                    continue
+
+                x = ilog2(direction)
+                ix = i + ci[x]
+                jx = j + cj[x]
+
+                if not ingrid(height, width, ix, jx) or not mask[ix, jx]:
+
+                    pixel = Cell(i, j)
+                    area = local_contributive_area(pixel, flow, mask)
+                    outlets.push_back(Outlet(pixel, area))
+                    targets.push_back(Cell(ix, jx))
+
+    return outlets, targets
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def outlet(short[:, :] flow, long i0, long j0):
+
+    cdef:
+
+        long height = flow.shape[0], width = flow.shape[1]
+        long i = i0, j = j0, ix = -1, jx = -1
+        int x
+
+    while ingrid(height, width, i, j):
+
+        direction = flow[i, j]
+
+        if direction == -1:
+            break
+
+        ix, jx = i, j
+
+        if direction == 0:
+            break
+
+        x = ilog2(direction)
+        i = i + ci[x]
+        j = j + cj[x]
+
+    return ix, jx

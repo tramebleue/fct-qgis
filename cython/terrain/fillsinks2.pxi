@@ -127,6 +127,9 @@ def fillsinks2(
     # progress.write(msg)
     print(msg)
 
+    if queue.empty():
+        return np.asarray(out)
+
     entry = queue.top()
     z = -entry.first
     
@@ -178,4 +181,4 @@ def fillsinks2(
     # progress.close()
     print(msg)
 
-    return np.float32(out)
+    return np.asarray(out)
