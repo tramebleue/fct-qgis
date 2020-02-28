@@ -15,4 +15,4 @@ site/
 cython/terrain/*.cpp
 tests/testdata/*.aux.xml
 .DS_Store
-.vscode
+.vscode/

@@ -57,5 +57,5 @@ parameters:
     description:
       Resulting centerline.
 seealso:
-  - "[PolygonCenterLine](../../../algorithms/spatial_components/PolygonCenterLine/)"
-  - "[ValleyCenterLine](../../../algorithms/spatial_components/ValleyCenterLine/)"
+  - "[PolygonCenterLine](../../../algorithms/spatialcomponents/PolygonCenterLine/)"
+  - "[ValleyCenterLine](../../../algorithms/spatialcomponents/ValleyCenterLine/)"
