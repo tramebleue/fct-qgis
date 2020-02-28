@@ -46,6 +46,8 @@ class ValleyBottom(AlgorithmMetadata, QgsProcessingAlgorithm):
     STEP = 'STEP'
     AGGREG = 'AGGREG'
     BUFFER = 'BUFFER'
+    THRESH_MIN = 'THRESH_MIN'
+    THRESH_MAX = 'THRESH_MAX'
     OUT_VB = 'OUT_VB'
 
     def initAlgorithm(self, configuration):
@@ -84,6 +86,16 @@ class ValleyBottom(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.tr('Large buffer size'),
             defaultValue=1500.0,
             minValue=1))
+
+        self.addParameter(QgsProcessingParameterNumber(
+            self.THRESH_MIN,
+            self.tr('Minimum threshold value'),
+            defaultValue=-10.0))
+
+        self.addParameter(QgsProcessingParameterNumber(
+            self.THRESH_MAX,
+            self.tr('Maximum threshold value'),
+            defaultValue=10.0))
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUT_VB,
@@ -156,7 +168,10 @@ class ValleyBottom(AlgorithmMetadata, QgsProcessingAlgorithm):
                 'largebufferdistanceparameter': self.parameterAsDouble(parameters, self.BUFFER, context),
                 'mergedistance': self.parameterAsDouble(parameters, self.AGGREG, context),
                 'native:smoothgeometry_1:VALLEYBOTTOM_POLYGON': parameters['OUT_VB'],
-                'thresholds': [-10,10,1]
-            }, context=context, feedback=feedback)
+                'thresholds': [
+                    self.parameterAsDouble(parameters, self.THRESH_MIN, context),
+                    self.parameterAsDouble(parameters, self.THRESH_MAX, context),
+                    1]
+            }, context=context)
 
         return {self.OUT_VB: valleybottom['native:smoothgeometry_1:VALLEYBOTTOM_POLYGON']}

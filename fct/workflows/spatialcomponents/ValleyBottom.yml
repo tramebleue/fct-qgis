@@ -49,6 +49,12 @@ parameters:
   BUFFER:
     type: Number
     description: Size around the stream network in which the valley bottom will be researched
+  THRESH_MIN:
+    type: Number
+    description: Minimum elevation to extract from the Relative DEM
+  THRESH_MAX:
+    type: Number
+    description: Maximum elevation to extract from the Relative DEM
   OUT_VB:
     type: Polygon
     description: Output valley bottom polygon
