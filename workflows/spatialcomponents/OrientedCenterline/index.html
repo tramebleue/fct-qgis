@@ -36,7 +36,7 @@
     
     
       
-        <title>Oriented centerline</title>
+        <title>Oriented Centerline</title>
       
     
     
@@ -129,7 +129,7 @@
               Fluvial Corridor Toolbox Documentation
             </span>
             <span class="md-header-nav__topic">
-              Oriented centerline
+              Oriented Centerline
             </span>
           
         </div>
@@ -1550,11 +1550,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Oriented centerline
+        Oriented Centerline
       </label>
     
-    <a href="./" title="Oriented centerline" class="md-nav__link md-nav__link--active">
-      Oriented centerline
+    <a href="./" title="Oriented Centerline" class="md-nav__link md-nav__link--active">
+      Oriented Centerline
     </a>
     
       
@@ -1584,6 +1584,13 @@
         <li class="md-nav__item">
   <a href="#parameters" title="Parameters" class="md-nav__link">
     Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" title="See Also" class="md-nav__link">
+    See Also
   </a>
   
 </li>
@@ -1830,6 +1837,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#see-also" title="See Also" class="md-nav__link">
+    See Also
+  </a>
+  
+</li>
+      
       
       
       
@@ -1849,13 +1863,30 @@
                   <a href="https://github.com/tramebleue/fct/edit/master/docs/workflows/spatialcomponents/OrientedCenterline.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="oriented-centerline">Oriented centerline<a class="headerlink" href="#oriented-centerline" title="Permanent link">&para;</a></h1>
+                <h1 id="oriented-centerline">Oriented Centerline<a class="headerlink" href="#oriented-centerline" title="Permanent link">&para;</a></h1>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Oriented center-line (ie. medial axis) of the input polygons based on an auxiliary stream network.</p>
-<p>Tags:<br/><code>hydrography</code></p>
+<p>Oriented center-line (ie. medial axis) of the input polygons based on an auxiliary
+stream network and a DEM.</p>
+<p>Tags:<br/><code>vector</code>, <code>polygon</code>, <code>medial axis</code>, <code>disaggregation</code>, <code>model</code>, <code>centerline</code>, <code>valley</code>, <code>line orientation</code>, <code>dem</code></p>
 
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<p>No Description Yet.</p>
+<p>Compute the medial axis of a polygon and orient lines from upstream to downstream with provided DEM. 
+Useful for computing centerlines of a valley bottom or any other 
+polygon for which you have a corresponding stream network.</p>
+<p>If a stream network is not available for your polygon (ex. historical channel), it is possible to 
+use instead a created LineString which cut the polygon boundaries upstream and downstream.</p>
+<p>Algorithm:</p>
+<div class="codehilite"><pre><span></span>Intersect the input polygon boundaries with the stream network
+Keep the most distant resulting points (upstream and downstream points)
+Cut the input polygon boundaries with the upstream and downstream points (get two polygon sides)
+Compute Voronoi polygons with points on the sides and dissolve it on each side
+Cut the Voronoi lines with the input polygon
+Remove duplicate lines
+Drape lines on DEM
+Check/Fix links orientation
+</pre></div>
+
+
 <h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h2>
 <table>
     <thead>
@@ -1874,6 +1905,8 @@
 
             </td>
             <td>
+                Distance between points on the input polygon sides to compute the</br>
+Voronoi polygons. The smaller the distance, the smoother the result will be.</br>
 
 
                 Default value: <code>25</code>
@@ -1881,7 +1914,7 @@
 
             </td>
             <td>
-                QgsProcessingParameterNumber
+                Number
             </td>
         </tr>
 
@@ -1892,12 +1925,12 @@
 
             </td>
             <td>
-
+                Digital Elevation Model.
 
 
             </td>
             <td>
-                QgsProcessingParameterRasterLayer
+                Raster
             </td>
         </tr>
 
@@ -1908,12 +1941,12 @@
 
             </td>
             <td>
-
+                Polygon to compute the centerline.
 
 
             </td>
             <td>
-                QgsProcessingParameterFeatureSource
+                Polygon
             </td>
         </tr>
 
@@ -1924,12 +1957,14 @@
 
             </td>
             <td>
+                Stream network to compute the upstream and downstream points.</br>
+ex. french BDCarthage.</br>
 
 
 
             </td>
             <td>
-                QgsProcessingParameterFeatureSource
+                LineString
             </td>
         </tr>
 
@@ -1940,18 +1975,27 @@
 
             </td>
             <td>
-
+                Resulting centerline.
 
 
             </td>
             <td>
-                QgsProcessingModelOutput
+                LineString
             </td>
         </tr>
 
     </tbody>
 </table>
 
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p><a href="../../../algorithms/spatial_components/PolygonCenterLine/">PolygonCenterLine</a></p>
+</li>
+<li>
+<p><a href="../../../algorithms/spatial_components/ValleyCenterLine/">ValleyCenterLine</a></p>
+</li>
+</ul>
 <div class="references"></div>
                 
                   
