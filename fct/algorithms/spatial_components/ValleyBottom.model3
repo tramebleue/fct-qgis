@@ -6,8 +6,8 @@
       <Option name="alg_config"/>
       <Option type="QString" name="alg_id" value="fct:binaryclosing"/>
       <Option type="QString" name="component_description" value="Merge close objects"/>
-      <Option type="double" name="component_pos_x" value="1261"/>
-      <Option type="double" name="component_pos_y" value="612"/>
+      <Option type="double" name="component_pos_x" value="1026"/>
+      <Option type="double" name="component_pos_y" value="641"/>
       <Option name="dependencies"/>
       <Option type="QString" name="id" value="fct:binaryclosing_1"/>
       <Option name="outputs"/>
@@ -111,8 +111,8 @@
       <Option name="alg_config"/>
       <Option type="QString" name="alg_id" value="gdal:polygonize"/>
       <Option type="QString" name="component_description" value="Polygonize"/>
-      <Option type="double" name="component_pos_x" value="1701"/>
-      <Option type="double" name="component_pos_y" value="734"/>
+      <Option type="double" name="component_pos_x" value="1029"/>
+      <Option type="double" name="component_pos_y" value="814"/>
       <Option name="dependencies"/>
       <Option type="QString" name="id" value="gdal:polygonize_1"/>
       <Option name="outputs"/>
@@ -151,16 +151,16 @@
       <Option name="alg_config"/>
       <Option type="QString" name="alg_id" value="gdal:sieve"/>
       <Option type="QString" name="component_description" value="Sieve result"/>
-      <Option type="double" name="component_pos_x" value="1486"/>
-      <Option type="double" name="component_pos_y" value="671"/>
+      <Option type="double" name="component_pos_x" value="1033"/>
+      <Option type="double" name="component_pos_y" value="728"/>
       <Option name="dependencies"/>
       <Option type="QString" name="id" value="gdal:sieve_1"/>
       <Option type="Map" name="outputs">
         <Option type="Map" name="VALLEYBOTTOM_RASTER">
           <Option type="QString" name="child_id" value="gdal:sieve_1"/>
           <Option type="QString" name="component_description" value="VALLEYBOTTOM_RASTER"/>
-          <Option type="double" name="component_pos_x" value="1724"/>
-          <Option type="double" name="component_pos_y" value="657"/>
+          <Option type="double" name="component_pos_x" value="1275"/>
+          <Option type="double" name="component_pos_y" value="751"/>
           <Option type="invalid" name="default_value"/>
           <Option type="bool" name="mandatory" value="false"/>
           <Option type="QString" name="name" value="VALLEYBOTTOM_RASTER"/>
@@ -261,6 +261,46 @@
         </Option>
       </Option>
     </Option>
+    <Option type="Map" name="native:extractbyattribute_1">
+      <Option type="bool" name="active" value="true"/>
+      <Option name="alg_config"/>
+      <Option type="QString" name="alg_id" value="native:extractbyattribute"/>
+      <Option type="QString" name="component_description" value="Extract valley bottom polygon"/>
+      <Option type="double" name="component_pos_x" value="1029"/>
+      <Option type="double" name="component_pos_y" value="901"/>
+      <Option name="dependencies"/>
+      <Option type="QString" name="id" value="native:extractbyattribute_1"/>
+      <Option name="outputs"/>
+      <Option type="bool" name="outputs_collapsed" value="true"/>
+      <Option type="bool" name="parameters_collapsed" value="true"/>
+      <Option type="Map" name="params">
+        <Option type="List" name="FIELD">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="QString" name="static_value" value="VALUE"/>
+          </Option>
+        </Option>
+        <Option type="List" name="INPUT">
+          <Option type="Map">
+            <Option type="QString" name="child_id" value="gdal:polygonize_1"/>
+            <Option type="QString" name="output_name" value="OUTPUT"/>
+            <Option type="int" name="source" value="1"/>
+          </Option>
+        </Option>
+        <Option type="List" name="OPERATOR">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="int" name="static_value" value="0"/>
+          </Option>
+        </Option>
+        <Option type="List" name="VALUE">
+          <Option type="Map">
+            <Option type="int" name="source" value="2"/>
+            <Option type="QString" name="static_value" value="1"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
     <Option type="Map" name="native:reclassifybytable_1">
       <Option type="bool" name="active" value="true"/>
       <Option name="alg_config"/>
@@ -323,8 +363,8 @@
       <Option name="alg_config"/>
       <Option type="QString" name="alg_id" value="native:simplifygeometries"/>
       <Option type="QString" name="component_description" value="Simplify network"/>
-      <Option type="double" name="component_pos_x" value="538"/>
-      <Option type="double" name="component_pos_y" value="264"/>
+      <Option type="double" name="component_pos_x" value="802"/>
+      <Option type="double" name="component_pos_y" value="244"/>
       <Option name="dependencies"/>
       <Option type="QString" name="id" value="native:simplifygeometries_1"/>
       <Option name="outputs"/>
@@ -356,8 +396,8 @@
       <Option name="alg_config"/>
       <Option type="QString" name="alg_id" value="native:simplifygeometries"/>
       <Option type="QString" name="component_description" value="Simplify polygon"/>
-      <Option type="double" name="component_pos_x" value="1917"/>
-      <Option type="double" name="component_pos_y" value="798"/>
+      <Option type="double" name="component_pos_x" value="1027"/>
+      <Option type="double" name="component_pos_y" value="982"/>
       <Option name="dependencies"/>
       <Option type="QString" name="id" value="native:simplifygeometries_2"/>
       <Option name="outputs"/>
@@ -366,7 +406,7 @@
       <Option type="Map" name="params">
         <Option type="List" name="INPUT">
           <Option type="Map">
-            <Option type="QString" name="child_id" value="gdal:polygonize_1"/>
+            <Option type="QString" name="child_id" value="native:extractbyattribute_1"/>
             <Option type="QString" name="output_name" value="OUTPUT"/>
             <Option type="int" name="source" value="1"/>
           </Option>
@@ -390,16 +430,16 @@
       <Option name="alg_config"/>
       <Option type="QString" name="alg_id" value="native:smoothgeometry"/>
       <Option type="QString" name="component_description" value="Smooth polygon"/>
-      <Option type="double" name="component_pos_x" value="2150"/>
-      <Option type="double" name="component_pos_y" value="859"/>
+      <Option type="double" name="component_pos_x" value="1033"/>
+      <Option type="double" name="component_pos_y" value="1067"/>
       <Option name="dependencies"/>
       <Option type="QString" name="id" value="native:smoothgeometry_1"/>
       <Option type="Map" name="outputs">
         <Option type="Map" name="VALLEYBOTTOM_POLYGON">
           <Option type="QString" name="child_id" value="native:smoothgeometry_1"/>
           <Option type="QString" name="component_description" value="VALLEYBOTTOM_POLYGON"/>
-          <Option type="double" name="component_pos_x" value="2383"/>
-          <Option type="double" name="component_pos_y" value="889"/>
+          <Option type="double" name="component_pos_x" value="1265"/>
+          <Option type="double" name="component_pos_y" value="1087"/>
           <Option type="invalid" name="default_value"/>
           <Option type="bool" name="mandatory" value="false"/>
           <Option type="QString" name="name" value="VALLEYBOTTOM_POLYGON"/>
@@ -438,6 +478,7 @@
     </Option>
   </Option>
   <Option name="help"/>
+  <Option name="modelVariables"/>
   <Option type="QString" name="model_group" value="Spatial Components"/>
   <Option type="QString" name="model_name" value="Valley Bottom"/>
   <Option type="Map" name="parameterDefinitions">
@@ -472,26 +513,26 @@
     </Option>
     <Option type="Map" name="largebufferdistanceparameter">
       <Option type="int" name="data_type" value="1"/>
-      <Option type="invalid" name="default"/>
+      <Option type="QString" name="default" value="1500"/>
       <Option type="int" name="default_unit" value="9"/>
       <Option type="QString" name="description" value="LARGE_BUFFER_DISTANCE_PARAMETER"/>
       <Option type="int" name="flags" value="0"/>
       <Option type="double" name="max" value="1.7976931348623157e+308"/>
       <Option name="metadata"/>
-      <Option type="double" name="min" value="-1.7976931348623157e+308"/>
+      <Option type="double" name="min" value="0"/>
       <Option type="QString" name="name" value="largebufferdistanceparameter"/>
       <Option type="QString" name="parameter_type" value="distance"/>
       <Option type="QString" name="parent" value=""/>
     </Option>
     <Option type="Map" name="mergedistance">
       <Option type="int" name="data_type" value="1"/>
-      <Option type="invalid" name="default"/>
+      <Option type="QString" name="default" value="5"/>
       <Option type="int" name="default_unit" value="9"/>
       <Option type="QString" name="description" value="MERGE_DISTANCE"/>
       <Option type="int" name="flags" value="0"/>
       <Option type="double" name="max" value="1.7976931348623157e+308"/>
       <Option name="metadata"/>
-      <Option type="double" name="min" value="-1.7976931348623157e+308"/>
+      <Option type="double" name="min" value="0"/>
       <Option type="QString" name="name" value="mergedistance"/>
       <Option type="QString" name="parameter_type" value="distance"/>
       <Option type="QString" name="parent" value=""/>
@@ -536,25 +577,25 @@
     </Option>
     <Option type="Map" name="inputstreamnetwork">
       <Option type="QString" name="component_description" value="inputstreamnetwork"/>
-      <Option type="double" name="component_pos_x" value="268"/>
-      <Option type="double" name="component_pos_y" value="223"/>
+      <Option type="double" name="component_pos_x" value="544"/>
+      <Option type="double" name="component_pos_y" value="215"/>
       <Option type="QString" name="name" value="inputstreamnetwork"/>
     </Option>
     <Option type="Map" name="largebufferdistanceparameter">
       <Option type="QString" name="component_description" value="largebufferdistanceparameter"/>
-      <Option type="double" name="component_pos_x" value="542"/>
-      <Option type="double" name="component_pos_y" value="330"/>
+      <Option type="double" name="component_pos_x" value="538"/>
+      <Option type="double" name="component_pos_y" value="303"/>
       <Option type="QString" name="name" value="largebufferdistanceparameter"/>
     </Option>
     <Option type="Map" name="mergedistance">
       <Option type="QString" name="component_description" value="mergedistance"/>
-      <Option type="double" name="component_pos_x" value="1016"/>
-      <Option type="double" name="component_pos_y" value="637"/>
+      <Option type="double" name="component_pos_x" value="764"/>
+      <Option type="double" name="component_pos_y" value="610"/>
       <Option type="QString" name="name" value="mergedistance"/>
     </Option>
     <Option type="Map" name="thresholds">
       <Option type="QString" name="component_description" value="thresholds"/>
-      <Option type="double" name="component_pos_x" value="460"/>
+      <Option type="double" name="component_pos_x" value="459"/>
       <Option type="double" name="component_pos_y" value="514"/>
       <Option type="QString" name="name" value="thresholds"/>
     </Option>
