@@ -469,8 +469,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../algorithms/hydrography/SelectConnectedComponents/" title="Select Connected Streams" class="md-nav__link">
-      Select Connected Streams
+    <a href="../../../algorithms/hydrography/SelectConnectedComponents/" title="Select Connected Reaches" class="md-nav__link">
+      Select Connected Reaches
     </a>
   </li>
 
@@ -1600,6 +1600,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#see-also" title="See Also" class="md-nav__link">
+    See Also
+  </a>
+  
+</li>
+      
       
       
       
@@ -1830,6 +1837,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#see-also" title="See Also" class="md-nav__link">
+    See Also
+  </a>
+  
+</li>
+      
       
       
       
@@ -1851,11 +1865,24 @@
                 
                 <h1 id="valley-bottom">Valley bottom<a class="headerlink" href="#valley-bottom" title="Permanent link">&para;</a></h1>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Extract valley bottom over the studied area</p>
-<p>Tags:<br/><code>hydrography</code>, <code>spatialcomponents</code></p>
+<p>Extract valley bottom from a DEM and a stream network.</p>
+<p>Tags:<br/><code>hydrography</code>, <code>spatial components</code>, <code>valley bottom</code>, <code>detrend</code>, <code>relative</code>, <code>dem</code>, <code>alluvial floodplain</code>, <code>stream network</code></p>
 
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<p>No Description Yet.</p>
+<p>Within a watershed, extraction of a valley bottom related to a hydrographic network is a
+crucial step for the fluvial corridor characterization. Defined as the modern alluvial floodplain by <span><a class="citation" href="#ref-alberSpatialDisaggregationAggregation2011" id="cite-alberSpatialDisaggregationAggregation2011">(Alber et al., 2011)</a></span>, valley bottom is the deposition zone of alluvium since
+Holocene (Schumm, 1977) and includes both riverbed and floodplain. This valley bottom
+crucial fluvial unit with important water, material and biota transfers (Nanson and Croke,
+1992). Valley corridor width also controls fluvial dynamics and patterns so that extracting this
+layer is often a preliminary step in the biogeomorphic characterization of stream networks
+(Notebaert et Piégay, 2013).</p>
+<p><span><a class="citation" href="#ref-roux2014" id="cite-roux2014">(Roux et al., 2014)</a></span> </p>
+<p>3 methods to detrend DEM are proposed:</p>
+<ul>
+<li>Topological is identical to <span><a class="citation" href="#ref-roux2014" id="cite-roux2014">(Roux et al., 2014)</a></span> and <span><a class="citation" href="#ref-alberSpatialDisaggregationAggregation2011" id="cite-alberSpatialDisaggregationAggregation2011">(Alber et al., 2011)</a></span>.</li>
+<li>Nearest is fast and helpful if your stream network does not match perfectly with your DEM.</li>
+<li>Flow is slower, but precise. You may need to fill depressions of your DEM and resolve flat lands before trying to extract the valley bottom.</li>
+</ul>
 <h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h2>
 <table>
     <thead>
@@ -1869,110 +1896,154 @@
 
         <tr>
             <td>
-                Aggregation distance</br>
-                <code>aggregationdistance</code>
+                Input DEM</br>
+                <code>IN_DEM</code>
 
             </td>
             <td>
+                Input raw DEM coded on Float32
 
-
-                Default value: <code>0</code>
+                Default value: <code>[3]</code>
 
 
             </td>
             <td>
-                QgsProcessingParameterDistance
+                RasterLayer
             </td>
         </tr>
 
         <tr>
             <td>
-                DEM</br>
-                <code>dem</code>
+                Input stream network</br>
+                <code>IN_STREAM</code>
 
             </td>
             <td>
-
+                Input stream network
 
 
             </td>
             <td>
-                QgsProcessingParameterRasterLayer
+                LineString
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Detrending method</br>
+                <code>METHOD</code>
+
+            </td>
+            <td>
+                Detrending method (see documentation above)
+
+                Default value: <code>Topological</code>
+
+
+            </td>
+            <td>
+                Enum
             </td>
         </tr>
 
         <tr>
             <td>
                 Disaggregation step</br>
-                <code>disaggregationstep</code>
+                <code>STEP</code>
 
             </td>
             <td>
+                Distance of stream network segmentation
 
-
-                Default value: <code>0</code>
+                Default value: <code>50.0</code>
 
 
             </td>
             <td>
-                QgsProcessingParameterDistance
+                Number
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Aggregation distance</br>
+                <code>AGGREG</code>
+
+            </td>
+            <td>
+                Maximal distance to aggregate small parts of valley bottom extracted
+
+                Default value: <code>5.0</code>
+
+
+            </td>
+            <td>
+                Number
             </td>
         </tr>
 
         <tr>
             <td>
                 Large buffer size</br>
-                <code>largebuffersize</code>
+                <code>BUFFER</code>
 
             </td>
             <td>
+                Size around the stream network in which the valley bottom will be researched
 
-
-                Default value: <code>0</code>
-
-
-            </td>
-            <td>
-                QgsProcessingParameterDistance
-            </td>
-        </tr>
-
-        <tr>
-            <td>
-                Stream network</br>
-                <code>streamnetwork</code>
-
-            </td>
-            <td>
-
+                Default value: <code>1500.0</code>
 
 
             </td>
             <td>
-                QgsProcessingParameterFeatureSource
+                Number
             </td>
         </tr>
 
         <tr>
             <td>
-                Output Valley Bottom</br>
-                <code>Output Valley Bottom</code>
+                Output valley bottom</br>
+                <code>OUT_VB</code>
 
             </td>
             <td>
-
+                Output valley bottom polygon
 
 
             </td>
             <td>
-                QgsProcessingModelOutput
+                Polygon
             </td>
         </tr>
 
     </tbody>
 </table>
 
-<div class="references"></div>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p><a href="../../../algorithms/terrain/FillDepressions/">Fill depressions</a></p>
+</li>
+<li>
+<p><a href="../../../algorithms/terrain/ResolveFlats/">Resolve flats</a></p>
+</li>
+</ul>
+<div class="references">
+<div class="bibentry" id="ref-alberSpatialDisaggregationAggregation2011">
+<p>Alber, A. and Pi<span class="bibtex-protected">é</span>gay, H.
+(2011).
+Spatial disaggregation and aggregation procedures for characterizing fluvial features at the network-scale: <span class="bibtex-protected"><span class="bibtex-protected">Application</span></span> to the <span class="bibtex-protected"><span class="bibtex-protected">Rh<span class="bibtex-protected">ô</span>ne</span></span> basin (<span class="bibtex-protected"><span class="bibtex-protected">France</span></span>).
+<em>Geomorphology</em>, 125(3):343–360.
+<a href="https://doi.org/10.1016/j.geomorph.2010.09.009">doi:10.1016/j.geomorph.2010.09.009</a>.</p>
+</div>
+<div class="bibentry" id="ref-roux2014">
+<p>Roux, C., Alber, A., Bertrand, M., Vaudor, L., and Piégay, H.
+(2014).
+“<span class="bibtex-protected">FluvialCorridor</span>&ldquo;: <span class="bibtex-protected">A</span> new <span class="bibtex-protected">ArcGIS</span> toolbox package for multiscale riverscape exploration.
+<em>Geomorphology</em>.
+URL: <a href="http://dx.doi.org/10.1016/j.geomorph.2014.04.018">http://dx.doi.org/10.1016/j.geomorph.2014.04.018</a>, <a href="https://doi.org/10.1016/j.geomorph.2014.04.018">doi:10.1016/j.geomorph.2014.04.018</a>.</p>
+</div>
+</div>
                 
                   
                 
