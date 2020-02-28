@@ -1,8 +1,58 @@
 displayName: Valley bottom
 group: spatialcomponents
-shortHelpString: NULL
-helpString: NULL
-helpUrl: NULL
+summary: |
+  Extract valley bottom from a DEM and a stream network.
+
+description: |
+  Within a watershed, extraction of a valley bottom related to a hydrographic network is a
+  crucial step for the fluvial corridor characterization. Defined as the modern alluvial floodplain by [@alberSpatialDisaggregationAggregation2011], valley bottom is the deposition zone of alluvium since
+  Holocene (Schumm, 1977) and includes both riverbed and floodplain. This valley bottom
+  crucial fluvial unit with important water, material and biota transfers (Nanson and Croke,
+  1992). Valley corridor width also controls fluvial dynamics and patterns so that extracting this
+  layer is often a preliminary step in the biogeomorphic characterization of stream networks
+  (Notebaert et Piégay, 2013).
+
+  [@roux2014] 
+
+  3 methods to detrend DEM are proposed:
+    
+    - Topological is identical to [@roux2014] and [@alberSpatialDisaggregationAggregation2011].
+    - Nearest is fast and helpful if your stream network does not match perfectly with your DEM.
+    - Flow is slower, but precise. You may need to fill depressions of your DEM and resolve flat lands before trying to extract the valley bottom.
+
 tags:
   - hydrography
-  - spatialcomponents
+  - spatial components
+  - valley bottom
+  - detrend 
+  - relative
+  - dem
+  - alluvial floodplain
+  - stream network
+
+parameters:
+  IN_DEM: 
+    type: RasterLayer
+    description: Input raw DEM coded on Float32
+  IN_STREAM:
+    type: LineString
+    description: Input stream network
+  METHOD:
+    type: Enum
+    description: Detrending method (see documentation above)
+  STEP:
+    type: Number
+    description: Distance of stream network segmentation
+  AGGREG:
+    type: Number
+    description: Maximal distance to aggregate small parts of valley bottom extracted
+  BUFFER:
+    type: Number
+    description: Size around the stream network in which the valley bottom will be researched
+  OUT_VB:
+    type: Polygon
+    description: Output valley bottom polygon
+
+seealso:
+  - "[Fill depressions](../../../algorithms/terrain/FillDepressions/)"
+  - "[Resolve flats](../../../algorithms/terrain/ResolveFlats/)"
