@@ -114,32 +114,23 @@ def stream_to_feature(
         stack.pop()
         i = c.first
         j = c.second
-        # segment = list[Cell]()
-        # segment.push_back(c)
+
         segment = [(j, i)]
-
         head = inflow[i, j] == 0
-
         direction = flow[i, j]
 
-        x = ilog2(direction)
-        di, dj = ci[x], cj[x]
-        i, j = i+di, j+dj
+        while not (direction == -1 or direction == 0):
 
-        while ingrid(height, width, i, j):
+            x = ilog2(direction)
+            di, dj = ci[x], cj[x]
+            i, j = i+di, j+dj
 
             # segment.push_back(Cell(i, j))
             segment.append((j, i))
 
-            if inflow[i, j] == 1:
+            if ingrid(height, width, i, j) and inflow[i, j] == 1:
 
                 direction = flow[i, j]
-                if direction == 0:
-                    break
-
-                x = ilog2(direction)
-                di, dj = ci[x], cj[x]
-                i, j = i+di, j+dj
 
             else:
 
