@@ -33,13 +33,18 @@ cdef void connect(
 
     cdef:
         float over_z
+        float epsilon = 0.002
         WatershedPair p
 
     if l1 > l2:
         l1, l2 = l2, l1
 
     p = WatershedPair(l1, l2)
-    over_z = max[float](z1, z2)
+
+    if (max[float](z1, z2) - min[float](z1, z2)) < epsilon:
+        over_z = max[float](z1, z2) + epsilon
+    else:
+        over_z = max[float](z1, z2)
 
     if graph.count(p) == 0:
         graph[p] = over_z
@@ -140,6 +145,9 @@ cdef void connect_corner(
 
     connect(graph, l1, z1, l2, z2)
 
+def read_data(row, col, tiledatafn):
+    return np.load(tiledatafn(row, col), allow_pickle=True)
+
 def connect_tile(int row, int col, float nodata, dict tileindex, tiledatafn):
     """
     Return connection graph to neighbor tiles.
@@ -163,7 +171,7 @@ def connect_tile(int row, int col, float nodata, dict tileindex, tiledatafn):
         WatershedPair p
 
     tile_id = tileindex[(row, col)].gid
-    data = np.load(tiledatafn(row, col))
+    data = read_data(row, col, tiledatafn)
 
     for link, z in data['graph']:
         
@@ -197,7 +205,7 @@ def connect_tile(int row, int col, float nodata, dict tileindex, tiledatafn):
             elevations = data['z'][side]
             labels = data['labels'][side]
             neighbor_id = tileindex[(i, j)].gid
-            neighbor_data = np.load(tiledatafn(i, j))
+            neighbor_data = read_data(i, j, tiledatafn)
             neighbor_side = (side + 2) % 4
             neighbor_elevations = neighbor_data['z'][neighbor_side]
             neighbor_labels = neighbor_data['labels'][neighbor_side]
@@ -235,7 +243,7 @@ def connect_tile(int row, int col, float nodata, dict tileindex, tiledatafn):
         elevations = data['z'][0]
         labels = data['labels'][0]
         neighbor_id = tileindex[(row-1, col-1)].gid
-        neighbor_data = np.load(tiledatafn(row-1, col-1))
+        neighbor_data = read_data(row-1, col-1, tiledatafn)
         neighbor_elevations = neighbor_data['z'][2]
         neighbor_labels = neighbor_data['labels'][2]
 
