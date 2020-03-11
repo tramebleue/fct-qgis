@@ -73,6 +73,9 @@ def resolve_flat(
         unsigned int label, next_label
         unsigned char[:, :] seen
         bint is_edge_outlet, is_receiving_flow, is_flat
+        
+        int slope_gradient = -3
+        int outlet_gradient = 5
 
     # low_queue = list()
     # high_queue = list()
@@ -81,15 +84,15 @@ def resolve_flat(
     height = elevations.shape[0]
     width = elevations.shape[1]
 
+    if feedback is None:
+        feedback = SilentFeedback()
+
     # Find flats boundary cells
 
     feedback.setProgressText('Find flat boundary cells ...')
     total = 100.0 / (height*width)
     FLOW_NODATA = -1
     NO_FLOW = 0
-
-    if feedback is None:
-        feedback = SilentFeedback()
 
     for i in range(height):
         for j in range(width):
@@ -279,7 +282,7 @@ def resolve_flat(
                 # high_queue.append((xi, xj))
                 high_queue.push_back(Cell(xi, xj))
 
-    flat_mask = -np.int32(flat_mask)
+    flat_mask = slope_gradient * np.int32(flat_mask)
 
     # Process flow toward lower terrain
 
@@ -330,9 +333,9 @@ def resolve_flat(
         assert(label > 0)
 
         if flat_mask[i, j] < 0:
-            flat_mask[i, j] = flat_mask[i, j] + flat_heights[label] + 2*increment
+            flat_mask[i, j] = flat_mask[i, j] + outlet_gradient*flat_heights[label] + outlet_gradient*increment
         else:
-            flat_mask[i, j] = 2*increment
+            flat_mask[i, j] = outlet_gradient*increment
 
         for x in range(8):
 
@@ -378,9 +381,9 @@ def resolve_flat(
         assert(label > 0)
 
         if flat_mask[i, j] < 0:
-            flat_mask[i, j] = flat_mask[i, j] + flat_heights[label] + 2*increment
+            flat_mask[i, j] = flat_mask[i, j] + outlet_gradient*flat_heights[label] + outlet_gradient*increment
         else:
-            flat_mask[i, j] = 2*increment
+            flat_mask[i, j] = outlet_gradient*increment
 
         for x in range(8):
 

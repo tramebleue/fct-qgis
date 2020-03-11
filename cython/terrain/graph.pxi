@@ -33,7 +33,7 @@ cdef void connect(
 
     cdef:
         float over_z
-        float epsilon = 0.002
+        # float epsilon = 0.002
         WatershedPair p
 
     if l1 > l2:
@@ -41,10 +41,12 @@ cdef void connect(
 
     p = WatershedPair(l1, l2)
 
-    if (max[float](z1, z2) - min[float](z1, z2)) < epsilon:
-        over_z = max[float](z1, z2) + epsilon
-    else:
-        over_z = max[float](z1, z2)
+    # if (max[float](z1, z2) - min[float](z1, z2)) < epsilon:
+    #     over_z = max[float](z1, z2) + epsilon
+    # else:
+    #     over_z = max[float](z1, z2)
+
+    over_z = max[float](z1, z2)
 
     if graph.count(p) == 0:
         graph[p] = over_z
