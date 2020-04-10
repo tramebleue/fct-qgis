@@ -235,7 +235,8 @@ class SignedShortestDistance(AlgorithmMetadata, QgsProcessingAlgorithm):
             row, col = query_pixels[current]
             x, y = query_points[current]
 
-            point = np.array([(x, y)])
+            # point = np.array([(x, y)])
+            point = np.repeat([(x, y)], 5, axis=0)
             nearest_segments = np.take(segments, nearest_idx[current], axis=0, mode='wrap')
             dist, signed_dist, pos = ta.signed_distance(nearest_segments[:, :2], nearest_segments[:, 2:], point)
 

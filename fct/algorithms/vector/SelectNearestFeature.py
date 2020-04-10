@@ -74,12 +74,12 @@ class SelectNearestFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
         reference_layer = self.parameterAsVectorLayer(parameters, self.REFERENCE_LAYER, context)
         search_distance = self.parameterAsDouble(parameters,self.SEARCH_DISTANCE,context)
 
-        spatial_index = QgsSpatialIndex(reference_layer.getFeatures())
+        spatial_index = QgsSpatialIndex(input_layer.getFeatures())
 
         total = 100.0 / input_layer.featureCount() if input_layer.featureCount() else 0
         selection = set()
 
-        for current, ref_feature in enumerate(input_layer.getFeatures()):
+        for current, ref_feature in enumerate(reference_layer.getFeatures()):
 
             if feedback.isCanceled():
                 break
@@ -89,6 +89,7 @@ class SelectNearestFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
             search_box.grow(search_distance)
 
             nearest_id = None
+            distance = float('inf')
 
             for candidate_id in spatial_index.intersects(search_box):
 
@@ -109,4 +110,4 @@ class SelectNearestFeature(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         input_layer.selectByIds(list(selection), QgsVectorLayer.SetSelection)
 
-        return{}
+        return {}
