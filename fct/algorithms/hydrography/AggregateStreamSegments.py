@@ -50,6 +50,7 @@ class AggregateStreamSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
     CATEGORY_FIELD = 'CATEGORY_FIELD'
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
+    COPY_FIELDS = 'COPY_FIELDS'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
@@ -79,6 +80,13 @@ class AggregateStreamSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
             type=QgsProcessingParameterField.Numeric,
             defaultValue='NODEB'))
 
+        self.addParameter(QgsProcessingParameterField(
+            self.COPY_FIELDS,
+            self.tr('Fields To Copy'),
+            parentLayerParameterName=self.INPUT,
+            allowMultiple=True,
+            type=QgsProcessingParameterField.Any))
+
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
             self.tr('Aggregated Lines'),
@@ -90,6 +98,9 @@ class AggregateStreamSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
         category_field = self.parameterAsString(parameters, self.CATEGORY_FIELD, context)
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
+        copy_fields = self.parameterAsFields(parameters, self.COPY_FIELDS, context)
+
+        feedback.pushInfo('%s' % copy_fields)
 
         if category_field:
             category_field_idx = layer.fields().lookupField(category_field)
@@ -97,12 +108,18 @@ class AggregateStreamSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
         else:
             category_field_instance = QgsField('CATEGORY', QVariant.String, len=16)
 
+        copy_fields_instances = []
+        for copy_field in copy_fields:
+            field_idx = layer.fields().lookupField(copy_field)
+            copy_fields_instances.append(layer.fields().at(field_idx))
+
         fields = asQgsFields(
             QgsField('GID', type=QVariant.Int, len=10),
             QgsField('LENGTH', QVariant.Double),
             category_field_instance,
             QgsField(from_node_field, type=QVariant.Int, len=10),
-            QgsField(to_node_field, type=QVariant.Int, len=10)
+            QgsField(to_node_field, type=QVariant.Int, len=10),
+            *copy_fields_instances
         )
 
         (sink, dest_id) = self.parameterAsSink(parameters, self.OUTPUT, context,
@@ -199,6 +216,7 @@ class AggregateStreamSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                 for link in downward_index[from_node]:
 
                     segment = srclayer.getFeature(link.feature_id)
+                    copy_values = [segment.attribute(field) for field in copy_fields]
                     vertices = [v for v in segment.geometry().vertices()]
 
                     current = current + 1
@@ -223,7 +241,7 @@ class AggregateStreamSegments(AlgorithmMetadata, QgsProcessingAlgorithm):
                         category,
                         from_node,
                         link.b
-                    ])
+                    ] + copy_values)
                     sink.addFeature(feature)
 
                     process_stack.append(link.b)
