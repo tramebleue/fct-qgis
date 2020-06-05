@@ -139,7 +139,7 @@ class LocatePolygonAlongNetwork(AlgorithmMetadata, QgsProcessingFeatureBasedAlgo
 
     def outputFields(self, inputFields): #pylint: disable=no-self-use,missing-docstring
         appendUniqueField(QgsField('AXIS', QVariant.Int), inputFields)
-        appendUniqueField(QgsField('MLOC', QVariant.Double), inputFields)
+        appendUniqueField(QgsField('LOCM', QVariant.Double), inputFields)
         return inputFields
 
     def supportInPlaceEdit(self, layer): #pylint: disable=no-self-use,missing-docstring,unused-argument

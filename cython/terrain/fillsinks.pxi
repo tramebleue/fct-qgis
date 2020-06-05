@@ -18,13 +18,11 @@ Priority Flood Depression Filling - Flow Direction
 def fillsinks(
         float[:, :] elevations,
         float nodata,
-        float dx, float dy,
-        float minslope=1e-5,
-        # float[:, :] out = None,
-        short[:, :] flow = None):
+        float zdelta=0,
+        float[:, :] out=None,
+        short[:, :] flow=None,
+        feedback=None):
     """
-    fillsinks(elevations, nodata, dx, dy, minslope, out=None)
-
     Fill sinks of digital elevation model (DEM),
     based on the algorithm of Wang & Liu (2006).
 
@@ -37,24 +35,25 @@ def fillsinks(
     nodata: float
         no-data value in `elevations`    
 
-    dx: float
-        raster horizontal resolution in `elevations`
-
-    dy: float
-        raster vertical resolution in `elevations`
-        (positive value)
-
-    minslope: float
-        Minimum slope to preserve between cells
+    zdelta: float
+        Minimum z delta to preserve between cells
         when filling up sinks.
 
     out: array-like
         Same shape and dtype as elevations, initialized to nodata
+        It is safe to pass `out = elevations` to save some memory
+        when processing large raster ?
+
+    flow: array-like
+        Optional flow direction output
+        Same shape as elevations, dtype int16, initialized to -1
+
+    feedback: QgsFeedback-like object
 
     Returns
     -------
 
-    Flow raster.
+    Depression filled elevation raster.
 
     Notes
     -----
@@ -79,169 +78,163 @@ def fillsinks(
         Cell ij
         QueueEntry entry
         CellQueue queue
-        unsigned char[:, :] seen
+        unsigned char[:, :] settled
 
-        np.ndarray[double, ndim=2] w
-        np.ndarray[float] mindiff
-        # CppTermProgress progress
+        bint flow_output = False
+
+        short FLOW_NODATA = -1
+        short NO_FLOW = 0
+        
+        double total
+        int progress0, progress1
 
     height = elevations.shape[0]
     width = elevations.shape[1]
+    total = 100.0 / (height*width)
+
+    if out is None:
+        out = np.full((height, width), nodata, dtype=np.float32)
+
+    if flow is not None:
+        flow_output = True
+        flow[:, :] = FLOW_NODATA
+
+    # TODO
+    # test for congruent dimensions among elevations, out and flow
+
+    settled = np.zeros((height, width), dtype=np.uint8)
+
+    if feedback is None:
+        feedback = SilentFeedback()
+
+    # Find boundary cells
     
-    # nodata = src.nodata
-    # dx = src.transform.a
-    # dy = -src.transform.e
+    feedback.setProgressText('Input is %d x %d' % (width, height))
+    feedback.setProgressText('Find boundary cells ...')
 
-    w = np.array([ ci, cj ]).T * (dx, dy)
-    mindiff = np.float32(minslope*np.sqrt(np.sum(w*w, axis=1)))
+    for i in range(height):
+        for j in range(width):
 
-    # if out is None:
-    #     out = np.full((height, width), nodata, dtype=np.float32)
-
-    if flow is None:
-        flow = np.full((height, width), -1, dtype=np.int16)
-
-    seen = np.zeros((height, width), dtype=np.uint8)
-    
-    # progress = CppTermProgress(2*width*height)
-    msg = 'Input is %d x %d' % (width, height)
-    # progress.write(msg)
-    print(msg)
-    msg = 'Find boundary cells ...'
-    # progress.write(msg)
-    print(msg)
-
-    with nogil:
-
-        for i in range(height):
-            for j in range(width):
-
-                z = elevations[i, j]
-                
-                if z != nodata:
-                    
-                    for x in range(8):
-                    
-                        ix = i + ci[x]
-                        jx = j + cj[x]
-                    
-                        if not ingrid(height, width, ix, jx) or (elevations[ix, jx] == nodata):
-                            
-                            # heapq.heappush(queue, (-z, x, y))
-                            entry = QueueEntry(-z, Cell(i, j))
-                            queue.push(entry)
-                            seen[i, j] = 1
-
-                            break
-
-                # progress.update(1)
-
-    msg = 'Fill depressions from bottom to top ...'
-    # progress.write(msg)
-    print(msg)
-
-    if queue.empty():
-        return np.asarray(flow)
-
-    entry = queue.top()
-    z = -entry.first
-    
-    msg = f'Starting from z = {z:.3f}'
-    # progress.write(msg)
-    print(msg)
-
-    msg = f'Initial queue size = {queue.size()}'
-    print(msg)
-
-    with nogil:
-
-        while not queue.empty():
-
-            # z, x, y = heapq.heappop(queue)
-            # z = out[x, y]
-            entry = queue.top()
-            queue.pop()
-
-            # z = -entry.first
-            ij = entry.second
-            i = ij.first
-            j = ij.second
             z = elevations[i, j]
-
-            # assert flow[i, j] == -1
-
-            if flow[i, j] == -1:
-
-                zmin = z
-                xmin = -1
-
+            
+            if z != nodata:
+                
                 for x in range(8):
-
+                
                     ix = i + ci[x]
                     jx = j + cj[x]
-                    
-                    if ingrid(height, width, ix, jx):
+                
+                    if not ingrid(height, width, ix, jx) or (elevations[ix, jx] == nodata):
+                        
+                        entry = QueueEntry(-z, Cell(i, j))
+                        queue.push(entry)
+                        # visited[i, j] = 1
+                        out[i, j] = z
 
-                        # consider only visited cells,
-                        # other cells either have elevation > z
-                        # or are sinks
+                        break
 
-                        if flow[ix, jx] != -1:
+        if feedback.isCanceled():
+            break
 
-                            zx = elevations[ix, jx]
+        feedback.setProgress(int(total * i * width))
 
-                            # assert zx != nodata
+    if feedback.isCanceled():
+        return np.asarray(out)
 
-                            # should never happen ...
-                            if zx == nodata:
-                                # we don't flow to nodata cells
-                                continue
+    # Priority flood from lowest to highest terrain
 
-                            if zx < zmin:
-                                zmin = zx
-                                xmin = x
+    feedback.setProgressText('Fill depressions from bottom to top ...')
+    progress0 = progress1 = 0
+    current = 0
 
-                    # else:
+    while not queue.empty():
 
-                    #     # flow outside dem
-                    #     xmin = x
-                    #     break
+        entry = queue.top()
+        queue.pop()
 
-                if xmin == -1:
-                    # no flow
-                    flow[i, j] = 0
-                else:
-                    flow[i, j] = pow2(xmin)
+        z = -entry.first
+        ij = entry.second
+        i = ij.first
+        j = ij.second
+        # z = elevations[i, j]
 
+        if settled[i, j] == 1:
+            # already settled
+            continue
+
+        out[i, j] = z
+        settled[i, j] = 1
+
+        # Calculate flow direction to lowest neighbor
+
+        if flow_output:
+
+            zmin = z
+            xmin = -1
 
             for x in range(8):
-                
+
                 ix = i + ci[x]
                 jx = j + cj[x]
                 
                 if ingrid(height, width, ix, jx):
 
-                    zx = elevations[ix, jx]
+                    # consider only settled cells,
+                    # other cells either have elevation >= z
+                    # or are sinks
 
-                    if (zx != nodata) and (seen[ix, jx] == 0):
+                    zx = out[ix, jx]
 
-                        if zx < (z + mindiff[x]):
+                    if (zx != nodata) and (settled[ix, jx] == 1):
 
-                            zx = z + mindiff[x]
-                            elevations[ix, jx] = zx
-                            flow[ix, jx] = pow2(reverse_direction(x))
+                        if zx < zmin:
+                            zmin = zx
+                            xmin = x
 
-                        # out[ix, jx] = zx
-                        # flow[ix, jx] = pow2(reverse_direction(x))
+            if xmin == -1:
+                # we found no neighbor cell having z < zmin
+                # no flow
+                flow[i, j] = NO_FLOW
+            else:
+                flow[i, j] = pow2(xmin)
 
-                        # heapq.heappush(queue, (-iz, ix, iy))
+        # Discover neighbor cells
+
+        for x in range(8):
+            
+            ix = i + ci[x]
+            jx = j + cj[x]
+            
+            if ingrid(height, width, ix, jx):
+
+                zx = elevations[ix, jx]
+
+                if (zx != nodata) and (settled[ix, jx] == 0):
+
+                    if zx < z + zdelta:
+                        zx = z + zdelta
+
+                    if (out[ix, jx] == nodata) or (out[ix, jx] > zx):
+
+                        # out[ix, jx] == nodata : not yet discovered
+                        # out[ix, jx] > zx : this alternative path yields a lower z for cell (ix, jx)
+                        #     though we should always discover cells from the lowest neighbor cell
+
+                        out[ix, jx] = zx
                         entry = QueueEntry(-zx, Cell(ix, jx))
                         queue.push(entry)
-                        seen[ix, jx] = 1
 
-    msg = 'Done.'
-    # progress.write(msg)
-    # progress.close()
-    print(msg)
+        current += 1
+        progress1 = int(current*total)
+        
+        if progress1 > progress0:
 
-    return np.asarray(flow)
+            if feedback.isCanceled():
+                break
+        
+            feedback.setProgress(progress1)
+            progress0 = progress1
+
+    feedback.setProgress(100)
+
+    return np.asarray(out)

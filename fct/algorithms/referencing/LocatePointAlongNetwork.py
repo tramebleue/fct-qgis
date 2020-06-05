@@ -132,7 +132,7 @@ class LocatePointAlongNetwork(AlgorithmMetadata, QgsProcessingFeatureBasedAlgori
 
     def outputFields(self, inputFields): #pylint: disable=no-self-use,missing-docstring
         appendUniqueField(QgsField('AXIS', QVariant.Int), inputFields)
-        appendUniqueField(QgsField('MLOC', QVariant.Double), inputFields)
+        appendUniqueField(QgsField('LOCM', QVariant.Double), inputFields)
         appendUniqueField(QgsField('DISTANCE', QVariant.Double), inputFields)
         appendUniqueField(QgsField('SIDE', QVariant.Double), inputFields)
         return inputFields

@@ -19,7 +19,7 @@ from osgeo import gdal
 
 from qgis.core import ( # pylint:disable=import-error,no-name-in-module
     QgsProcessingAlgorithm,
-    QgsProcessingParameterNumber,
+    QgsProcessingParameterDistance,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer
 )
@@ -41,7 +41,7 @@ class FillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
     METADATA = AlgorithmMetadata.read(__file__, 'FillDepressions')
 
     DEM = 'DEM'
-    MIN_SLOPE = 'MIN_SLOPE'
+    ZDELTA = 'ZDELTA'
     OUTPUT = 'OUTPUT'
     FLOW = 'FLOW'
 
@@ -51,14 +51,10 @@ class FillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
             self.DEM,
             self.tr('Digital Elevation Model (DEM)')))
 
-        # self.addParameter(ParameterString(self.NO_DATA,
-        #                                   self.tr('No data value'), '-9999'))
-
-        self.addParameter(QgsProcessingParameterNumber(
-            self.MIN_SLOPE,
-            self.tr('Min. Slope (%)'),
-            type=QgsProcessingParameterNumber.Double,
-            minValue=0.0,
+        self.addParameter(QgsProcessingParameterDistance(
+            self.ZDELTA,
+            self.tr('Minimun Z Delta'),
+            parentParameterName=self.DEM,
             defaultValue=0.0))
 
         self.addParameter(QgsProcessingParameterRasterDestination(
@@ -88,7 +84,7 @@ class FillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
         elevations_lyr = self.parameterAsRasterLayer(parameters, self.DEM, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
         flow_output = self.parameterAsOutputLayer(parameters, self.FLOW, context)
-        min_slope = self.parameterAsDouble(parameters, self.MIN_SLOPE, context) / 100
+        zdelta = self.parameterAsDouble(parameters, self.ZDELTA, context)
 
         driver = gdal.GetDriverByName('GTiff')
 
@@ -97,10 +93,13 @@ class FillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         nodata = elevations_ds.GetRasterBand(1).GetNoDataValue()
         transform = elevations_ds.GetGeoTransform()
-        resolution_x = transform[1]
-        resolution_x = -transform[5]
 
-        flow = fillsinks(elevations, nodata, resolution_x, resolution_x, min_slope)
+        if flow_output:
+            flow = np.zeros_like(elevations, dtype=np.int16)
+        else:
+            flow = None
+
+        out = fillsinks(elevations, nodata, zdelta, flow=flow, feedback=feedback)
 
         if feedback.isCanceled():
             feedback.reportError(self.tr('Aborted'), True)
@@ -120,7 +119,7 @@ class FillDepressions(AlgorithmMetadata, QgsProcessingAlgorithm):
         dst.SetGeoTransform(transform)
         dst.SetProjection(elevations_lyr.crs().toWkt())
 
-        dst.GetRasterBand(1).WriteArray(elevations)
+        dst.GetRasterBand(1).WriteArray(out)
         dst.GetRasterBand(1).SetNoDataValue(nodata)
 
         # Properly close GDAL resources
