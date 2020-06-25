@@ -24,8 +24,6 @@ def shortest_max(
         float[:, :] distance=None,
         feedback=None):
     """
-    shortest_max(data, nodata, startval=0, cost=None, out=None, distance=None, feedback=None)
-
     Assign to each input cell the maximum value on the shortest path
     to the nearest origin (reference) cell.
 
@@ -77,6 +75,7 @@ def shortest_max(
         CellQueue queue
         unsigned char[:, :] seen
         map[Cell, Cell] ancestors
+        float[:, :] jitteri, jitterj
 
     height = data.shape[0]
     width = data.shape[1]
@@ -84,6 +83,22 @@ def shortest_max(
     total = 100.0 / (height*width)
     count = 0
     progress0 = progress1 = 0
+
+    jitteri = np.float32(np.random.normal(0, 0.4, (height, width)))
+    jitterj = np.float32(np.random.normal(0, 0.4, (height, width)))
+
+    for i in range(height):
+        for j in range(width):
+
+            if jitteri[i, j] > 0.4:
+                jitteri[i, j] = 0.4
+            elif jitteri[i, j] < -0.4:
+                jitteri[i, j] = -0.4
+
+            if jitterj[i, j] > 0.4:
+                jitterj[i, j] = 0.4
+            elif jitterj[i, j] < -0.4:
+                jitterj[i, j] = -0.4
 
     if cost is None:
         cost = np.ones((height, width), dtype=np.float32)
@@ -117,6 +132,9 @@ def shortest_max(
             elif data[i, j] != nodata:
 
                 count += 1
+
+    if count == 0:
+        return
 
     total = 100.0 / count
     count = 0
@@ -188,10 +206,14 @@ def shortest_max(
             if data[ix, jx] == nodata:
                 continue
 
-            if ci[x] == 0 or cj[x] == 0:
-                dx = 1
-            else:
-                dx = 1.4142135623730951 # sqrt(2)
+            # if ci[x] == 0 or cj[x] == 0:
+            #     dx = 1
+            # else:
+            #     dx = 1.4142135623730951 # sqrt(2)
+
+            dx = sqrt(
+                (i + jitteri[i, j] - ix - jitteri[ix, jx])**2 +
+                (j + jitterj[i, j] - jx - jitterj[ix, jx])**2)
 
             dx = d + dx*cost[ix, jx]
 

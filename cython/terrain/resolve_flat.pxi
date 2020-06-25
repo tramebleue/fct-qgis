@@ -154,6 +154,14 @@ def resolve_flat(
 
         feedback.setProgress(int(total * i * width))
 
+    if (low_queue.size() + high_queue.size() + edge_queue.size()) == 0:
+
+        feedback.setProgressText('Found no flats.')
+        flat_mask = np.zeros((height, width), dtype=np.int32)
+        labels = np.zeros((height, width), dtype=np.uint32)
+        
+        return np.float32(flat_mask), np.uint32(labels)
+
     feedback.setProgressText('Low queue : %d, High queue : %d' % (low_queue.size(), high_queue.size()))
 
     # Label flats

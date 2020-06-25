@@ -151,6 +151,53 @@ def xytopixel(float x, float y, transform, gdal=True):
 
     return pointtopixel(Point(x, y), gt)
 
+def index(float x, float y, transform):
+    """
+    Transform real world coordinates (x, y)
+    into raster pixel coordinates (py, px)
+
+    Parameters
+    ----------
+
+    x, y: float
+        x and y real world coordinates
+
+    transform: object
+        RasterIO Affine Transform Object
+
+    Returns
+    -------
+
+    (row, col): int
+        raster pixel coordinates
+    """
+
+    return xytopixel(x, y, transform, False)
+
+def xy(int row, int col, transform):
+    """
+    Transform raster pixel coordinates (py, px)
+    into real world coordinates (x, y)
+
+    Parameters
+    ----------
+
+    row, col: int
+        raster pixel coordinates
+
+    transform: object
+        RasterIO Affine Transform Object
+
+    Returns
+    -------
+
+    (x, y): float
+        x and y real world coordinates
+        
+    """
+    
+    return pixeltoxy(row, col, transform, False)
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

@@ -22,6 +22,7 @@ ctypedef map[LabelPair, float] SpilloverGraph
 cdef void grow_pit_region(
     float[:, :] elevations,
     float nodata,
+    float noout,
     Label[:, :] labels,
     long height,
     long width,
@@ -49,7 +50,7 @@ cdef void grow_pit_region(
             ix = i + ci[x]
             jx = j + cj[x]
 
-            if not ingrid(height, width, ix, jx) or elevations[ix, jx] == nodata:
+            if not ingrid(height, width, ix, jx) or elevations[ix, jx] == nodata or elevations[ix, jx] == noout:
                 continue
 
             if labels[ix, jx] > 0:
@@ -71,6 +72,7 @@ cdef void grow_pit_region(
 cdef void grow_slope_region(
     float[:, :] elevations,
     float nodata,
+    float noout,
     Label[:, :] labels,
     long height,
     long width,
@@ -100,7 +102,7 @@ cdef void grow_slope_region(
             ix = i + ci[x]
             jx = j + cj[x]
 
-            if not ingrid(height, width, ix, jx) or elevations[ix, jx] == nodata:
+            if not ingrid(height, width, ix, jx) or elevations[ix, jx] == nodata or elevations[ix, jx] == noout:
                 continue
 
             if labels[ix, jx] > 0:
@@ -121,13 +123,13 @@ cdef void grow_slope_region(
 def watershed_labels(
         float[:, :] elevations,
         float nodata,
+        float noout,
         # float dx, float dy,
         # float minslope=1e-3,
         # float[:, :] out = None,
-        Label[:, :] labels = None):
+        Label[:, :] labels=None,
+        feedback=None):
     """
-    fillsinks(elevations, nodata, dx, dy, minslope, out=None)
-
     Fill sinks of digital elevation model (DEM),
     based on the algorithm of Wang & Liu (2006).
 
@@ -138,26 +140,30 @@ def watershed_labels(
         Digital elevation model (DEM) raster (ndim=2)
 
     nodata: float
-        no-data value in `elevations`    
+        no-data value in `elevations`
 
-    dx: float
-        raster horizontal resolution in `elevations`
+    noout: float
+        no-out value in `elevations`
+        Provide max(elevations) if not applicable
 
-    dy: float
-        raster vertical resolution in `elevations`
-        (positive value)
-
-    minslope: float
-        Minimum slope to preserve between cells
-        when filling up sinks.
-
-    out: array-like
+    labels: array-like
         Same shape and dtype as elevations, initialized to nodata
+
+    feedback: QgsProcessingFeedback-like object
+        or None to disable feedback
 
     Returns
     -------
 
-    Flow raster.
+    labels: array-like, dtype=uint32, nodata=0
+        Raster map of watershed labels
+        starting from 1 (0 is nodata)
+
+    graph: dict
+        Watershed graph (label1, label2): minz
+        where label1 < label2 and (label1, label2) denotes an undirected link
+        between watershed 1 and watershed 2, and minz is the minimum connecting elevation
+        between the two waterhseds.
 
     Notes
     -----
@@ -189,7 +195,7 @@ def watershed_labels(
         CellStack slope
         SpilloverGraph graph
         LabelPair edge
-        map[Label, Cell] seeds
+        # map[Label, Cell] seeds
         int step = 0
 
         # np.ndarray[double, ndim=2] w
@@ -203,14 +209,12 @@ def watershed_labels(
 
     if labels is None:
         labels = np.zeros((height, width), dtype=np.uint32)
+
+    if feedback is None:
+        feedback = SilentFeedback()
     
-    # progress = CppTermProgress(2*width*height)
-    msg = 'Input is %d x %d' % (width, height)
-    # progress.write(msg)
-    print(msg)
-    msg = 'Find boundary cells ...'
-    # progress.write(msg)
-    print(msg)
+    feedback.setProgressText('Input is %d x %d' % (width, height))
+    feedback.setProgressText('Find boundary cells ...')
 
     with nogil:
 
@@ -226,7 +230,9 @@ def watershed_labels(
                         ix = i + ci[x]
                         jx = j + cj[x]
                     
-                        if not ingrid(height, width, ix, jx) or (elevations[ix, jx] == nodata):
+                        if not ingrid(height, width, ix, jx) or elevations[ix, jx] == nodata:
+
+                            # Do not seed from no-out cells
                             
                             # heapq.heappush(queue, (-z, x, y))
                             entry = QueueEntry(-z, Cell(i, j))
@@ -236,19 +242,17 @@ def watershed_labels(
 
                 # progress.update(1)
 
-    msg = 'Fill depressions from bottom to top ...'
-    # progress.write(msg)
-    print(msg)
+    feedback.setProgressText('Fill depressions from bottom to top ...')
 
-    entry = priority.top()
-    z = -entry.first
+    # entry = priority.top()
+    # z = -entry.first
     
-    msg = f'Starting from z = {z:.3f}'
-    # progress.write(msg)
-    print(msg)
+    # msg = f'Starting from z = {z:.3f}'
+    # # progress.write(msg)
+    # print(msg)
 
-    msg = f'Initial queue size = {priority.size()}'
-    print(msg)
+    # msg = f'Initial queue size = {priority.size()}'
+    # print(msg)
 
     with nogil:
 
@@ -273,7 +277,7 @@ def watershed_labels(
                     ix = i + ci[x]
                     jx = j + cj[x]
 
-                    if not ingrid(height, width, ix, jx) or elevations[ix, jx] == nodata:
+                    if not ingrid(height, width, ix, jx) or elevations[ix, jx] == nodata or elevations[ix, jx] == noout:
                         continue
 
                     if labels[ix, jx] > 0 and elevations[ix, jx] < zmin:
@@ -286,7 +290,7 @@ def watershed_labels(
                     label = next_label
                     next_label += 1
                     labels[i, j] = label
-                    seeds[label] = c
+                    # seeds[label] = c
 
                 else:
 
@@ -343,13 +347,13 @@ def watershed_labels(
 
                         elevations[ix, jx] = z
                         pit.push(Cell(ix, jx))
-                        grow_pit_region(elevations, nodata, labels, height, width, label, pit, slope)
+                        grow_pit_region(elevations, nodata, noout, labels, height, width, label, pit, slope)
 
                     else:
 
                         slope.push(Cell(ix, jx))
 
-            grow_slope_region(elevations, nodata, labels, height, width, label, slope, priority)
+            grow_slope_region(elevations, nodata, noout, labels, height, width, label, slope, priority)
 
             # with rio.open('EXTRACT_08_05_935_LABELS.tif', 'w', **profile) as dst:
             #     dst.write(labels, 1)
@@ -357,15 +361,10 @@ def watershed_labels(
 
             step += 1
 
-    msg = f'{step} steps executed'
-    print(msg)
+    # msg = f'{step} steps executed'
+    # print(msg)
 
+    feedback.setProgressText(f'Found {next_label-1} watersheds.')
+    feedback.setProgress(100)
 
-
-    msg = f'Found {next_label-1} watersheds.'
-    print(msg)
-
-    msg = 'Done.'
-    print(msg)
-
-    return np.asarray(labels), graph, seeds
+    return np.asarray(labels), graph

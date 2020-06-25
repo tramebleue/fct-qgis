@@ -116,7 +116,7 @@ def signed_distance(float[:, :] a, float[:, :] b, float[:, :] c):
 
             pos[k] = dot
 
-    return dist, signed_dist, pos
+    return np.asarray(dist), np.asarray(signed_dist), np.asarray(pos)
 
 # def side_of_nearest_segment(pixels, points, segments, out, feedback):
 #     """
