@@ -24,6 +24,7 @@ from qgis.core import ( # pylint:disable=no-name-in-module
     QgsGeometry,
     QgsProcessing,
     QgsProcessingAlgorithm,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField,
@@ -46,25 +47,25 @@ def node_type(in_degree, out_degree):
 
     if in_degree == 0:
         if out_degree == 0:
-            typ = 'XOUT' # Exterior node (not included in graph construction)
+            typ = 'Isolated' # Exterior node (not included in graph construction)
         elif out_degree == 1:
-            typ = 'SRCE' # Source node
+            typ = 'Source' # Source node
         else:
-            typ = 'DIVG' # Diverging node
+            typ = 'Divergence' # Diverging node
     elif in_degree == 1:
         if out_degree == 0:
-            typ = 'EXUT' # Outlet (exutoire)
+            typ = 'Outlet' # Outlet (exutoire)
         elif out_degree == 1:
-            typ = 'NODE' # Simple node between 2 edges (reaches)
+            typ = 'Simple' # Simple node between 2 edges (reaches)
         else:
-            typ = 'DIFL' # Diffluence
+            typ = 'Diffluence' # Diffluence
     else:
         if out_degree == 0:
-            typ = 'XSIN' # Sink
+            typ = 'Sink' # Sink
         elif out_degree == 1:
-            typ = 'CONF' # Confluence
+            typ = 'Confluence' # Confluence
         else:
-            typ = 'XXOS' # Crossing
+            typ = 'Crossing' # Crossing
 
     return typ
 
@@ -79,6 +80,7 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
     FROM_NODE_FIELD = 'FROM_NODE_FIELD'
     TO_NODE_FIELD = 'TO_NODE_FIELD'
     MEAS_FIELD = 'MEAS_FIELD'
+    SUBSET = 'SUBSET'
 
     def initAlgorithm(self, configuration): #pylint: disable=unused-argument,missing-docstring
 
@@ -109,6 +111,19 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
             defaultValue='MEASURE',
             optional=True))
 
+        self.addParameter(QgsProcessingParameterEnum(
+            self.SUBSET,
+            self.tr('Type Subset'),
+            options=[self.tr(option) for option in [
+                'All',
+                'Sources',
+                'Outlets',
+                'Confluences',
+                'Singularities',
+                'Simple Nodes'
+                ]],
+            defaultValue=0))
+
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT,
             self.tr('Nodes'),
@@ -120,6 +135,16 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
         from_node_field = self.parameterAsString(parameters, self.FROM_NODE_FIELD, context)
         to_node_field = self.parameterAsString(parameters, self.TO_NODE_FIELD, context)
         measure_field = self.parameterAsString(parameters, self.MEAS_FIELD, context)
+        subset = self.parameterAsInt(parameters, self.SUBSET, context)
+
+        subset_map = [
+            ('All', {}),
+            ('Source', {'Source', 'Divergence'}),
+            ('Outlet', {'Outlet'}),
+            ('Confluence/Diffluence', {'Confluence', 'Diffluence'}),
+            ('Singularity', {'Sink', 'Crossing', 'Isolated'}),
+            ('Simple Node', {'Simple'})
+        ]
 
         feedback.pushInfo(self.tr("Build node index ..."))
 
@@ -127,7 +152,7 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
             QgsField('GID', type=QVariant.Int, len=10),
             QgsField('DIN', type=QVariant.Int, len=6),
             QgsField('DOUT', type=QVariant.Int, len=6),
-            QgsField('TYPE', type=QVariant.String, len=4),
+            QgsField('TYPE', type=QVariant.String, len=15),
             QgsField('MEAS', type=QVariant.Double, len=10, prec=2)
         ]
 
@@ -184,25 +209,32 @@ class NetworkNodes(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         total = 100.0 / len(nodes) if nodes else 0
 
+        _, types = subset_map[subset]
+
         for current, gid in enumerate(nodes.keys()):
+
+            feedback.setProgress(int(current * total))
+            if feedback.isCanceled():
+                break
+
+            din = in_degree[gid]
+            dout = len(adjacency[gid])
+
+            nty = node_type(din, dout)
+            if types and nty not in types:
+                continue
 
             feature = QgsFeature()
             point, measure = nodes[gid]
-            din = in_degree[gid]
-            dout = len(adjacency[gid])
             feature.setGeometry(QgsGeometry.fromPointXY(point))
             feature.setAttributes([
                 gid,
                 din,
                 dout,
-                node_type(din, dout),
+                nty,
                 measure
                 ])
 
             sink.addFeature(feature)
-
-            feedback.setProgress(int(current * total))
-            if feedback.isCanceled():
-                break
 
         return {self.OUTPUT: dest_id}
