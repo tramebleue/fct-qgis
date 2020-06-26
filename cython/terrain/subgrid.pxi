@@ -26,18 +26,23 @@ cdef GridExtent grid_extent(float[:, :] geometry, GeoTransform transform) nogil:
         Point coordinate
         Cell pixel
         long length = geometry.shape[0], k
-        long mini = - 1, minj = -1, maxi = -1, maxj = -1
+        long mini, minj, maxi, maxj
 
     for k in range(length):
 
         coordinate = Point(geometry[k, 0], geometry[k, 1])
         pixel = pointtopixel(coordinate, transform)
 
-        if pixel.first < mini or mini == -1:
+        if k == 0:
+            mini = maxi = pixel.first
+            minj = maxj = pixel.second
+            continue
+
+        if pixel.first < mini:
             mini = pixel.first
         if pixel.first > maxi:
             maxi = pixel.first
-        if pixel.second < minj or minj == -1:
+        if pixel.second < minj:
             minj = pixel.second
         if pixel.second > maxj:
             maxj = pixel.second

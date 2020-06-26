@@ -97,21 +97,22 @@ def disaggregate(float[:, :] geometry, unsigned char[:, :] zone,
         else:
             zvalue = 0
 
-    while zvalue > 0 and count < value:
+    if zvalue > 0:
+        while count < value:
 
-        randomi = np.random.randint(low=mini, high=maxi+1, size=1000, dtype=np.int32)
-        randomj = np.random.randint(low=minj, high=maxj+1, size=1000, dtype=np.int32)
+            randomi = np.random.randint(low=mini, high=maxi+1, size=10000, dtype=np.int32)
+            randomj = np.random.randint(low=minj, high=maxj+1, size=10000, dtype=np.int32)
 
-        for k in range(1000):
+            for k in range(10000):
 
-            i = randomi[k]
-            j = randomj[k]
+                i = randomi[k]
+                j = randomj[k]
 
-            if ingrid(height, width, i, j) and zone[i, j] >= zvalue and mask[i, j]:
-                out[i, j] = out[i, j] + 1
-                count += 1
-                if count >= value:
-                    break
+                if ingrid(height, width, i, j) and zone[i, j] >= zvalue and mask[i, j]:
+                    out[i, j] = out[i, j] + 1
+                    count += 1
+                    if count >= value:
+                        break
 
     for i in range(mini, maxi+1):
         for j in range(minj, maxj+1):
