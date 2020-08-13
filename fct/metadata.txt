@@ -36,9 +36,9 @@ changelog =
 	1.0.0
 	- First version released in fct repository
 tags = fluvial, vector, analysis, processing
-homepage = https://github.com/tramebleue/fct
+homepage = https://github.com/tramebleue/fct-qgis
 tracker = 
-repository = https://github.com/tramebleue/fct
+repository = https://github.com/tramebleue/fct-qgis
 icon = images/icon.png
 experimental = True
 deprecated = False
