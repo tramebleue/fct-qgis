@@ -1,0 +1,19 @@
+displayName: Disaggregate Network
+group: spatialcomponents
+summary: |
+  Disaggregate polygonal features based using corresponding polylines.
+description: |
+  Disaggregate polygonal features using corresponding polylines.
+  For better result, the polylines should be smoothed centerlines of the polygonal features.
+  Both polygonal and polylines features should have a common FID field to associate each polygon to his corresponding polyline. 
+tags:
+  - vector
+  - DGO
+  - disaggregation
+  - model
+  - regional
+  - network
+seealso:
+  - ValleyBottom
+  - ValleyCenterLine
+  - DisaggregatePolygon
