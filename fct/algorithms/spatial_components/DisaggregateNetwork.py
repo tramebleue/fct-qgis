@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-DisaggregatePolygon
+DisaggregateNetwork
 
 ***************************************************************************
 *                                                                         *
@@ -101,9 +101,7 @@ class DisaggregateNetwork(AlgorithmMetadata, QgsProcessingAlgorithm):
         polygons = self.parameterAsSource(parameters, self.POLYGON, context)
 
         axis_fid_net = self.parameterAsFields(parameters, self.AXIS_FID, context)[0]
-        axis_fid_poly = self.parameterAsFields(parameters, self.POLY_AXIS_FID, context)[
-            0
-        ]
+        axis_fid_poly = self.parameterAsFields(parameters, self.POLY_AXIS_FID, context)[0]
         idx_axis_net = network.fields().indexOf(axis_fid_net)
         idx_axis_poly = polygons.fields().indexOf(axis_fid_poly)
 
