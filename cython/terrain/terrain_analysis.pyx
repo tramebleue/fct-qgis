@@ -1,4 +1,4 @@
-# coding: utf-8
+# distutils: language=c++
 # cython: c_string_type=str, c_string_encoding=ascii, embedsignature=True
 
 """

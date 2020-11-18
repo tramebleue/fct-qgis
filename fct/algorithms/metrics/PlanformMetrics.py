@@ -87,14 +87,15 @@ def qgs_vector(p0, p1):
 
 class Bend(object):
 
-    def __init__(self, points):
+    def __init__(self, points, measure):
         self.points = points
+        self.measure = measure
 
     @classmethod
     def merge(cls, bend1, bend2):
 
         assert(bend1.points[-1] == bend2.points[0])
-        return cls(bend1.points[:-1] + bend2.points)
+        return cls(bend1.points[:-1] + bend2.points, bend2.measure)
 
     @property
     def p_origin(self):
@@ -284,6 +285,7 @@ class PlanformMetrics(AlgorithmMetadata, QgsProcessingAlgorithm):
 
         fields = QgsFields(layer.fields())
         fields.append(QgsField('BENDID', QVariant.Int, len=10))
+        fields.append(QgsField('BENDM', QVariant.Double, len=10, prec=2))
         fields.append(QgsField('NPTS', QVariant.Int, len=4))
         fields.append(QgsField('LBEND', QVariant.Double, len=10, prec=2))
         fields.append(QgsField('LWAVE', QVariant.Double, len=10, prec=2))
@@ -330,14 +332,15 @@ class PlanformMetrics(AlgorithmMetadata, QgsProcessingAlgorithm):
                 ])
             axis_sink.addFeature(new_feature)
 
-        def write_segment(fid, points, feature):
+        def write_segment(fid, bend, feature):
 
-            bend = Bend(points)
+            # bend = Bend(points, measure)
 
             new_feature = QgsFeature()
-            new_feature.setGeometry(QgsGeometry.fromPolylineXY(points))
+            new_feature.setGeometry(QgsGeometry.fromPolylineXY(bend.points))
             new_feature.setAttributes(feature.attributes() + [
                     fid,
+                    bend.measure,
                     bend.npoints(),
                     bend.length(),
                     bend.wavelength(),
@@ -417,6 +420,7 @@ class PlanformMetrics(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             # write_inflection_point(point_id, a)
             point_id = point_id + 1
+            measure = 0.0
 
             for c in points_iterator:
 
@@ -427,6 +431,7 @@ class PlanformMetrics(AlgorithmMetadata, QgsProcessingAlgorithm):
                     p0 = current_segment[0]
                     pi = QgsPointXY(0.5 * (a.x() + b.x()), 0.5 * (a.y() + b.y()))
                     current_segment.append(pi)
+                    measure += qgs_vector(p0, pi).length()
 
                     if current_axis_direction:
                         angle = current_axis_direction.angle(qgs_vector(p0, pi)) * 180 / math.pi
@@ -437,12 +442,13 @@ class PlanformMetrics(AlgorithmMetadata, QgsProcessingAlgorithm):
                     # write_segment(fid, current_segment, feature)
                     # write_inflection_point(point_id, pi)
 
-                    bend = Bend(current_segment)
+                    bend = Bend(current_segment, measure)
                     bends.append(bend)
                     inflection_points.append(p0)
 
                     current_sign = sign
                     current_segment = [pi, b]
+                    measure += qgs_vector(pi, b).length()
                     current_axis_direction = qgs_vector(p0, pi)
                     fid = fid + 1
                     point_id = point_id + 1
@@ -450,6 +456,7 @@ class PlanformMetrics(AlgorithmMetadata, QgsProcessingAlgorithm):
                 else:
 
                     current_segment.append(b)
+                    measure += qgs_vector(a, b).length()
 
                 if current_sign == 0:
                     current_sign = sign
@@ -465,10 +472,11 @@ class PlanformMetrics(AlgorithmMetadata, QgsProcessingAlgorithm):
 
             # write_axis_segment(fid, p0, b, feature, angle)
             current_segment.append(b)
+            measure += qgs_vector(a, b).length()
 
             # write_segment(fid, current_segment, feature)
             # write_inflection_point(point_id, b)
-            bend = Bend(current_segment)
+            bend = Bend(current_segment, measure)
             bends.append(bend)
             inflection_points.append(p0)
             inflection_points.append(b)
@@ -666,7 +674,7 @@ class PlanformMetrics(AlgorithmMetadata, QgsProcessingAlgorithm):
                 write_inflection_point(point_id, point, angle, dist)
                 retained = retained + 1
                 write_axis_segment(fid, bend.p_origin, bend.p_end, feature)
-                write_segment(fid, bend.points, feature)
+                write_segment(fid, bend, feature)
 
                 index = entry.next
 

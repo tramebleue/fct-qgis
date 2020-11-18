@@ -15,8 +15,14 @@ Disaggregate spatial values
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def disaggregate(float[:, :] geometry, unsigned char[:, :] zone,
-    int value, object rio_transform, unsigned char[:, :] mask, int[:, :] out):
+def disaggregate(
+    float[:, :] geometry,
+    unsigned char[:, :] zone,
+    float value,
+    float increment,
+    object rio_transform,
+    unsigned char[:, :] mask,
+    float[:, :] out):
     """
     Disaggregate uniformly `value`
     over the extent given by `geometry`(must be a polygon)
@@ -47,7 +53,7 @@ def disaggregate(float[:, :] geometry, unsigned char[:, :] zone,
         calls  to `disaggregate` ;
         `mask` must be initialized to zeros.
 
-    out: array-like, dtype=int32, same szie as `zone`
+    out: array-like, dtype=float32, same size as `zone`
         Target raster, receiving disaggregated increments
         that sum up to `value`
     """
@@ -59,7 +65,9 @@ def disaggregate(float[:, :] geometry, unsigned char[:, :] zone,
         long i, j, mini, minj, maxi, maxj
         GeoTransform transform
         int[:] randomi, randomj
-        int k, count = 0, zcount = 0, ucount = 0, zvalue = 0
+        int k, area = 0, urban_area = 0
+
+        float total = 0.0
 
     transform = transform_from_rasterio(rio_transform)
 
@@ -81,37 +89,36 @@ def disaggregate(float[:, :] geometry, unsigned char[:, :] zone,
             if zone[i, j] > 0 and point_in_ring(p, geometry):
 
                 if zone[i, j] == 1:
-                    zcount += 1
+                    area += 1
                 
                 if zone[i, j] == 2:
-                    zcount += 1
-                    ucount += 1
+                    area += 1
+                    urban_area += 1
                 
                 mask[i, j] = True
 
-    if ucount > 0:
-        zvalue = 2
-    else:
-        if zcount > 0:
-            zvalue = 1
-        else:
-            zvalue = 0
+    if area + urban_area == 0:
+        return
 
-    if zvalue > 0:
-        while count < value:
+    while total < value:
 
-            randomi = np.random.randint(low=mini, high=maxi+1, size=10000, dtype=np.int32)
-            randomj = np.random.randint(low=minj, high=maxj+1, size=10000, dtype=np.int32)
+        randomi = np.random.randint(low=mini, high=maxi+1, size=10000, dtype=np.int32)
+        randomj = np.random.randint(low=minj, high=maxj+1, size=10000, dtype=np.int32)
 
-            for k in range(10000):
+        for k in range(10000):
 
-                i = randomi[k]
-                j = randomj[k]
+            i = randomi[k]
+            j = randomj[k]
 
-                if ingrid(height, width, i, j) and zone[i, j] >= zvalue and mask[i, j]:
-                    out[i, j] = out[i, j] + 1
-                    count += 1
-                    if count >= value:
+            if ingrid(height, width, i, j) and mask[i, j]:
+
+                if (urban_area > 0 and zone[i, j] == 2) or \
+                    (urban_area == 0 and zone[i, j] == 1):
+                    
+                    out[i, j] += increment
+                    total += increment
+                    
+                    if total >= value:
                         break
 
     for i in range(mini, maxi+1):
