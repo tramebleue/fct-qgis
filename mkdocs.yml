@@ -1,7 +1,7 @@
 site_name: Fluvial Corridor Toolbox Documentation
 
-repo_name: tramebleue/fct
-repo_url: https://github.com/tramebleue/fct
+repo_name: tramebleue/fct-qgis
+repo_url: https://github.com/tramebleue/fct-qgis
 
 theme:
   name: material
@@ -14,7 +14,7 @@ extra:
   manifest: 'manifest.webmanifest'
   social:
     - type: 'github'
-      link: 'https://github.com/tramebleue/fct'
+      link: 'https://github.com/tramebleue/fct-qgis'
 
 extra_javascript: 
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML

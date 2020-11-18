@@ -4,7 +4,7 @@
 
 To quickly install the latest released version, add the following repository to your QGIS plugin repositories :
 
-    https://tramebleue.github.io/fct/repo/plugins.xml
+    https://tramebleue.github.io/fct-qgis/repo/plugins.xml
 
 Then check the ```Show experimental plugins``` box, and install the Fluvial Corridor Toolbox plugin with the QGIS plugin manager. 
 

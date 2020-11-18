@@ -286,7 +286,7 @@ def task_releases_stats():
 
             from github import Github
             g = Github()
-            fct_repo = g.get_repo("tramebleue/fct")
+            fct_repo = g.get_repo("tramebleue/fct-qgis")
 
             print(" Publish date  | Release tag |           Release title           |            Asset name             | Download count")
             print("---------------|-------------|-----------------------------------|-----------------------------------|---------------")
@@ -346,7 +346,7 @@ def task_release():
             psswd = getpass.getpass("GitHub password: ")
 
             g = Github(user, psswd)
-            fct_repo = g.get_repo("tramebleue/fct")
+            fct_repo = g.get_repo("tramebleue/fct-qgis")
 
             tag_name = f"v{version}"
             zip_path = os.path.join("release", 
