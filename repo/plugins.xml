@@ -3,7 +3,7 @@
         <description>Fluvial Corridor Toolbox</description>
         <version>1.0.6</version>
         <qgis_minimum_version>3.4.0</qgis_minimum_version>
-        <qgis_maximum_version>3.99.0</qgis_maximum_version>
+        <qgis_maximum_version>3.10.99</qgis_maximum_version>
         <homepage>https://tramebleue.github.io/fct-qgis/</homepage>
         <file_name>FluvialCorridorToolbox.1.0.6.zip</file_name>
         <icon>https://tramebleue.github.io/fct-qgis/repo/icon.png</icon>
