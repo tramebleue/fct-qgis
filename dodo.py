@@ -16,7 +16,6 @@ Build tools, cross-platform replacement for Makefile
 import os
 import platform
 import shutil
-import getpass
 from lxml import etree
 from copy import deepcopy
 from configparser import ConfigParser
@@ -343,9 +342,9 @@ def task_release():
                 print(str(error))
 
             user = input("GitHub username: ")
-            psswd = getpass.getpass("GitHub password: ")
+            access_token = input("GitHub personal access token: ")
 
-            g = Github(user, psswd)
+            g = Github(access_token)
             fct_repo = g.get_repo("tramebleue/fct-qgis")
 
             tag_name = f"v{version}"
@@ -397,7 +396,7 @@ def task_release():
             config['general']['version'] = new_version
 
             new_changelog = input("New changelog item for this version (e.g.: Actual dev version): - ")
-            config['general']['changelog'] = f"\n{new_version}\n - {new_changelog}\n{changelog}"
+            config['general']['changelog'] = f"\n{new_version}\n- {new_changelog}\n{changelog}"
 
             with open(os.path.join('fct', 'metadata.txt'), 'w') as f:
                 config.write(f)
