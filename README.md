@@ -1,5 +1,8 @@
 # Fluvial Corridor Toolbox
 
+> **Warning**
+> This version of the toolbox is deprecated. Development and maintenance of the Fluvial Corridor Toolbox for QGIS continues on [EVS-GIS/fct-qgis](https://github.com/EVS-GIS/fct-qgis)
+
 ![Corridor Width Profile Example (River le Var, France)](https://github.com/tramebleue/fct-cli/blob/master/docs/img/width_profile.png)
 
 The Fluvial Corridor Toolbox is a set of geoalgorithms intended to describe and measure fluvial features and processes.
@@ -17,7 +20,7 @@ This branch is under development and is an open effort to support QGis 3 (curren
 
 To quickly install the latest released version, add the following repository to your QGIS plugin repositories :
 
-    https://tramebleue.github.io/fct-qgis/repo/plugins.xml
+    https://evs-gis.github.io/fct-qgis/repo/plugins.xml
 
 Then check the ```Show experimental plugins``` box, and install the Fluvial Corridor Toolbox plugin with the QGIS plugin manager.
 
